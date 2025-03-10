@@ -47,9 +47,9 @@ docker run --platform linux/amd64  --rm \
   -v /path/to/output/directory:/output \
   -e INPUT_FILE="/data/LiDAR/0002_Val_dArpette/02_RAW_LAZ/ARPETTE_LV95_HELL_1560II_CH1_211020_082047.laz" \
   -e OUTPUT_DIR="/output" \
-  -e S3_BUCKET="s3://XXXXXXXXXXXX/AddLidar/ARPETTE_LV95_HELL_1560II_CH1_211020_082047/" \
-  -e ACCESS_KEY="XXXXXXXXXXXX" \
-  -e PRIVATE_KEY="XXXXXXXXXXXX" \
+  -e S3_BUCKET="s3://${S3_BUCKET}/AddLidar/ARPETTE_LV95_HELL_1560II_CH1_211020_082047/" \
+  -e ACCESS_KEY="${S3_ACCESS_KEY}" \
+  -e PRIVATE_KEY="${S3_PRIVATE_KEY}" \
   ghcr.io/epfl-enac/potree_converter:debian-2.1.1
 ```
 
