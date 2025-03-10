@@ -30,6 +30,7 @@ Temporary Items
 *.sh.swp
 *.sh.swo
 
+.example
 # Docker
 # Ignore Docker files
 # Dockerfile

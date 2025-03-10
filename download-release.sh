@@ -34,7 +34,6 @@ if [[ "$CHOICE" =~ ^[1-5]$ ]]; then
     rm -rf PotreeConverter_linux_x64
 	rm -rf PotreeConverter/resources
 	chmod +x PotreeConverter/PotreeConverter
-    cp Dockerfile PotreeConverter/
     cp entrypoint.sh PotreeConverter/
 else
     echo "Invalid selection."

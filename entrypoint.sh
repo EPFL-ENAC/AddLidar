@@ -40,8 +40,8 @@ cat <<EOF > "$S3CFG_FILE"
 [default]
 access_key = ${ACCESS_KEY}
 secret_key = ${PRIVATE_KEY}
-host_base = s3.amazonaws.com
-host_bucket = %(bucket)s.s3.amazonaws.com
+host_base = s3.epfl.ch
+host_bucket = s3.epfl.ch/%(bucket)
 use_https = True
 EOF
 

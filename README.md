@@ -16,24 +16,11 @@ make build
 
 ## Docker Usage
 
-### Build the Docker image
+### Build the Docker image locally
 
 ```bash
-docker buildx build --platform linux/amd64 -t ghcr.io/epfl-enac/potree_converter:2.1.1 --push .
-```
-
-### Run with volume mounts
-
-```bash
-# Using make
-make convert
-
-# Manual docker run
-docker run --platform linux/amd64 --rm \
-    -v "/path/to/input/file.las:/input/pointcloud.las" \
-    -v "/path/to/output/directory:/output" \
-    ghcr.io/epfl-enac/potree_converter:2.1.1 \
-    -i /input/pointcloud.las -o /output
+make install
+docker build -f Dockerfile --platform linux/amd64 -t ghcr.io/epfl-enac/potree_converter:debian-2.1.1 ./PotreeConverter
 ```
 
 ## S3 Upload Feature
@@ -47,20 +34,23 @@ When using the entrypoint.sh script, set the following environment variables:
 - `INPUT_FILE`: Path to the input point cloud file (e.g., /data/input.las)
 - `OUTPUT_DIR`: Directory where the output will be stored (e.g., /data/output)
 - `S3_BUCKET`: S3 bucket destination (e.g., s3://your-bucket/path/)
+- `ACCESS_KEY`: S3 access key
+- `PRIVATE_KEY`: S3 private key
+
 - `EXTRA_ARGS`: (Optional) Additional arguments for PotreeConverter
 
 ### Example with S3 upload
 
 ```bash
-docker run --platform linux/amd64 --rm \
-    -v "/path/to/input/file.las:/data/input.las" \
-    -v "/path/to/output/directory:/data/output" \
-    -e INPUT_FILE=/data/input.las \
-    -e OUTPUT_DIR=/data/output \
-    -e S3_BUCKET=s3://your-bucket/path/ \
-    -e EXTRA_ARGS="--generate-page" \
-    --entrypoint /app/entrypoint.sh \
-    ghcr.io/epfl-enac/potree_converter:2.1.1
+docker run --platform linux/amd64  --rm \
+  -v /path/to/data:/data \
+  -v /path/to/output/directory:/output \
+  -e INPUT_FILE="/data/LiDAR/0002_Val_dArpette/02_RAW_LAZ/ARPETTE_LV95_HELL_1560II_CH1_211020_082047.laz" \
+  -e OUTPUT_DIR="/output" \
+  -e S3_BUCKET="s3://XXXXXXXXXXXX/AddLidar/ARPETTE_LV95_HELL_1560II_CH1_211020_082047/" \
+  -e ACCESS_KEY="XXXXXXXXXXXX" \
+  -e PRIVATE_KEY="XXXXXXXXXXXX" \
+  ghcr.io/epfl-enac/potree_converter:debian-2.1.1
 ```
 
 ## Common PotreeConverter Arguments
@@ -71,12 +61,6 @@ docker run --platform linux/amd64 --rm \
 - `--material`: RGB, ELEVATION, INTENSITY, INTENSITY_GRADIENT, CLASSIFICATION, RETURN_NUMBER, SOURCE, LEVEL_OF_DETAIL
 - `--output-format`: BINARY, LAS, LAZ
 - `--scale`: Scale factor for precision (default: 0.001)
-
-For a complete list of arguments, run:
-
-```bash
-docker run --rm ghcr.io/epfl-enac/potree_converter:2.1.1 --help
-```
 
 ## License
 
