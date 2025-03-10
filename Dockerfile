@@ -9,6 +9,7 @@ RUN dpkg --add-architecture amd64 && \
     git cmake build-essential wget \
     libc6 \
     binutils:amd64 \
+    s3cmd \
     && rm -rf /var/lib/apt/lists/*
 
 # Create a directory for your binary
@@ -23,5 +24,14 @@ RUN chmod +x /app/PotreeConverter
 
 # Use LD_PRELOAD to directly link the library when running the binary
 # Keep --help as default but allow passing arguments from docker run command
-ENTRYPOINT [ "sh", "-c", "LD_PRELOAD=/app/liblaszip.so /app/PotreeConverter $*", "--" ]
+# ENTRYPOINT [ "sh", "-c", "LD_PRELOAD=/app/liblaszip.so /app/PotreeConverter $*", "--" ]
+# CMD ["--help"]
+
+
+# Copy our custom entrypoint script that runs conversion then S3 upload
+COPY entrypoint.sh /entrypoint.sh
+RUN chmod +x /entrypoint.sh
+
+# Use the custom entrypoint
+ENTRYPOINT ["/entrypoint.sh"]
 CMD ["--help"]

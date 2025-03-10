@@ -9,14 +9,10 @@ CONTAINER_NAME = potree_converter_container
 
 install:
 	@echo "Downloading PotreeConverter..."
-	wget https://github.com/potree/PotreeConverter/releases/download/2.1.1/PotreeConverter_2.1.1_x64_linux.zip
-	unzip PotreeConverter_2.1.1_x64_linux.zip
-	rm PotreeConverter_2.1.1_x64_linux.zip
-	mv PotreeConverter_linux_x64 PotreeConverter
-	rm -rf PotreeConverter/resources
-	chmod +x PotreeConverter/PotreeConverter
+	./download-release.sh
+	@echo "PotreeConverter downloaded successfully"
 
-build:
+build: install check
 	@echo "Building Docker image..."
 	docker buildx build --platform linux/amd64 -t $(IMAGE_NAME) --push .
 
@@ -43,6 +39,7 @@ stop:
 
 # Remove the Docker container
 clean:
+	rm -rf PotreeConverter
 	docker rm $(CONTAINER_NAME)
 
 # Remove the Docker image
