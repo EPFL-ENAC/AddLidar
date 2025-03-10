@@ -1,31 +1,28 @@
-FROM ubuntu:latest
+FROM alpine:latest
 
-# Add amd64 architecture and install necessary dependencies
-RUN dpkg --add-architecture amd64 && \
-    apt-get update && apt-get install -y \
-    libstdc++6 \
-    libtiff-dev libgeotiff-dev libgdal-dev \
-    libboost-system-dev libboost-thread-dev libboost-filesystem-dev libboost-program-options-dev libboost-regex-dev libboost-iostreams-dev libtbb-dev \
-    git cmake build-essential wget \
-    libc6 \
-    binutils:amd64 \
-    s3cmd \
-    && rm -rf /var/lib/apt/lists/*
+# Install runtime dependencies only
+RUN apk add --no-cache \
+    libstdc++ \
+    libtiff \
+    tbb-dev \
+    boost-system \
+    boost-thread \
+    boost-filesystem \
+    boost-program_options \
+    boost-regex \
+    boost-iostreams \
+    py3-s3cmd
 
-# Create a directory for your binary
+# Create app directory
 WORKDIR /app
 
-# Copy the shared library and binary
+# Copy only the required files
 COPY liblaszip.so /app/
 COPY PotreeConverter /app/
-
-# Make your binary executable
-RUN chmod +x /app/PotreeConverter
-
-# Copy our custom entrypoint script that runs conversion then S3 upload
 COPY entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
 
-# Use the custom entrypoint
+# Set permissions
+RUN chmod +x /app/PotreeConverter /entrypoint.sh
+
 ENTRYPOINT ["/entrypoint.sh"]
 CMD ["--help"]

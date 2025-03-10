@@ -81,3 +81,8 @@ docker run --rm ghcr.io/epfl-enac/potree_converter:2.1.1 --help
 ## License
 
 PotreeConverter is released under the [MIT License](https://github.com/potree/PotreeConverter/blob/master/LICENSE).
+
+
+/Users/pierreguilbert/Works/git/github/EPFL-ENAC/AddLidar-API/lidar-api/data/LiDAR/0001_Mission_Root/02_LAS_PCD/all_grouped_high_veg_10th_point.las
+
+/Users/pierreguilbert/Works/git/github/EPFL-ENAC/AddLidar-API/lidar-api/output
