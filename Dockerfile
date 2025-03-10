@@ -1,17 +1,20 @@
 FROM alpine:latest
 
-# Install runtime dependencies only
-RUN apk add --no-cache \
+# Add community repository and install runtime dependencies
+RUN apk add --no-cache --update \
     libstdc++ \
-    libtiff \
-    tbb-dev \
+    tiff-dev \
     boost-system \
     boost-thread \
     boost-filesystem \
     boost-program_options \
     boost-regex \
     boost-iostreams \
-    py3-s3cmd
+    python3 \
+    py3-pip
+
+# Install s3cmd via pip since py3-s3cmd isn't available
+RUN pip3 install --no-cache-dir --break-system-packages s3cmd
 
 # Create app directory
 WORKDIR /app

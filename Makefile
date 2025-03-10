@@ -14,7 +14,7 @@ install:
 
 build: install check
 	@echo "Building Docker image..."
-	docker buildx build --platform linux/amd64 -t $(IMAGE_NAME) --push ./PotreeConverter
+	docker buildx build -f Dockerfile --platform linux/amd64 -t $(IMAGE_NAME) --push ./PotreeConverter
 
 # Run the Docker container
 run:
