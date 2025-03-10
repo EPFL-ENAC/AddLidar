@@ -1,25 +1,59 @@
-FROM alpine:latest
+# Base stage with Ubuntu for libraries
+FROM ubuntu:22.04 AS base
 
-# Add community repository and install runtime dependencies
-RUN apk add --no-cache --update \
-    libstdc++ \
-    tiff-dev \
-    boost-system \
-    boost-thread \
-    boost-filesystem \
-    boost-program_options \
-    boost-regex \
-    boost-iostreams \
-    python3 \
-    py3-pip
+# Install required libraries to have the files available
+RUN apt-get update && apt-get install -y \
+    libstdc++6 \
+    libtiff5 \
+    libboost-system1.74.0 \
+    libboost-thread1.74.0 \
+    libboost-filesystem1.74.0 \
+    libboost-program-options1.74.0 \
+    libboost-regex1.74.0 \
+    libboost-iostreams1.74.0
 
-# Install s3cmd via pip since py3-s3cmd isn't available
-RUN pip3 install --no-cache-dir --break-system-packages s3cmd
+# Runtime stage with Debian slim
+FROM debian:bullseye-slim
+
+# Create necessary directories
+RUN mkdir -p /lib/x86_64-linux-gnu /usr/lib/x86_64-linux-gnu
+
+# Copy core libraries from Ubuntu
+COPY --from=base /lib/x86_64-linux-gnu/libc.so.6* /lib/x86_64-linux-gnu/
+COPY --from=base /lib/x86_64-linux-gnu/libm.so.6* /lib/x86_64-linux-gnu/
+COPY --from=base /lib/x86_64-linux-gnu/libpthread.so.0* /lib/x86_64-linux-gnu/
+COPY --from=base /lib/x86_64-linux-gnu/libdl.so.2* /lib/x86_64-linux-gnu/
+COPY --from=base /lib/x86_64-linux-gnu/librt.so.1* /lib/x86_64-linux-gnu/
+COPY --from=base /lib64/ld-linux-x86-64.so.2* /lib64/
+
+# Copy C++ standard libraries
+COPY --from=base /usr/lib/x86_64-linux-gnu/libstdc++.so.6* /usr/lib/x86_64-linux-gnu/
+COPY --from=base /usr/lib/x86_64-linux-gnu/libgcc_s.so.1* /usr/lib/x86_64-linux-gnu/
+
+# Copy tiff libraries
+COPY --from=base /usr/lib/x86_64-linux-gnu/libtiff.so* /usr/lib/x86_64-linux-gnu/
+
+# Copy boost libraries
+COPY --from=base /usr/lib/x86_64-linux-gnu/libboost_system.so* /usr/lib/x86_64-linux-gnu/
+COPY --from=base /usr/lib/x86_64-linux-gnu/libboost_thread.so* /usr/lib/x86_64-linux-gnu/
+COPY --from=base /usr/lib/x86_64-linux-gnu/libboost_filesystem.so* /usr/lib/x86_64-linux-gnu/
+COPY --from=base /usr/lib/x86_64-linux-gnu/libboost_program_options.so* /usr/lib/x86_64-linux-gnu/
+COPY --from=base /usr/lib/x86_64-linux-gnu/libboost_regex.so* /usr/lib/x86_64-linux-gnu/
+COPY --from=base /usr/lib/x86_64-linux-gnu/libboost_iostreams.so* /usr/lib/x86_64-linux-gnu/
+
+# Install minimal Python for s3cmd
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    python3-minimal \
+    python3-pip \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install s3cmd
+RUN pip3 install --no-cache-dir s3cmd
 
 # Create app directory
 WORKDIR /app
 
-# Copy only the required files
+# Copy application files
 COPY liblaszip.so /app/
 COPY PotreeConverter /app/
 COPY entrypoint.sh /entrypoint.sh

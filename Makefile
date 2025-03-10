@@ -4,7 +4,7 @@
 # https://github.com/potree/PotreeConverter/releases/download/2.1.1/PotreeConverter_2.1.1_x64_linux.zip
 
 # Variables
-IMAGE_NAME = ghcr.io/epfl-enac/potree_converter:alpine-2.1.1
+IMAGE_NAME = ghcr.io/epfl-enac/potree_converter:debian-2.1.1
 CONTAINER_NAME = potree_converter_container
 
 install:
