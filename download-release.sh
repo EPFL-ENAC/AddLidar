@@ -31,8 +31,11 @@ if [[ "$CHOICE" =~ ^[1-5]$ ]]; then
     unzip PotreeConverter_${SELECTED_RELEASE}_x64_linux.zip
     rm PotreeConverter_${SELECTED_RELEASE}_x64_linux.zip
 	mv PotreeConverter_linux_x64 PotreeConverter
+    rm -rf PotreeConverter_linux_x64
 	rm -rf PotreeConverter/resources
 	chmod +x PotreeConverter/PotreeConverter
+    cp Dockerfile PotreeConverter/
+    cp entrypoint.sh PotreeConverter/
 else
     echo "Invalid selection."
 fi
