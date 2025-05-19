@@ -20,38 +20,74 @@ make build
 
 ```bash
 make install
-docker build -f Dockerfile --platform linux/amd64 -t ghcr.io/epfl-enac/potree_converter:debian-2.1.1 ./PotreeConverter
+docker build -f Dockerfile --platform linux/amd64 -t ghcr.io/epfl-enac/potree_converter:debian-2.1.1 .
 ```
 
-## S3 Upload Feature
+## Using .metacloud Files
 
-This container includes functionality to automatically upload converted point clouds to an S3 bucket.
+This container supports processing point cloud files listed in a `.metacloud` file. A `.metacloud` file is a text file that contains paths to multiple point cloud files to be processed together.
+
+### .metacloud File Format
+
+```
+POINTS_FILES
+./path/to/file1.las
+./path/to/file2.las
+./path/to/file3.las
+
+METACLOUD_ATTRIBUTES
+creator "Your Name"
+description "Description of your point cloud dataset"
+```
+
+The paths in the `.metacloud` file should be relative to the directory containing the `.metacloud` file. When mounting directories to the Docker container, ensure the directory structure matches the paths in your `.metacloud` file.
+
+For example, if your `.metacloud` file references `./01_Lidar_Processed_las/file.las`, you should mount the parent directory of `01_Lidar_Processed_las` to `/input` in the container.
 
 ### Environment Variables
 
 When using the entrypoint.sh script, set the following environment variables:
 
-- `INPUT_FILE`: Path to the input point cloud file (e.g., /data/input.las)
-- `OUTPUT_DIR`: Directory where the output will be stored (e.g., /data/output)
-- `S3_BUCKET`: S3 bucket destination (e.g., s3://your-bucket/path/)
-- `ACCESS_KEY`: S3 access key
-- `PRIVATE_KEY`: S3 private key
-
+- `INPUT_FILE`: Path to the input `.metacloud` file (e.g., /input/point_cloud.metacloud)
+- `OUTPUT_DIR`: Directory where the output will be stored (e.g., /output)
 - `EXTRA_ARGS`: (Optional) Additional arguments for PotreeConverter
 
-### Example with S3 upload
+### Example with .metacloud file
 
 ```bash
-docker run --platform linux/amd64  --rm \
-  -v /path/to/data:/data \
-  -v /path/to/output/directory:/output \
-  -e INPUT_FILE="/data/LiDAR/0002_Val_dArpette/02_RAW_LAZ/ARPETTE_LV95_HELL_1560II_CH1_211020_082047.laz" \
+docker run --platform linux/amd64 --rm \
+  -v "/path/to/input/directory:/input" \
+  -v "/path/to/output/directory:/output" \
+  -e INPUT_FILE="/input/point_cloud_las.metacloud" \
   -e OUTPUT_DIR="/output" \
-  -e S3_BUCKET="s3://${S3_BUCKET}/AddLidar/ARPETTE_LV95_HELL_1560II_CH1_211020_082047/" \
-  -e ACCESS_KEY="${S3_ACCESS_KEY}" \
-  -e PRIVATE_KEY="${S3_PRIVATE_KEY}" \
   ghcr.io/epfl-enac/potree_converter:debian-2.1.1
 ```
+
+### Working Example
+
+```bash
+docker run --platform linux/amd64 --rm \
+  -v "/home/pierre/dev/PotreeConverterMakefile/input:/input" \
+  -v "/home/pierre/dev/PotreeConverterMakefile/output:/output" \
+  -e INPUT_FILE="/input/point_cloud_las.metacloud" \
+  -e OUTPUT_DIR="/output" \
+  ghcr.io/epfl-enac/potree_converter:debian-2.1.1
+```
+
+### Using the Makefile for Convenience
+
+You can use the `convert-metacloud` target in the Makefile for an interactive prompt:
+
+```bash
+make convert-metacloud
+```
+
+This will prompt you for:
+
+1. The path to your `.metacloud` file
+2. The output directory path
+
+And then run the Docker container with the appropriate parameters.
 
 ## Common PotreeConverter Arguments
 
