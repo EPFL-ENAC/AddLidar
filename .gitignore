@@ -43,3 +43,6 @@ volumes/
 
 # Ignore Docker images
 *.tar
+
+input/
+output/
