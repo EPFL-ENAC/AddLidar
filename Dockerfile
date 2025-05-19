@@ -41,20 +41,12 @@ COPY --from=base /usr/lib/x86_64-linux-gnu/libboost_program_options.so* /usr/lib
 COPY --from=base /usr/lib/x86_64-linux-gnu/libboost_regex.so* /usr/lib/x86_64-linux-gnu/
 COPY --from=base /usr/lib/x86_64-linux-gnu/libboost_iostreams.so* /usr/lib/x86_64-linux-gnu/
 
-# Install minimal Python for s3cmd
-RUN apt-get update && apt-get install -y --no-install-recommends \
-    python3-minimal \
-    python3-pip \
-    && rm -rf /var/lib/apt/lists/*
-
-# Install s3cmd
-RUN pip3 install --no-cache-dir s3cmd
 
 # Create app directory
 WORKDIR /app
 
 # Copy application files
-COPY liblaszip.so /app/
+COPY PotreeConverter/liblaszip.so /app/
 COPY PotreeConverter /app/
 COPY entrypoint.sh /entrypoint.sh
 

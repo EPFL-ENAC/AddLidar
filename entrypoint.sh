@@ -2,13 +2,8 @@
 set -e
 
 # Expected environment variables:
-#   INPUT_FILE:   The file to be converted (e.g., /data/input.las)
-#   OUTPUT_DIR:   The directory where the .octree will be stored (e.g., /data/octree_output)
-#   S3_BUCKET:    The S3 destination bucket (e.g., s3://your-bucket/path/)
-#
-#   ACCESS_KEY:   Your S3 access key.
-#   PRIVATE_KEY:  Your S3 secret key.
-#
+#   INPUT_FILE:   The .metacloud file listing point cloud files to process
+#   OUTPUT_DIR:   The directory where the converted files will be stored
 #   EXTRA_ARGS:   (Optional) Additional arguments for PotreeConverter
 
 # Check for required conversion variables
@@ -22,35 +17,79 @@ if [ -z "$OUTPUT_DIR" ]; then
   exit 1
 fi
 
-if [ -z "$S3_BUCKET" ]; then
-  echo "ERROR: S3_BUCKET is not set"
+# Ensure INPUT_FILE is a .metacloud file
+if [[ ! "$INPUT_FILE" == *.metacloud ]]; then
+  echo "ERROR: INPUT_FILE must be a .metacloud file"
   exit 1
 fi
 
-# Check for S3 credentials
-if [ -z "$ACCESS_KEY" ] || [ -z "$PRIVATE_KEY" ]; then
-  echo "ERROR: Both ACCESS_KEY and PRIVATE_KEY must be set"
+echo "DEBUG: Script starting"
+echo "DEBUG: INPUT_FILE=$INPUT_FILE"
+echo "DEBUG: OUTPUT_DIR=$OUTPUT_DIR"
+echo "DEBUG: EXTRA_ARGS=$EXTRA_ARGS"
+
+# Create output directory
+mkdir -p "$OUTPUT_DIR"
+
+# Parse the .metacloud file and collect all point cloud files
+PARSING_POINTS_FILES=false
+FILE_COUNT=0
+POINT_CLOUD_FILES=()
+
+while IFS= read -r line; do
+  # Skip comments and empty lines
+  echo "DEBUG: Processing line: $line"
+  [[ "$line" =~ ^#.*$ || -z "$line" ]] && continue
+  
+  # Check section markers
+  if [[ "$line" == "POINTS_FILES" ]]; then
+    PARSING_POINTS_FILES=true
+    continue
+  elif [[ "$line" == "METACLOUD_ATTRIBUTES" ]]; then
+    PARSING_POINTS_FILES=false
+    continue
+  fi
+  
+  # Process file paths in POINTS_FILES section
+  if [ "$PARSING_POINTS_FILES" = true ]; then
+    # Remove leading ./ from the line if present
+    clean_path="${line#./}"
+    
+    echo "DEBUG: Cleaned path: $clean_path"
+    # Since we're mounting the directory containing the .metacloud file to /input,
+    # we need to append the relative path to /input
+    point_cloud_file="/input/${clean_path}"
+    echo "DEBUG: Full path to point cloud file: $point_cloud_file"
+    if [ ! -f "$point_cloud_file" ]; then
+      echo "WARNING: File not found: $point_cloud_file"
+    fi
+    
+    # Add to the array of files
+    POINT_CLOUD_FILES+=("$point_cloud_file")
+    echo "DEBUG: Added file to array: $point_cloud_file"
+    FILE_COUNT=$(($FILE_COUNT + 1))
+    echo "DEBUG: File count: $FILE_COUNT"
+    echo "Found file $FILE_COUNT: $point_cloud_file"
+  fi
+done < "$INPUT_FILE"
+
+echo "DEBUG: Found files: ${POINT_CLOUD_FILES[@]}"
+
+
+# Check if we found any files
+if [ ${#POINT_CLOUD_FILES[@]} -eq 0 ]; then
+  echo "ERROR: No point cloud files found in the metacloud file."
   exit 1
 fi
 
-# Create a temporary s3cfg file based on environment variables.
-# Adjust host_base/host_bucket if you are using a non-AWS S3 service.
-S3CFG_FILE="/tmp/s3cfg"
-cat <<EOF > "$S3CFG_FILE"
-[default]
-access_key = ${ACCESS_KEY}
-secret_key = ${PRIVATE_KEY}
-host_base = s3.epfl.ch
-host_bucket = s3.epfl.ch/%(bucket)
-use_https = True
-EOF
+echo "Found $FILE_COUNT files to process."
 
-echo "Temporary s3cfg file created at $S3CFG_FILE"
+echo "DEBUG: About to run: /app/PotreeConverter ${POINT_CLOUD_FILES[@]} -o $OUTPUT_DIR $EXTRA_ARGS"
 
-echo "Starting PotreeConverter conversion..."
-LD_PRELOAD=/app/liblaszip.so /app/PotreeConverter "$INPUT_FILE" -o "$OUTPUT_DIR" $EXTRA_ARGS
+# Convert all files in a single PotreeConverter command
+echo "Starting PotreeConverter conversion with all files..."
+LD_PRELOAD=/app/liblaszip.so /app/PotreeConverter "${POINT_CLOUD_FILES[@]}" -o "$OUTPUT_DIR" $EXTRA_ARGS
+echo "Conversion completed."
 
-echo "Conversion completed. Uploading output to S3..."
-s3cmd --config="$S3CFG_FILE" put --guess-mime-type --acl-public --recursive -v --progress "$OUTPUT_DIR/" "$S3_BUCKET"
-
-echo "S3 upload complete."
+echo "Processing complete. Processed $FILE_COUNT files from .metacloud."
+echo "Results stored in: $OUTPUT_DIR"

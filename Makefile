@@ -1,7 +1,4 @@
-# Makefile
-
-# Download .zip linux x64 from https://github.com/potree/PotreeConverter/releases/tag/2.1.1
-# https://github.com/potree/PotreeConverter/releases/download/2.1.1/PotreeConverter_2.1.1_x64_linux.zip
+# Makefile for PotreeConverter with metacloud support
 
 # Variables
 IMAGE_NAME = ghcr.io/epfl-enac/potree_converter:debian-2.1.1
@@ -14,37 +11,33 @@ install:
 
 build: install check
 	@echo "Building Docker image..."
-	docker buildx build -f Dockerfile --platform linux/amd64 -t $(IMAGE_NAME) --push ./PotreeConverter
+	docker buildx build -f Dockerfile --platform linux/amd64 -t $(IMAGE_NAME) .
 
-# Run the Docker container
-run:
-	@echo "Running Docker container..."
-	docker run --platform linux/amd64 --name $(CONTAINER_NAME) -d $(IMAGE_NAME)
-
-# Run with input/output volume mounts
-convert:
-	@echo "Enter the path to your point cloud file: "
-	@read input_file; \
+# Run with metacloud file
+convert-metacloud:
+	@echo "Enter the path to your .metacloud file: "
+	@read metacloud_file; \
 	echo "Enter the output directory path: "; \
 	read output_dir; \
+	metacloud_dir=$$(dirname "$${metacloud_file}"); \
+	metacloud_filename=$$(basename "$${metacloud_file}"); \
+	echo "Running docker with metacloud file..."; \
 	docker run --platform linux/amd64 --rm \
-		-v "$${input_file}:/input/pointcloud.las" \
+		-v "$${metacloud_dir}:/input" \
 		-v "$${output_dir}:/output" \
-		$(IMAGE_NAME) \
-		-i /input/pointcloud.las -o /output
+		-e INPUT_FILE="/input/$${metacloud_filename}" \
+		-e OUTPUT_DIR="/output" \
+		-e EXTRA_ARGS="" \
+		$(IMAGE_NAME)
 
-# Stop the Docker container
-stop:
-	docker stop $(CONTAINER_NAME)
-
-# Remove the Docker container
+# Clean up
 clean:
 	rm -rf PotreeConverter
-	docker rm $(CONTAINER_NAME)
+	-docker rm $(CONTAINER_NAME) 2>/dev/null || true
 
-# Remove the Docker image
+# Clean image
 clean-image:
-	docker rmi $(IMAGE_NAME)
+	-docker rmi $(IMAGE_NAME) 2>/dev/null || true
 
 # Check if Dockerfile exists
 check:
@@ -53,5 +46,4 @@ check:
 		exit 1; \
 	fi
 
-
-.PHONY: build run stop clean clean-image
+.PHONY: install build convert-metacloud clean clean-image check
