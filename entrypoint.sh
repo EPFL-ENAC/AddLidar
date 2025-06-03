@@ -12,7 +12,12 @@ if [ -z "$INPUT_FILE" ]; then
   exit 1
 fi
 
-if [ -z "$OUTPUT_DIR" ]; then
+if [ -z "$INPUT_DIR" ]; then
+  echo "ERROR: INPUT_DIR is not set"
+  exit 1
+fi
+
+if [ -z "$OINPUT_DIRTPUT_DIR" ]; then
   echo "ERROR: OUTPUT_DIR is not set"
   exit 1
 fi
@@ -25,16 +30,16 @@ fi
 
 echo "DEBUG: Script starting"
 echo "DEBUG: INPUT_FILE=$INPUT_FILE"
+echo "DEBUG: INPUT_DIR=$INPUT_DIR"
 echo "DEBUG: OUTPUT_DIR=$OUTPUT_DIR"
 echo "DEBUG: EXTRA_ARGS=$EXTRA_ARGS"
 
 # Create output directory
 mkdir -p "$OUTPUT_DIR"
 
-echo "DEBUG: Contents of /input:"
-ls -la /input/ || echo "ERROR: /input directory not found"
-echo "DEBUG: Contents of /input/01_Lidar_Processed_las/:"
-ls -la /input/01_Lidar_Processed_las/ || echo "ERROR: /input/01_Lidar_Processed_las/ directory not found"
+echo "DEBUG: Contents of ${INPUT_DIR}:"
+ls -la ${INPUT_DIR} || echo "ERROR: ${INPUT_DIR} directory not found"
+
 
 
 # Parse the .metacloud file and collect all point cloud files
@@ -62,9 +67,9 @@ while IFS= read -r line; do
     clean_path="${line#./}"
     
     echo "DEBUG: Cleaned path: $clean_path"
-    # Since we're mounting the directory containing the .metacloud file to /input,
-    # we need to append the relative path to /input
-    point_cloud_file="/input/${clean_path}"
+    # Since we're mounting the directory containing the .metacloud file to /lidar,
+    # we need to append the relative path to /lidar
+    point_cloud_file="${INPUT_DIR}${clean_path}"
     echo "DEBUG: Full path to point cloud file: $point_cloud_file"
     if [ ! -f "$point_cloud_file" ]; then
       echo "WARNING: File not found: $point_cloud_file"
