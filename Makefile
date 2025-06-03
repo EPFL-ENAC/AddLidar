@@ -13,6 +13,11 @@ build: install check
 	@echo "Building Docker image..."
 	docker buildx build -f Dockerfile --platform linux/amd64 -t $(IMAGE_NAME) .
 
+push-image:
+	@echo "Pushing Docker image to GitHub Container Registry..."
+	docker push $(IMAGE_NAME)
+	@echo "Docker image pushed successfully"
+
 # Run with metacloud file
 convert-metacloud:
 	@echo "Enter the path to your .metacloud file: "
