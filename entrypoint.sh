@@ -56,7 +56,8 @@ while IFS= read -r line; do
   if [[ "$line" == "POINTS_FILES" ]]; then
     PARSING_POINTS_FILES=true
     continue
-  elif [[ "$line" == "METACLOUD_ATTRIBUTES" ]]; then
+  # Check for end of section, empty line
+  elif [[ "$line" =~ ^[A-Z_]+$ ]]; then
     PARSING_POINTS_FILES=false
     continue
   fi
