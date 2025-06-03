@@ -74,15 +74,12 @@ while IFS= read -r line; do
     echo "DEBUG: Full path to point cloud file: $point_cloud_file"
     if [ ! -f "$point_cloud_file" ]; then
       echo "WARNING: File not found: $point_cloud_file"
+    else
+      # Add to the array of files
+      POINT_CLOUD_FILES+=("$point_cloud_file")
+      echo "DEBUG: Added file to array: $point_cloud_file"
+      FILE_COUNT=$(($FILE_COUNT + 1))
     fi
-    
-    # Add to the array of files
-    POINT_CLOUD_FILES+=("$point_cloud_file")
-    echo "DEBUG: Added file to array: $point_cloud_file"
-    FILE_COUNT=$(($FILE_COUNT + 1))
-    echo "DEBUG: File count: $FILE_COUNT"
-    echo "Found file $FILE_COUNT: $point_cloud_file"
-  fi
 done < "$INPUT_FILE"
 
 echo "DEBUG: Found files: ${POINT_CLOUD_FILES[@]}"
