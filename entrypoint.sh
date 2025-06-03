@@ -17,7 +17,7 @@ if [ -z "$INPUT_DIR" ]; then
   exit 1
 fi
 
-if [ -z "$OINPUT_DIRTPUT_DIR" ]; then
+if [ -z "$OUTPUT_DIR" ]; then
   echo "ERROR: OUTPUT_DIR is not set"
   exit 1
 fi
