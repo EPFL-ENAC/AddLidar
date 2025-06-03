@@ -1,7 +1,7 @@
 # Makefile for PotreeConverter with metacloud support
 
 # Variables
-IMAGE_NAME = ghcr.io/epfl-enac/potree_converter:debian-2.1.1
+IMAGE_NAME = ghcr.io/epfl-enac/potree_converter:latest
 CONTAINER_NAME = potree_converter_container
 
 install:
