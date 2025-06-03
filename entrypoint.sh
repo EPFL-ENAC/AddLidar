@@ -80,6 +80,7 @@ while IFS= read -r line; do
       echo "DEBUG: Added file to array: $point_cloud_file"
       FILE_COUNT=$(($FILE_COUNT + 1))
     fi
+  fi
 done < "$INPUT_FILE"
 
 echo "DEBUG: Found files: ${POINT_CLOUD_FILES[@]}"
