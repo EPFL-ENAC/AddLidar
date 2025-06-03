@@ -31,6 +31,12 @@ echo "DEBUG: EXTRA_ARGS=$EXTRA_ARGS"
 # Create output directory
 mkdir -p "$OUTPUT_DIR"
 
+echo "DEBUG: Contents of /input:"
+ls -la /input/ || echo "ERROR: /input directory not found"
+echo "DEBUG: Contents of /input/01_Lidar_Processed_las/:"
+ls -la /input/01_Lidar_Processed_las/ || echo "ERROR: /input/01_Lidar_Processed_las/ directory not found"
+
+
 # Parse the .metacloud file and collect all point cloud files
 PARSING_POINTS_FILES=false
 FILE_COUNT=0
