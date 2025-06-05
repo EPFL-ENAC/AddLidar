@@ -12,6 +12,31 @@ RUN apt-get update && apt-get install -y \
     libboost-regex1.74.0 \
     libboost-iostreams1.74.0
 
+# Download stage
+FROM ubuntu:22.04 AS downloader
+
+# Install tools needed for downloading
+RUN apt-get update && apt-get install -y \
+    curl \
+    jq \
+    wget \
+    unzip \
+    && rm -rf /var/lib/apt/lists/*
+
+WORKDIR /download
+
+# Download PotreeConverter
+RUN REPO="potree/PotreeConverter" && \
+    API_URL="https://api.github.com/repos/$REPO/releases" && \
+    LATEST_RELEASE=$(curl -s "$API_URL" | jq -r '.[0].tag_name') && \
+    DOWNLOAD_URL="https://github.com/$REPO/releases/download/$LATEST_RELEASE/PotreeConverter_${LATEST_RELEASE}_x64_linux.zip" && \
+    echo "Downloading from: $DOWNLOAD_URL" && \
+    wget -v "$DOWNLOAD_URL" && \
+    unzip "PotreeConverter_${LATEST_RELEASE}_x64_linux.zip" && \
+    mv PotreeConverter_linux_x64 PotreeConverter && \
+    rm -rf PotreeConverter/resources && \
+    chmod +x PotreeConverter/PotreeConverter
+
 # Runtime stage with Debian slim
 FROM debian:bullseye-slim
 
@@ -48,9 +73,8 @@ RUN apt-get update && \
 # Create app directory
 WORKDIR /app
 
-# Copy application files
-COPY PotreeConverter/liblaszip.so /app/
-COPY PotreeConverter /app/
+# Copy PotreeConverter from downloader stage
+COPY --from=downloader /download/PotreeConverter /app/
 COPY entrypoint.sh /entrypoint.sh
 
 # Set permissions

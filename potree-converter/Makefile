@@ -4,11 +4,6 @@
 IMAGE_NAME = ghcr.io/epfl-enac/potree_converter:latest
 CONTAINER_NAME = potree_converter_container
 
-install:
-	@echo "Downloading PotreeConverter..."
-	./download-release.sh
-	@echo "PotreeConverter downloaded successfully"
-
 build: install check
 	@echo "Building Docker image..."
 	docker buildx build -f Dockerfile --platform linux/amd64 -t $(IMAGE_NAME) .
