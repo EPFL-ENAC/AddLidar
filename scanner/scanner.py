@@ -519,8 +519,8 @@ def queue_potree_conversion_jobs(
             "parallelism": parallelism,
             "db_path": DB,
             "db_dir": os.path.dirname(DB),
-            "fts_addlidar_pvc": FTS_ADDLIDAR_PVC,
-            "database_pvc": DATABASE_PVC,
+            "fts_addlidar_pvc_name": FTS_ADDLIDAR_PVC,
+            "database_pvc_name": DATABASE_PVC,
         }
 
         # Render the template
@@ -603,8 +603,8 @@ def queue_batch_zip_job(
             "zip_dir": ZIP,
             "db_path": DB,
             "db_dir": os.path.dirname(DB),
-            "fts_addlidar_pvc": FTS_ADDLIDAR_PVC,
-            "database_pvc": DATABASE_PVC,
+            "fts_addlidar_pvc_name": FTS_ADDLIDAR_PVC,
+            "database_pvc_name": DATABASE_PVC,
         }
 
         # Render the template
