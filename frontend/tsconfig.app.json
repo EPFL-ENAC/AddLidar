@@ -1,0 +1,36 @@
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "useDefineForClassFields": true,
+    "module": "ESNext",
+    "lib": ["ES2021", "DOM", "DOM.Iterable"],
+    "skipLibCheck": true,
+
+    /* Bundler mode */
+    "moduleResolution": "bundler",
+    "allowImportingTsExtensions": true,
+    "isolatedModules": true,
+    "moduleDetection": "force",
+    "noEmit": true,
+    "jsx": "preserve",
+
+    /* Linting */
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["vueSrc/*"]
+    }
+  },
+  "include": [
+    "vueSrc/**/*.d.ts",
+    "vueSrc/**/*.ts",
+    "vueSrc/**/*.tsx",
+    "vueSrc/**/*.vue",
+    "vueSrc/**/*.d.js",
+    "vueSrc/**/*.js",
+    "vueSrc/**/*.jsx"
+  ]
+}

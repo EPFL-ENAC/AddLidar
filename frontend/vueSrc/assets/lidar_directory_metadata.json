@@ -1,0 +1,135 @@
+[
+  {
+    "path": "/0001_Mission_Root/00_Raw_Lidar_SDC_Data.tar.gz",
+    "size_kb": 8,
+    "mod_time": "2025-04-06 15:42:39",
+    "mod_time_epoch": 1743946959,
+    "file_count": 1
+  },
+  {
+    "path": "/0001_Mission_Root/03_Classified_Colorized Point Index.tar.gz",
+    "size_kb": 8,
+    "mod_time": "2025-04-06 15:42:39",
+    "mod_time_epoch": 1743946959,
+    "file_count": 1
+  },
+  {
+    "path": "/0001_Mission_Root/02_LAS_PCD.tar.gz",
+    "size_kb": 1240664,
+    "mod_time": "2025-04-06 15:42:39",
+    "mod_time_epoch": 1743946959,
+    "file_count": 1
+  },
+  {
+    "path": "/0001_Mission_Root/05_GNSS_INS_Data.tar.gz",
+    "size_kb": 8,
+    "mod_time": "2025-04-06 15:41:15",
+    "mod_time_epoch": 1743946875,
+    "file_count": 1
+  },
+  {
+    "path": "/0001_Mission_Root/01_lidar_mounting_info.tar.gz",
+    "size_kb": 8,
+    "mod_time": "2025-04-06 15:42:39",
+    "mod_time_epoch": 1743946959,
+    "file_count": 1
+  },
+  {
+    "path": "/0001_Mission_Root/06_RGB_Images.tar.gz",
+    "size_kb": 8,
+    "mod_time": "2025-04-06 15:41:15",
+    "mod_time_epoch": 1743946875,
+    "file_count": 1
+  },
+  {
+    "path": "/0001_Mission_Root/04_Segmentation_Classification_Point_Index.tar.gz",
+    "size_kb": 8,
+    "mod_time": "2025-04-06 15:41:15",
+    "mod_time_epoch": 1743946875,
+    "file_count": 1
+  },
+  {
+    "path": "/0001_Mission_Root/07_Orthophotos.tar.gz",
+    "size_kb": 8,
+    "mod_time": "2025-04-06 15:41:15",
+    "mod_time_epoch": 1743946875,
+    "file_count": 1
+  },
+  {
+    "path": "/0003_EPFL/05_Metafile_Additional_Attributes.tar.gz",
+    "size_kb": 8,
+    "mod_time": "2025-04-06 15:42:39",
+    "mod_time_epoch": 1743946959,
+    "file_count": 1
+  },
+  {
+    "path": "/0003_EPFL/02_Camera.tar.gz",
+    "size_kb": 196791872,
+    "mod_time": "2025-04-06 20:28:38",
+    "mod_time_epoch": 1743964118,
+    "file_count": 1
+  },
+  {
+    "path": "/0003_EPFL/04_GNSS_INS_Data.tar.gz",
+    "size_kb": 48720,
+    "mod_time": "2025-04-06 17:40:14",
+    "mod_time_epoch": 1743954014,
+    "file_count": 1
+  },
+  {
+    "path": "/0003_EPFL/03_Orthophoto.tar.gz",
+    "size_kb": 3346960,
+    "mod_time": "2025-04-06 17:13:58",
+    "mod_time_epoch": 1743952438,
+    "file_count": 1
+  },
+  {
+    "path": "/0003_EPFL/01_Lidar.tar.gz",
+    "size_kb": 34691008,
+    "mod_time": "2025-04-06 17:01:19",
+    "mod_time_epoch": 1743951679,
+    "file_count": 1
+  },
+  {
+    "path": "/0003_EPFL/06_Metafile_Indexes.tar.gz",
+    "size_kb": 8,
+    "mod_time": "2025-04-06 15:42:39",
+    "mod_time_epoch": 1743946959,
+    "file_count": 1
+  },
+  {
+    "path": "/0002_Val_dArpette/00_Raw_Lidar_SDC_Data.tar.gz",
+    "size_kb": 78822208,
+    "mod_time": "2025-04-06 17:57:54",
+    "mod_time_epoch": 1743955074,
+    "file_count": 1
+  },
+  {
+    "path": "/0002_Val_dArpette/02_RAW_LAZ.tar.gz",
+    "size_kb": 3931920,
+    "mod_time": "2025-04-22 12:40:14",
+    "mod_time_epoch": 1745318414,
+    "file_count": 1
+  },
+  {
+    "path": "/0002_Val_dArpette/09_LAZ_FootPrints.tar.gz",
+    "size_kb": 72,
+    "mod_time": "2025-04-22 12:38:05",
+    "mod_time_epoch": 1745318285,
+    "file_count": 1
+  },
+  {
+    "path": "/0002_Val_dArpette/01_lidar_mounting_info.tar.gz",
+    "size_kb": 8,
+    "mod_time": "2025-04-22 11:46:24",
+    "mod_time_epoch": 1745315184,
+    "file_count": 1
+  },
+  {
+    "path": "/0002_Val_dArpette/01_Point_Cloud.tar.gz",
+    "size_kb": 4585712,
+    "mod_time": "2025-04-22 13:07:37",
+    "mod_time_epoch": 1745320057,
+    "file_count": 1
+  }
+]
