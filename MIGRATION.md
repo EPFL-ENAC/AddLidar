@@ -12,16 +12,19 @@ Git Subtree allows you to merge external repositories into subdirectories of you
 ## Implications & Workflows
 
 ### Syncing FROM original repos (pulling updates):
+
 ```bash
 git subtree pull --prefix=backend https://github.com/your-org/backend-repo.git main --squash
 ```
 
 ### Contributing BACK to original repos (pushing changes):
+
 ```bash
 git subtree push --prefix=backend https://github.com/your-org/backend-repo.git feature-branch
 ```
 
 ### Important Notes:
+
 - **Commit granularity**: Changes in monorepo affect the specific subtree
 - **Branch management**: You'll typically push to feature branches in original repos, then PR
 - **Squashing**: `--squash` creates cleaner history but loses individual commits
@@ -31,6 +34,7 @@ git subtree push --prefix=backend https://github.com/your-org/backend-repo.git f
 
 1. **First, update the repository URLs in the Makefile**
 2. **Run the initial setup**:
+
    ```bash
    make subtree-add
    ```
@@ -38,6 +42,7 @@ git subtree push --prefix=backend https://github.com/your-org/backend-repo.git f
 3. **Test the structure and make any adjustments**
 
 4. **When ready to deprecate, run**:
+
    ```bash
    make deprecate-repos
    ```
