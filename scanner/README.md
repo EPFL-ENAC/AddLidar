@@ -6,4 +6,4 @@ The LiDAR Archive Scanner is a Python-based application designed to scan directo
 
 # Beware
 
-1. Namespace is hard-coded in the *.template.yaml files: it's on purpose, we only want to run them on one namespace
+1. Namespace is hard-coded in the \*.template.yaml files: it's on purpose, we only want to run them on one namespace
