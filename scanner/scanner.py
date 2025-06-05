@@ -41,7 +41,7 @@ logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     handlers=[logging.StreamHandler()],
 )
-logger = logging.getLogger("lidar-archiver")
+logger = logging.getLogger("scanner.py")
 
 # Constants will be set in main() from arguments
 ORIG: str = ""
