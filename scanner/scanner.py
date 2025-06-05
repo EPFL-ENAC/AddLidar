@@ -514,7 +514,13 @@ def queue_potree_conversion_jobs(
             "metacloud_files": metacloud_files,
             "parallelism": parallelism,
             "db_path": DB,
-            "db_dir": os.path.dirname(DB),
+            "db_dir": os.path.dirname(DB),,
+            "fts_addlidar_pvc": os.getenv(
+                "FTS_ADDLIDAR_PVC", "fts-addlidar"
+            ),  # Use default if not set
+            "database_pvc": os.getenv(
+                "DATABASE_PVC", "database"
+            ),  # Use default if not set
         }
 
         # Render the template
@@ -597,6 +603,12 @@ def queue_batch_zip_job(
             "zip_dir": ZIP,
             "db_path": DB,
             "db_dir": os.path.dirname(DB),
+            "fts_addlidar_pvc": os.getenv(
+                "FTS_ADDLIDAR_PVC", "fts-addlidar"
+            ),  # Use default if not set
+            "database_pvc": os.getenv(
+                "DATABASE_PVC", "database"
+            ),  # Use default if not set
         }
 
         # Render the template
