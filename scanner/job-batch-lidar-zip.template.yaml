@@ -1,7 +1,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: "job-batch-lidar-zip-{{ timestamp }}"
+  name: "batch-lidar-zip-{{ timestamp }}"
   namespace: "epfl-cryos-addlidar-potree-prod"
 spec:
   ttlSecondsAfterFinished: 3600 # 1 hour
@@ -23,7 +23,7 @@ spec:
                     - key: job-name
                       operator: In
                       values:
-                        - job-batch-lidar-zip-{{ timestamp }}
+                        - batch-lidar-zip-{{ timestamp }}
                 topologyKey: "kubernetes.io/hostname"
       restartPolicy: Never
       initContainers:

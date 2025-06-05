@@ -1,7 +1,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: "job-batch-potree-conversion-{{ timestamp }}"
+  name: "batch-potree-converter-{{ timestamp }}"
   namespace: "epfl-cryos-addlidar-potree-prod"
 spec:
   ttlSecondsAfterFinished: 3600 # 1 hour
@@ -24,7 +24,7 @@ spec:
                     - key: job-name
                       operator: In
                       values:
-                        - job-batch-potree-conversion-{{ timestamp }}
+                        - batch-potree-converter-{{ timestamp }}
                 topologyKey: "kubernetes.io/hostname"
       restartPolicy: Never
       initContainers:

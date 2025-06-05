@@ -35,3 +35,12 @@ commitlint.config.js
 
 # CITATION files
 CITATION.cff
+
+# Ignore Dockerfiles
+**/Dockerfile*
+
+# Ignore Python files
+*.py
+
+# Ignore SQL files (if you don't want prettier-plugin-sql to format them)
+*.sql
