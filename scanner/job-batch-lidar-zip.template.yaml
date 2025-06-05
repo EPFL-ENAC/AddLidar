@@ -168,7 +168,7 @@ spec:
           emptyDir: {}
         - name: fts-addlidar
           persistentVolumeClaim:
-            claimName: { { fts_addlidar_pvc_name } }
+            claimName: "{{ fts_addlidar_pvc_name }}"
         - name: db-dir
           persistentVolumeClaim:
-            claimName: { { database_pvc_name } }
+            claimName: "{{ database_pvc_name }}"
