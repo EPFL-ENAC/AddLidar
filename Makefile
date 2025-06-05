@@ -69,7 +69,7 @@ add-backend-subtree:
 		fi; \
 	else \
 		echo "📥 Adding backend subtree from $(BACKEND_BRANCH) branch..."; \
-		if git subtree add --prefix=backend $(BACKEND_REPO) $(BACKEND_BRANCH) --squash 2>/dev/null; then \
+		if git subtree add --prefix=backend $(BACKEND_REPO) $(BACKEND_BRANCH)  2>/dev/null; then \
 			echo "✅ backend subtree added successfully"; \
 		else \
 			echo "❌ Failed to add backend subtree. Check repository URL and permissions."; \
@@ -87,7 +87,7 @@ add-frontend-subtree:
 		fi; \
 	else \
 		echo "📥 Adding frontend subtree from $(FRONTEND_BRANCH) branch..."; \
-		if git subtree add --prefix=frontend $(FRONTEND_REPO) $(FRONTEND_BRANCH) --squash 2>/dev/null; then \
+		if git subtree add --prefix=frontend $(FRONTEND_REPO) $(FRONTEND_BRANCH)  2>/dev/null; then \
 			echo "✅ frontend subtree added successfully"; \
 		else \
 			echo "❌ Failed to add frontend subtree. Check repository URL and permissions."; \
@@ -105,7 +105,7 @@ add-potree-converter-subtree:
 		fi; \
 	else \
 		echo "📥 Adding potree-converter subtree from $(POTREECONVERTER_BRANCH) branch..."; \
-		if git subtree add --prefix=potree-converter $(POTREECONVERTER_REPO) $(POTREECONVERTER_BRANCH) --squash 2>/dev/null; then \
+		if git subtree add --prefix=potree-converter $(POTREECONVERTER_REPO) $(POTREECONVERTER_BRANCH)  2>/dev/null; then \
 			echo "✅ potree-converter subtree added successfully"; \
 		else \
 			echo "❌ Failed to add potree-converter subtree. Check repository URL and permissions."; \
@@ -117,11 +117,11 @@ add-potree-converter-subtree:
 subtree-pull:
 	@echo "Pulling updates from all subtrees..."
 	@echo "Pulling updates from backend ($(BACKEND_BRANCH) branch)..."
-	@git subtree pull --prefix=backend $(BACKEND_REPO) $(BACKEND_BRANCH) --squash || true
+	@git subtree pull --prefix=backend $(BACKEND_REPO) $(BACKEND_BRANCH)  || true
 	@echo "Pulling updates from frontend ($(FRONTEND_BRANCH) branch)..."
-	@git subtree pull --prefix=frontend $(FRONTEND_REPO) $(FRONTEND_BRANCH) --squash || true
+	@git subtree pull --prefix=frontend $(FRONTEND_REPO) $(FRONTEND_BRANCH)  || true
 	@echo "Pulling updates from potree-converter ($(POTREECONVERTER_BRANCH) branch)..."
-	@git subtree pull --prefix=potree-converter $(POTREECONVERTER_REPO) $(POTREECONVERTER_BRANCH) --squash || true
+	@git subtree pull --prefix=potree-converter $(POTREECONVERTER_REPO) $(POTREECONVERTER_BRANCH)  || true
 	@echo "All subtrees updated successfully!"
 
 # Push commands
