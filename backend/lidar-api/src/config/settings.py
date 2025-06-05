@@ -6,7 +6,7 @@ class Settings(BaseSettings):
     IMAGE_NAME: str = "ghcr.io/epfl-enac/lidardatamanager"
     IMAGE_TAG: str = "latest"
     PATH_PREFIX: str = "/api"
-    NAMESPACE: str = "epfl-cryos-addlidar-potree-dev"
+    NAMESPACE: str = "epfl-eso-addlidar-dev"
     MOUNT_PATH: str = "/data"
     SUB_PATH: str = "fts-addlidar/LiDAR"
     DATABASE_PATH: str = "./data/database.db"  # Default path for SQLite database
