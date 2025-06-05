@@ -1,0 +1,18 @@
+services:
+  lidar-api:
+    build:
+      context: ./lidar-api/
+      dockerfile: Dockerfile
+    ports:
+      - "8081:8081"
+    env_file:
+      - ./lidar-api/.env
+    volumes:
+      - ./lidar-api/data:/data
+      - ./lidar-api/output:/output
+    networks:
+      - lidar_network
+
+networks:
+  lidar_network:
+    driver: bridge

@@ -1,0 +1,174 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: "job-batch-lidar-zip-{{ timestamp }}"
+  namespace: "epfl-cryos-addlidar-potree-prod"
+spec:
+  ttlSecondsAfterFinished: 3600 # 1 hour
+  # prettier-ignore
+  completions: {{ folders|length }} # Dynamic based on folder count
+  # prettier-ignore
+  parallelism: {{ parallelism|default(4) }}
+  backoffLimit: 0 # No retries per completion
+  completionMode: Indexed
+  template:
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: job-name
+                      operator: In
+                      values:
+                        - job-batch-lidar-zip-{{ timestamp }}
+                topologyKey: "kubernetes.io/hostname"
+      restartPolicy: Never
+      initContainers:
+        - name: "prepare-folders"
+          image: "docker.io/library/bash"
+          command:
+            - "bash"
+            - "-c"
+            - |
+              # Array of folders to process as [folderName, folderFingerprint] pairs
+              folders=(
+              {% for folder in folders %}
+                "{{ folder[0] }}|{{ folder[1] }}"
+              {% endfor %}
+              )
+
+              # Get the current folder based on job index
+              current_folder_pair=${folders[$JOB_COMPLETION_INDEX]}
+
+              # Extract the folder name and fingerprint from the pair
+              folder_name=$(echo "$current_folder_pair" | cut -d'|' -f1)
+              folder_fingerprint=$(echo "$current_folder_pair" | cut -d'|' -f2)
+
+              # Check if folder exists and is not empty
+              if [ -n "${folder_name}" ] && [ -d "/lidar/${folder_name}" ] && [ "$(ls -A /lidar/${folder_name} 2>/dev/null)" ]; then
+                echo "Found valid folder: /lidar/${folder_name} (Fingerprint: ${folder_fingerprint})"
+                # Write the input and output paths to a file for the main container
+                echo "${folder_name}" > /data/input_path.txt
+                echo "${folder_name}.tar.gz" > /data/output_path.txt
+                echo "${folder_fingerprint}" > /data/folder_fingerprint.txt
+                echo "true" > /data/folder_valid.txt
+              else
+                echo "WARNING: Folder /lidar/${folder_name} does not exist or is empty"
+                echo "false" > /data/folder_valid.txt
+                echo "${folder_name}" > /data/input_path.txt
+              fi
+          volumeMounts:
+            - name: fts-addlidar
+              subPath: "fts-addlidar/LiDAR"
+              mountPath: "{{ orig_dir }}"
+              readOnly: true
+            - mountPath: /data
+              name: data
+          resources:
+            limits:
+              cpu: "100m"
+              memory: "100Mi"
+            requests:
+              cpu: "10m"
+              memory: "10Mi"
+      containers:
+        - name: "lidar-zip-job"
+          image: "ghcr.io/epfl-enac/lidar-zip:latest"
+          command: ["/bin/bash", "-c"]
+          args:
+            - |
+              # Check if the folder is valid before proceeding
+              if [ -e "/data/folder_valid.txt" ] && [ "$(cat /data/folder_valid.txt)" == "true" ]; then
+                INPUT_PATH=$(cat /data/input_path.txt)
+                OUTPUT_PATH=$(cat /data/output_path.txt)
+                FINGERPRINT=$(cat /data/folder_fingerprint.txt)
+                START_TIME=$(date +%s)
+                
+                echo "Processing folder: $INPUT_PATH"
+                
+                # Attempt to create archive and capture exit code
+                if /usr/local/bin/archive_one_folder.sh /lidar/"$INPUT_PATH" /zips/"$OUTPUT_PATH"; then
+                  echo "Archive created successfully: $OUTPUT_PATH"
+                  
+                  # Update database with success status
+                  echo "Updating database for ${INPUT_PATH} with success status"
+                  TIMESTAMP=$(date +%s)
+                  PROCESSING_TIME=$((${TIMESTAMP} - ${START_TIME}))
+                  echo "Values to be updated: TIMESTAMP=${TIMESTAMP}, FINGERPRINT=${FINGERPRINT}, PROCESSING_TIME=${PROCESSING_TIME} for ${INPUT_PATH}"
+                  sqlite3 "{{ db_path }}" \
+                    "UPDATE folder_state SET last_processed = ${TIMESTAMP}, fp = '${FINGERPRINT}', processing_status = 'success', processing_time = ${PROCESSING_TIME} WHERE folder_key = '${INPUT_PATH}';" && \
+                  echo "Database updated successfully for ${INPUT_PATH}" || \
+                  echo "Failed to update database for ${INPUT_PATH}"
+                else
+                  echo "Archive creation failed for: $INPUT_PATH"
+                  
+                  # Update database with failed status
+                  echo "Updating database for ${INPUT_PATH} with failed status"
+                  TIMESTAMP=$(date +%s)
+                  PROCESSING_TIME=$((${TIMESTAMP} - ${START_TIME}))
+                  sqlite3 "{{ db_path }}" \
+                    "UPDATE folder_state SET last_processed = ${TIMESTAMP}, fp = '${FINGERPRINT}', processing_status = 'failed', processing_time = ${PROCESSING_TIME}, error_message = 'Archive creation failed' WHERE folder_key = '${INPUT_PATH}';" && \
+                  echo "Database updated with failed status for ${INPUT_PATH}" || \
+                  echo "Failed to update database for ${INPUT_PATH}"
+                  
+                  exit 1
+                fi
+
+                # Show the current state of the database record after update
+                echo "Database record state after update:"
+                sqlite3 -header -column "{{ db_path }}" \
+                  "SELECT folder_key, processing_status, error_message FROM folder_state WHERE folder_key = '${INPUT_PATH}';" || \
+                echo "Failed to query database record"
+              else
+                # Handle invalid or empty folder case
+                if [ -e "/data/input_path.txt" ]; then
+                  INPUT_PATH=$(cat /data/input_path.txt)
+                  FINGERPRINT=$(cat /data/folder_fingerprint.txt 2>/dev/null || echo "")
+                  
+                  echo "Skipping archive process - invalid or empty folder: ${INPUT_PATH}"
+                  
+                  # Update database with failed status for invalid/empty folder
+                  echo "Updating database for ${INPUT_PATH} with failed status (invalid/empty folder)"
+                  TIMESTAMP=$(date +%s)
+                  sqlite3 "{{ db_path }}" \
+                    "UPDATE folder_state SET last_processed = ${TIMESTAMP}, processing_status = 'empty', processing_time = 0, error_message = 'Folder is invalid or empty' WHERE folder_key = '${INPUT_PATH}';" && \
+                  echo "Database updated with failed status for invalid folder ${INPUT_PATH}" || \
+                  echo "Failed to update database for ${INPUT_PATH}"
+                else
+                  echo "No input path available"
+                  exit 1
+                fi
+                
+                exit 0
+              fi
+          volumeMounts:
+            - name: fts-addlidar
+              subPath: "fts-addlidar/LiDAR"
+              mountPath: "{{ orig_dir }}"
+              readOnly: true
+            - name: fts-addlidar
+              subPath: "fts-addlidar/LiDAR-Zips"
+              mountPath: "{{ zip_dir }}"
+            - mountPath: /data
+              name: data
+            - mountPath: "{{ db_dir }}"
+              name: db-dir
+          resources:
+            limits:
+              cpu: "4"
+              memory: "4Gi"
+            requests:
+              cpu: "500m"
+              memory: "1Gi"
+      volumes:
+        - name: data
+          emptyDir: {}
+        - name: fts-addlidar
+          persistentVolumeClaim:
+            claimName: addlidar-smb-pvc
+        - name: db-dir
+          persistentVolumeClaim:
+            claimName: addlidar-db-pvc
