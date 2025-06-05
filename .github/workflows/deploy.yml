@@ -19,4 +19,4 @@ jobs:
       # Optional inputs can be passed here
       ORG: epfl-eso #.e.g epfl-cryos
       REPO: AddLidar # ex. lgb-trsc
-      build_context: '[ "./"]'
+      build_context: '["./backend", "./frontend", "./compression", "./scanner", "./potree-converter"]'
