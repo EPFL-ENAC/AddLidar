@@ -4,7 +4,7 @@ FROM python:3.9-alpine
 WORKDIR /app
 
 # Copy the necessary files into the container
-COPY scan_and_enqueue.py .
+COPY scanner.py .
 COPY job-batch-lidar-zip.template.yaml .
 COPY job-batch-potree-converter.template.yaml .
 COPY persist_state.sql .
@@ -20,4 +20,4 @@ RUN apk add --no-cache \
     sqlite-utils
 
 # Command to run the script with the specified arguments
-CMD ["python", "scan_and_enqueue.py", "--original-root", "/lidar", "--zip-root", "/zips", "--db-path", "/db-path/archive.db"]
+CMD ["python", "scanner.py", "--original-root", "/lidar", "--zip-root", "/zips", "--db-path", "/db-path/archive.db"]

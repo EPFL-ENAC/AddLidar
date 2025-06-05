@@ -168,7 +168,7 @@ spec:
           emptyDir: {}
         - name: fts-addlidar
           persistentVolumeClaim:
-            claimName: addlidar-smb-pvc
+            claimName: { { fts_addlidar_pvc_name } }
         - name: db-dir
           persistentVolumeClaim:
-            claimName: addlidar-db-pvc
+            claimName: { { database_pvc_name } }
