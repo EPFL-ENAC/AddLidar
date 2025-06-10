@@ -1,8 +1,13 @@
-// src/router/index.ts
 import { createRouter, createWebHistory, RouteRecordRaw } from "vue-router";
 import MainView from "@/views/MainView.vue";
+import MissionListView from "@/views/MissionListView.vue";
 
 const routes: Array<RouteRecordRaw> = [
+  {
+    path: "/",
+    name: "MissionList",
+    component: MissionListView,
+  },
   {
     path: "/mission/:id",
     name: "Mission",

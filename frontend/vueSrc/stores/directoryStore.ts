@@ -15,11 +15,25 @@ export interface DirectoryNode {
   error_message: string | null;
 }
 
+export interface PotreeMetacloudState {
+  mission_key: string;
+  fp: string;
+  output_path: string;
+  last_checked: number;
+  last_processed: number | null;
+  processing_time: number | null;
+  processing_status: string;
+  error_message: string | null;
+  last_checked_time: string;
+  last_processed_time: string | null;
+}
+
 export const useDirectoryStore = defineStore("directory", () => {
   const directoryData = ref<DirectoryNode[]>([]);
   const isLoading = ref(false);
   const error = ref<string | null>(null);
   const pointcloudMetadata = ref<any>(null);
+  const allMissions = ref<PotreeMetacloudState[]>([]);
 
   // For same-domain deployment, we can use relative URLs
   const apiBasePath = ref("/api");
@@ -93,6 +107,40 @@ export const useDirectoryStore = defineStore("directory", () => {
     }
   }
 
+  // Fetch list of all available missions
+  async function fetchAllMissions() {
+    try {
+      const response = await fetch(
+        `${apiBasePath.value}/sqlite/potree_metacloud_state?limit=100&offset=0`
+      );
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+
+      const responseData = await response.json();
+      // Extract the data array from the response
+      allMissions.value = responseData.data;
+      return responseData.data;
+    } catch (err) {
+      console.error("Error fetching missions:", err);
+      throw err;
+    }
+  }
+  // Helper function to get mission keys only
+  function getMissionKeys(): string[] {
+    return allMissions.value.map((mission) => mission.mission_key);
+  }
+
+  // Helper function to get mission by key
+  function getMissionByKey(
+    missionKey: string
+  ): PotreeMetacloudState | undefined {
+    return allMissions.value.find(
+      (mission) => mission.mission_key === missionKey
+    );
+  }
+
   // Get download URL for a path
   function getDownloadUrl(path: string): string {
     const cleanPath = path.startsWith("/") ? path.substring(1) : path;
@@ -142,6 +190,10 @@ export const useDirectoryStore = defineStore("directory", () => {
 
   return {
     directoryData,
+    allMissions,
+    fetchAllMissions,
+    getMissionKeys,
+    getMissionByKey,
     pointcloudMetadata,
     isLoading,
     error,
