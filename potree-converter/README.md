@@ -23,6 +23,10 @@ make install
 docker build -f Dockerfile --platform linux/amd64 -t ghcr.io/epfl-enac/potree_converter:debian-2.1.1 .
 ```
 
+## Updating the Docker Image
+
+WARNING : enack8s-app-config/epfl-eso/addlidar/overlays/prod/kustomization.yaml needs to manually updated with the new image tag after each build (image tag is not automatically updated by the CD).
+
 ## Using .metacloud Files
 
 This container supports processing point cloud files listed in a `.metacloud` file. A `.metacloud` file is a text file that contains paths to multiple point cloud files to be processed together.

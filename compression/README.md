@@ -15,3 +15,7 @@ The LiDAR ZIP Archive Tool is a containerized utility that helps package LiDAR d
 ## Integration with AddLidar
 
 This tool is part of the AddLidar system, which is deployed on a Kubernetes cluster. It's designed to be run as a Kubernetes job for processing LiDAR datasets as part of the overall workflow.
+
+## Updating the Docker Image
+
+WARNING : enack8s-app-config/epfl-eso/addlidar/overlays/prod/kustomization.yaml needs to manually updated with the new image tag after each build (image tag is not automatically updated by the CD).
