@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.2.0](https://github.com/EPFL-ENAC/AddLidar/compare/v0.1.0...v0.2.0) (2025-06-12)
+
+
+### Features
+
+* add new database snapshot for lidar API ([b935c84](https://github.com/EPFL-ENAC/AddLidar/commit/b935c8465f09682a3f090e65f2ab130bd4c84c3c))
+
+
+### Bug Fixes
+
+* **scanner:** parameterize image settings in job templates for compression and potree-converter ([e173fd9](https://github.com/EPFL-ENAC/AddLidar/commit/e173fd9c1d41ffcedad863705293f7883a2939d1))
+
 ## 0.1.0 (2025-06-12)
 
 
