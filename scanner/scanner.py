@@ -521,6 +521,10 @@ def queue_potree_conversion_jobs(
             "db_dir": os.path.dirname(DB),
             "fts_addlidar_pvc_name": FTS_ADDLIDAR_PVC,
             "database_pvc_name": DATABASE_PVC,
+            "potree_converter_image_registry": os.environ.get("POTREE_CONVERTER_IMAGE_REGISTRY"),
+            "potree_converter_image_name": os.environ.get("POTREE_CONVERTER_IMAGE_NAME"),
+            "potree_converter_image_tag": os.environ.get("POTREE_CONVERTER_IMAGE_TAG"),
+            "potree_converter_image_sha256": os.environ.get("POTREE_CONVERTER_IMAGE_SHA256"),
         }
 
         # Render the template
@@ -605,6 +609,10 @@ def queue_batch_zip_job(
             "db_dir": os.path.dirname(DB),
             "fts_addlidar_pvc_name": FTS_ADDLIDAR_PVC,
             "database_pvc_name": DATABASE_PVC,
+            "compression_image_registry": os.environ.get("COMPRESSION_IMAGE_REGISTRY"),
+            "compression_image_name": os.environ.get("COMPRESSION_IMAGE_NAME"),
+            "compression_image_tag": os.environ.get("COMPRESSION_IMAGE_TAG"),
+            "compression_image_sha256": os.environ.get("COMPRESSION_IMAGE_SHA256")
         }
 
         # Render the template

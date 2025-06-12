@@ -78,7 +78,8 @@ spec:
               memory: "10Mi"
       containers:
         - name: "potree-converter"
-          image: "ghcr.io/epfl-enac/epfl-eso/addlidar/potree-converter:latest"
+          image: "{{ potree_converter_image_registry | default('ghcr.io') }}/{{ potree_converter_image_name | default('epfl-enac/epfl-eso/addlidar/potree-converter') }}:{{ potree_converter_image_tag | default('latest') }}{% if potree_converter_image_sha256 %}@sha256:{{ potree_converter_image_sha256 }}{% endif %}"
+          imagePullPolicy: IfNotPresent
           command: ["/bin/bash", "-c"]
           args:
             - |
