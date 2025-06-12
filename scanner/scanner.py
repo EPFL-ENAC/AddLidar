@@ -41,12 +41,16 @@ logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
     handlers=[logging.StreamHandler()],
 )
-logger = logging.getLogger("lidar-archiver")
+logger = logging.getLogger("scanner.py")
 
 # Constants will be set in main() from arguments
 ORIG: str = ""
 ZIP: str = ""
 DB: str = ""
+# Default PVC for FTS AddLidar, can be overridden by command line argument
+FTS_ADDLIDAR_PVC: str = ""
+# Default PVC for database, can be overridden by command line argument
+DATABASE_PVC: str = ""
 # We'll store parsed args globally so they can be accessed from other functions
 args = None
 
@@ -478,7 +482,7 @@ def queue_potree_conversion_jobs(
     Returns:
         Optional[int]: Number of jobs created (1 if batch job created) or None if no action was taken
     """
-    global ORIG, ZIP, DB, args
+    global ORIG, ZIP, DB, FTS_ADDLIDAR_PVC, DATABASE_PVC, args
 
     if not metacloud_files:
         logger.info("No metacloud files to process, skipping job creation")
@@ -515,6 +519,8 @@ def queue_potree_conversion_jobs(
             "parallelism": parallelism,
             "db_path": DB,
             "db_dir": os.path.dirname(DB),
+            "fts_addlidar_pvc_name": FTS_ADDLIDAR_PVC,
+            "database_pvc_name": DATABASE_PVC,
         }
 
         # Render the template
@@ -562,7 +568,7 @@ def queue_batch_zip_job(
     Returns:
         Optional[int]: Number of folders processed or None if no action was taken
     """
-    global ORIG, ZIP, DB, args
+    global ORIG, ZIP, DB, DATABASE_PVC, FTS_ADDLIDAR_PVC, args
 
     if not folders:
         logger.info("No folders to process, skipping batch job creation")
@@ -597,6 +603,8 @@ def queue_batch_zip_job(
             "zip_dir": ZIP,
             "db_path": DB,
             "db_dir": os.path.dirname(DB),
+            "fts_addlidar_pvc_name": FTS_ADDLIDAR_PVC,
+            "database_pvc_name": DATABASE_PVC,
         }
 
         # Render the template
@@ -631,7 +639,7 @@ def main() -> None:
     Main function to scan directories and enqueue archive jobs.
     """
     # Access global constants and args to modify them
-    global ORIG, ZIP, DB, args
+    global ORIG, ZIP, DB, FTS_ADDLIDAR_PVC, DATABASE_PVC, args
 
     parser = argparse.ArgumentParser(
         description="LiDAR Archive Scanner and Job Enqueuer"
@@ -656,6 +664,17 @@ def main() -> None:
         choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
         default="INFO",
         help="Set logging level (default: INFO)",
+    )
+    parser.add_argument(
+        "--database-pvc",
+        default="database",
+        help="PVC name for the database (default: 'database')",
+    )
+
+    parser.add_argument(
+        "--fts-addlidar-pvc",
+        default="fts-addlidar",
+        help="PVC name for the FTS AddLidar (default: 'fts-addlidar')",
     )
     # parser.add_argument(
     #     "--execution-env",
@@ -696,6 +715,8 @@ def main() -> None:
     ORIG = args.original_root
     ZIP = args.zip_root
     DB = args.db_path
+    FTS_ADDLIDAR_PVC = args.fts_addlidar_pvc
+    DATABASE_PVC = args.database_pvc
     execution_env = "batch"
 
     dry_run: bool = args.dry_run

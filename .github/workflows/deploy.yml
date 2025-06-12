@@ -17,6 +17,6 @@ jobs:
       token: ${{ secrets.CD_TOKEN }}
     with:
       # Optional inputs can be passed here
-      ORG: epfl-eso #.e.g epfl-cryos
-      REPO: AddLidar # ex. lgb-trsc
-      build_context: '["./backend", "./frontend", "./compression", "./scanner", "./potree-converter"]'
+      ORG: epfl-eso #.e.g epfl-eso
+      REPO: addlidar # ex. addlidar
+      build_context: '["./backend/lidar-api", "./frontend", "./compression", "./scanner", "./potree-converter"]'

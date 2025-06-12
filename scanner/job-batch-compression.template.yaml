@@ -1,10 +1,11 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: "job-batch-lidar-zip-{{ timestamp }}"
-  namespace: "epfl-cryos-addlidar-potree-prod"
+  name: "batch-compression-{{ timestamp }}"
+  namespace: "epfl-eso-addlidar-prod"
 spec:
-  ttlSecondsAfterFinished: 3600 # 1 hour
+  ttlSecondsAfterFinished: 3600 # Clean up 1 hour after job completes
+  activeDeadlineSeconds: 86400 # Job timeout of 24 hours
   # prettier-ignore
   completions: {{ folders|length }} # Dynamic based on folder count
   # prettier-ignore
@@ -23,7 +24,7 @@ spec:
                     - key: job-name
                       operator: In
                       values:
-                        - job-batch-lidar-zip-{{ timestamp }}
+                        - batch-compression-{{ timestamp }}
                 topologyKey: "kubernetes.io/hostname"
       restartPolicy: Never
       initContainers:
@@ -69,14 +70,12 @@ spec:
               name: data
           resources:
             limits:
-              cpu: "100m"
               memory: "100Mi"
             requests:
-              cpu: "10m"
               memory: "10Mi"
       containers:
-        - name: "lidar-zip-job"
-          image: "ghcr.io/epfl-enac/lidar-zip:latest"
+        - name: "compression"
+          image: "ghcr.io/epfl-eso/addlidar/compression:latest"
           command: ["/bin/bash", "-c"]
           args:
             - |
@@ -168,7 +167,7 @@ spec:
           emptyDir: {}
         - name: fts-addlidar
           persistentVolumeClaim:
-            claimName: addlidar-smb-pvc
+            claimName: "{{ fts_addlidar_pvc_name }}"
         - name: db-dir
           persistentVolumeClaim:
-            claimName: addlidar-db-pvc
+            claimName: "{{ database_pvc_name }}"

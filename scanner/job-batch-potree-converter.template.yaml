@@ -1,8 +1,8 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: "job-batch-potree-conversion-{{ timestamp }}"
-  namespace: "epfl-cryos-addlidar-potree-prod"
+  name: "batch-potree-converter-{{ timestamp }}"
+  namespace: "epfl-eso-addlidar-prod"
 spec:
   ttlSecondsAfterFinished: 3600 # 1 hour
   # prettier-ignore
@@ -24,7 +24,7 @@ spec:
                     - key: job-name
                       operator: In
                       values:
-                        - job-batch-potree-conversion-{{ timestamp }}
+                        - batch-potree-converter-{{ timestamp }}
                 topologyKey: "kubernetes.io/hostname"
       restartPolicy: Never
       initContainers:
@@ -78,7 +78,7 @@ spec:
               memory: "10Mi"
       containers:
         - name: "potree-converter"
-          image: "ghcr.io/epfl-enac/potree_converter:latest"
+          image: "ghcr.io/epfl-enac/epfl-eso/addlidar/potree-converter:latest"
           command: ["/bin/bash", "-c"]
           args:
             - |
@@ -180,7 +180,7 @@ spec:
           emptyDir: {}
         - name: fts-addlidar
           persistentVolumeClaim:
-            claimName: addlidar-smb-pvc
+            claimName: "{{ fts_addlidar_pvc_name }}"
         - name: db-dir
           persistentVolumeClaim:
-            claimName: addlidar-db-pvc
+            claimName: "{{ database_pvc_name }}"
