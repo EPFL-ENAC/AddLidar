@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.3.0](https://github.com/EPFL-ENAC/AddLidar/compare/v0.2.0...v0.3.0) (2025-06-12)
+
+
+### Features
+
+* remove time stamp from job name ([d796982](https://github.com/EPFL-ENAC/AddLidar/commit/d796982fafdcb144710983bfcef67dae0a14b4e8))
+* remove time stamp from job name ([db6ebbd](https://github.com/EPFL-ENAC/AddLidar/commit/db6ebbd07f220efd8bb078c4d2b358c37d969abb))
+
+
+### Bug Fixes
+
+* **scanner:** update job names in compression and potree converter templates for consistency ([acf030f](https://github.com/EPFL-ENAC/AddLidar/commit/acf030f6afc5f786b78d282e4d76260a892728e8))
+* **scanner:** update job names in compression and potree converter templates for consistency ([f29b465](https://github.com/EPFL-ENAC/AddLidar/commit/f29b4651458df215b8c6857459cc1049afdd9c38))
+
 ## [0.2.0](https://github.com/EPFL-ENAC/AddLidar/compare/v0.1.0...v0.2.0) (2025-06-12)
 
 
