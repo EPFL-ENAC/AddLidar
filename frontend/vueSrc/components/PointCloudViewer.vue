@@ -49,7 +49,7 @@ watch(
   (newValue) => {
     console.log("New attribute", newValue);
     onAttributeChange(newValue);
-  }
+  },
 );
 
 watch(
@@ -57,7 +57,7 @@ watch(
   ([newMin, newMax]) => {
     console.log("Filtering source ID", newMin, newMax);
     window.viewer.setFilterPointSourceIDRange(newMin, newMax);
-  }
+  },
 );
 
 // Watch for changes in selected source IDs
@@ -87,7 +87,7 @@ watch(
     } catch (error) {
       console.error("Error applying point source ID filter:", error);
     }
-  }
+  },
 );
 
 // Watch for changes in the active mission
@@ -97,7 +97,7 @@ watch(
     if (newId && window.viewer) {
       loadPointCloud(newId);
     }
-  }
+  },
 );
 
 function loadPointCloud(id) {
@@ -124,7 +124,7 @@ function loadPointCloud(id) {
             i--
           ) {
             window.viewer.scene.removePointCloud(
-              window.viewer.scene.pointclouds[i]
+              window.viewer.scene.pointclouds[i],
             );
           }
         }
@@ -150,17 +150,17 @@ function loadPointCloud(id) {
 onMounted(() => {
   console.log(
     "Point cloud viewer mounted, active mission:",
-    pointcloudId.value
+    pointcloudId.value,
   );
   if (!pointcloudId.value) {
     showError(
-      'No mission selected. Please select a mission or provide a valid "id" query parameter.'
+      'No mission selected. Please select a mission or provide a valid "id" query parameter.',
     );
     return;
   }
 
   window.viewer = new Potree.Viewer(
-    document.getElementById("potree_render_area")
+    document.getElementById("potree_render_area"),
   );
   viewer.setEDLEnabled(true);
   viewer.setFOV(40);

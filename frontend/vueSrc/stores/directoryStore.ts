@@ -43,7 +43,7 @@ export const useDirectoryStore = defineStore("directory", () => {
   function configurePaths(
     api: string,
     static_path: string,
-    missionId?: string
+    missionId?: string,
   ) {
     apiBasePath.value = api;
     staticBasePath.value = static_path;
@@ -78,7 +78,7 @@ export const useDirectoryStore = defineStore("directory", () => {
         error.value = err instanceof Error ? err.message : "Unknown error";
         console.error(
           `Error fetching data for mission ${activeMission.value}:`,
-          err
+          err,
         );
       } finally {
         isLoading.value = false;
@@ -92,7 +92,7 @@ export const useDirectoryStore = defineStore("directory", () => {
   async function fetchMissionData(missionName: string) {
     try {
       const response = await fetch(
-        `${apiBasePath.value}/sqlite/folder_state/${missionName}`
+        `${apiBasePath.value}/sqlite/folder_state/${missionName}`,
       );
 
       if (!response.ok) {
@@ -111,7 +111,7 @@ export const useDirectoryStore = defineStore("directory", () => {
   async function fetchAllMissions() {
     try {
       const response = await fetch(
-        `${apiBasePath.value}/sqlite/potree_metacloud_state?limit=100&offset=0`
+        `${apiBasePath.value}/sqlite/potree_metacloud_state?limit=100&offset=0`,
       );
 
       if (!response.ok) {
@@ -134,10 +134,10 @@ export const useDirectoryStore = defineStore("directory", () => {
 
   // Helper function to get mission by key
   function getMissionByKey(
-    missionKey: string
+    missionKey: string,
   ): PotreeMetacloudState | undefined {
     return allMissions.value.find(
-      (mission) => mission.mission_key === missionKey
+      (mission) => mission.mission_key === missionKey,
     );
   }
 
@@ -153,7 +153,7 @@ export const useDirectoryStore = defineStore("directory", () => {
   async function fetchPointcloudMetadata(missionName: string) {
     try {
       const response = await fetch(
-        `${staticBasePath.value}/Potree/${missionName}/metadata.json`
+        `${staticBasePath.value}/Potree/${missionName}/metadata.json`,
       );
 
       if (!response.ok) {
@@ -178,14 +178,14 @@ export const useDirectoryStore = defineStore("directory", () => {
           error.value = err instanceof Error ? err.message : "Unknown error";
           console.error(
             `Error fetching metadata for mission ${newMission}:`,
-            err
+            err,
           );
         }
       } else {
         pointcloudMetadata.value = null;
       }
     },
-    { immediate: true }
+    { immediate: true },
   );
 
   return {

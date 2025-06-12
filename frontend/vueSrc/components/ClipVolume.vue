@@ -95,7 +95,7 @@ function startInsertion() {
         .jstree()
         .get_json("measurements");
       let jsonNode = measurementsRoot.children.find(
-        (child: any) => child.data.uuid === item.value.uuid
+        (child: any) => child.data.uuid === item.value.uuid,
       );
       ($("#jstree_scene") as any).jstree("deselect_all");
       ($("#jstree_scene") as any).jstree("select_node", jsonNode.id);

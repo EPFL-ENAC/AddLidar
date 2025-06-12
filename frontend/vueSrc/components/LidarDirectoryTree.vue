@@ -116,7 +116,7 @@ const filteredFiles = computed(() => {
     files = files.filter(
       (item) =>
         getFolderName(item.folder_key).toLowerCase().includes(term) ||
-        item.folder_key.toLowerCase().includes(term)
+        item.folder_key.toLowerCase().includes(term),
     );
   }
 
@@ -188,7 +188,7 @@ watch(
       directoryStore.fetchAllDirectoryData();
     }
   },
-  { immediate: true }
+  { immediate: true },
 );
 </script>
 

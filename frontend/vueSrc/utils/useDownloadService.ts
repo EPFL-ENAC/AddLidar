@@ -34,7 +34,7 @@ type NotificationHandler = (message: string, type: string) => void;
 
 export default function useDownloadService(
   // Optional custom notification handler
-  notifyFn?: NotificationHandler
+  notifyFn?: NotificationHandler,
 ) {
   // Base URLs for API and WebSocket
   const API_BASE_URL = `${window.location.protocol}//${window.location.hostname}:${window.location.port}`;
@@ -160,7 +160,7 @@ export default function useDownloadService(
         if (data.status === "Error") {
           notify(
             "Job failed. Please check the status log for details.",
-            "error"
+            "error",
           );
         }
       } catch (error) {
@@ -193,7 +193,7 @@ export default function useDownloadService(
           headers: {
             "Content-Type": "application/json",
           },
-        }
+        },
       );
 
       if (!response.ok) {
@@ -240,7 +240,7 @@ export default function useDownloadService(
       const contentDisposition = response.headers.get("Content-Disposition");
       if (contentDisposition) {
         const matches = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/.exec(
-          contentDisposition
+          contentDisposition,
         );
         if (matches && matches[1]) {
           filename = matches[1].replace(/['"]/g, "");

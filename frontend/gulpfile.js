@@ -74,7 +74,7 @@ gulp.task(
       port: 1234,
       https: false,
     });
-  })
+  }),
 );
 
 gulp.task("test", async function () {
@@ -143,8 +143,8 @@ gulp.task(
       gulp.src(paths.resources).pipe(gulp.dest("build/potree/resources"));
 
       done();
-    }
-  )
+    },
+  ),
 );
 
 gulp.task("pack", async function () {
@@ -178,5 +178,5 @@ gulp.task(
     ];
 
     watch(watchlist, gulp.series("build", "pack"));
-  })
+  }),
 );

@@ -15,7 +15,7 @@ watch(
   (newId) => {
     if (newId) directoryStore.setActiveMission(newId);
   },
-  { immediate: true }
+  { immediate: true },
 );
 </script>
 

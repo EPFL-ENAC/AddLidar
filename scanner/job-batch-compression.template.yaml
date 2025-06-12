@@ -75,7 +75,8 @@ spec:
               memory: "10Mi"
       containers:
         - name: "compression"
-          image: "ghcr.io/epfl-eso/addlidar/compression:latest"
+          image: "{{ compression_image_registry | default('ghcr.io') }}/{{ compression_image_name | default('epfl-enac/epfl-eso/addlidar/compression') }}:{{ compression_image_tag | default('latest') }}{% if compression_image_sha256 %}@sha256:{{ compression_image_sha256 }}{% endif %}"
+          imagePullPolicy: IfNotPresent
           command: ["/bin/bash", "-c"]
           args:
             - |

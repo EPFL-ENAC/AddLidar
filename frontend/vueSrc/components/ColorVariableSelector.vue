@@ -46,7 +46,7 @@ const attributeOptions = computed(() => {
         label: attribute.name,
         value: attribute.name,
       };
-    }
+    },
   );
 });
 
