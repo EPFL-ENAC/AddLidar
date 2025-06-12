@@ -5,7 +5,7 @@ WORKDIR /app
 
 # Copy the necessary files into the container
 COPY scanner.py .
-COPY job-batch-lidar-zip.template.yaml .
+COPY job-batch-compression.template.yaml .
 COPY job-batch-potree-converter.template.yaml .
 COPY persist_state.sql .
 

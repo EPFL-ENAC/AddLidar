@@ -581,7 +581,7 @@ def queue_batch_zip_job(
         # Load Jinja2 template
         template_path = os.path.join(
             os.path.dirname(os.path.abspath(__file__)),
-            "job-batch-lidar-zip.template.yaml",
+            "job-batch-compression.template.yaml",
         )
 
         if not os.path.exists(template_path):
