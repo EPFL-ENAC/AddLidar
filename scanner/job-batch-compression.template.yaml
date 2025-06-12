@@ -5,7 +5,7 @@ metadata:
   namespace: "epfl-eso-addlidar-prod"
 spec:
   ttlSecondsAfterFinished: 3600 # Clean up 1 hour after job completes
-  activeDeadlineSeconds: 86400  # Job timeout of 24 hours
+  activeDeadlineSeconds: 86400 # Job timeout of 24 hours
   # prettier-ignore
   completions: {{ folders|length }} # Dynamic based on folder count
   # prettier-ignore
