@@ -1,7 +1,5 @@
 {
-    "python.testing.pytestArgs": [
-        "lidar-api"
-    ],
-    "python.testing.unittestEnabled": false,
-    "python.testing.pytestEnabled": true
+  "python.testing.pytestArgs": ["lidar-api"],
+  "python.testing.unittestEnabled": false,
+  "python.testing.pytestEnabled": true
 }

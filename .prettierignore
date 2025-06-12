@@ -8,6 +8,13 @@ npm-shrinkwrap.json
 CHANGELOG.md
 
 
+# Ignore all files in the following directories (Potree specific)
+frontend/src/*
+frontend/resources/*
+frontend/libs/*
+**/.venv/*
+
+
 # Makefiles
 Makefile
 *.mk

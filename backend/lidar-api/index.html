@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
@@ -304,7 +304,7 @@
         window.location.protocol === "https:" ? "wss:" : "ws:"
       }//${window.location.hostname}:${window.location.port}`;
       const PREFIX = ["localhost", "0.0.0.0", "127.0.0.1", "::1"].includes(
-        window.location.hostname
+        window.location.hostname,
       )
         ? ""
         : "/api";
@@ -362,7 +362,7 @@
         if (data.total_time !== undefined) {
           const timeInfo = document.createElement("div");
           timeInfo.innerHTML = `<strong>Processing time:</strong> ${data.total_time.toFixed(
-            2
+            2,
           )}s`;
           container.appendChild(timeInfo);
         }
@@ -484,7 +484,7 @@
                 headers: {
                   "Content-Type": "application/json",
                 },
-              }
+              },
             );
 
             if (!response.ok) {
@@ -498,9 +498,8 @@
             statusGet.innerHTML = "";
             statusGet.appendChild(formatJsonMessage(data));
           } catch (error) {
-            document.getElementById(
-              "status_get"
-            ).innerHTML = `<p>Error: ${error.message}</p>`;
+            document.getElementById("status_get").innerHTML =
+              `<p>Error: ${error.message}</p>`;
             console.error("Error getting job status:", error);
           }
         });
@@ -536,9 +535,8 @@
               console.error("WebSocket health data parse error:", error);
             }
           } catch (error) {
-            document.getElementById(
-              "health_status"
-            ).innerHTML = `<p>Error: ${error.message}</p>`;
+            document.getElementById("health_status").innerHTML =
+              `<p>Error: ${error.message}</p>`;
             console.error("Error checking health:", error);
           }
         });
@@ -559,12 +557,12 @@
             }
 
             // Build request body object with all parameters
-            
+
             const requestBody = {
               file_path: filePath,
-              format: document.getElementById("format").value
+              format: document.getElementById("format").value,
             };
-            
+
             const outcrs = document.getElementById("outcrs").value.trim();
             if (outcrs) requestBody.outcrs = outcrs;
             // Add optional parameters only if they have values
@@ -581,7 +579,7 @@
             if (!isNaN(number)) requestBody.number = number;
 
             const density = parseFloat(
-              document.getElementById("density").value
+              document.getElementById("density").value,
             );
             if (!isNaN(density)) requestBody.density = density;
 
@@ -623,7 +621,7 @@
                   "Content-Type": "application/json",
                 },
                 body: JSON.stringify(requestBody),
-              }
+              },
             );
 
             if (!response.ok) {
@@ -650,9 +648,8 @@
                 "<p>Failed to start job.</p>";
             }
           } catch (error) {
-            document.getElementById(
-              "status"
-            ).innerHTML = `<p>Error: ${error.message}</p>`;
+            document.getElementById("status").innerHTML =
+              `<p>Error: ${error.message}</p>`;
             console.error("Error starting job:", error);
           }
         });
@@ -674,7 +671,7 @@
                 headers: {
                   "Content-Type": "application/json",
                 },
-              }
+              },
             );
 
             if (!response.ok) {
@@ -696,16 +693,15 @@
 
             currentJob = null; // Reset current job
           } catch (error) {
-            document.getElementById(
-              "status"
-            ).innerHTML = `<p>Error: ${error.message}</p>`;
+            document.getElementById("status").innerHTML =
+              `<p>Error: ${error.message}</p>`;
             console.error("Error stopping job:", error);
           }
         });
 
       function listenForUpdates(jobName) {
         const ws = new WebSocket(
-          `${WS_BASE_URL}${PREFIX}/ws/job-status/${jobName}`
+          `${WS_BASE_URL}${PREFIX}/ws/job-status/${jobName}`,
         );
 
         ws.onopen = () => {

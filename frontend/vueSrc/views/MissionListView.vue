@@ -109,12 +109,12 @@ async function loadMissions() {
       ) {
         try {
           metadata = await directoryStore.fetchPointcloudMetadata(
-            mission.mission_key
+            mission.mission_key,
           );
         } catch (err) {
           console.warn(
             `Failed to load metadata for mission ${mission.mission_key}:`,
-            err
+            err,
           );
         }
       }
@@ -162,7 +162,7 @@ function formatBounds(boundingBox) {
   if (!boundingBox) return "N/A";
   const { min, max } = boundingBox;
   return `[${min[0].toFixed(1)}, ${min[1].toFixed(1)}] to [${max[0].toFixed(
-    1
+    1,
   )}, ${max[1].toFixed(1)}]`;
 }
 
@@ -202,7 +202,9 @@ onMounted(() => {
   border-radius: 8px;
   overflow: hidden;
   cursor: pointer;
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s;
   background: white;
   position: relative;
 }

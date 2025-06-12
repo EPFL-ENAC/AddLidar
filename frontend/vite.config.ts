@@ -26,7 +26,7 @@ export default defineConfig({
     // https://github.com/quasarframework/quasar/blob/dev/vite-plugin/index.d.ts
     quasar({
       sassVariables: fileURLToPath(
-        new URL("./vueSrc/quasar-variables.sass", import.meta.url)
+        new URL("./vueSrc/quasar-variables.sass", import.meta.url),
       ),
     }),
   ],

@@ -63,7 +63,7 @@ const pointSourceIdAttribute = computed(() => {
   return directoryStore.pointcloudMetadata.attributes.find(
     (attr: any) =>
       attr.name.toLowerCase().includes("point source") ||
-      attr.name.toLowerCase().includes("pointsource")
+      attr.name.toLowerCase().includes("pointsource"),
   );
 });
 
@@ -75,7 +75,7 @@ watch(
       initializeSourceIDs(attribute);
     }
   },
-  { immediate: true }
+  { immediate: true },
 );
 
 // Initialize source IDs from metadata
