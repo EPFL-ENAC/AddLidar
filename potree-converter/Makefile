@@ -4,6 +4,8 @@
 IMAGE_NAME = ghcr.io/epfl-enac/potree_converter:latest
 CONTAINER_NAME = potree_converter_container
 
+
+# OUTDATED : CD CREATES AUTOMATICALLY NEW IMAGES
 build: install check
 	@echo "Building Docker image..."
 	docker buildx build -f Dockerfile --platform linux/amd64 -t $(IMAGE_NAME) .
