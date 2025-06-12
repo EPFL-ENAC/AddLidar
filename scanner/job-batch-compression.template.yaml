@@ -1,7 +1,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: "compression-{{ timestamp }}"
+  name: "compression"
   namespace: "epfl-eso-addlidar-prod"
 spec:
   ttlSecondsAfterFinished: 3600 # Clean up 1 hour after job completes
@@ -24,7 +24,7 @@ spec:
                     - key: job-name
                       operator: In
                       values:
-                        - compression-{{ timestamp }}
+                        - compression
                 topologyKey: "kubernetes.io/hostname"
       restartPolicy: Never
       initContainers:
