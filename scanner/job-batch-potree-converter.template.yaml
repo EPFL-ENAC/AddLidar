@@ -78,7 +78,7 @@ spec:
               memory: "10Mi"
       containers:
         - name: "potree-converter"
-          image: "ghcr.io/epfl-enac/potree_converter:latest"
+          image: "ghcr.io/epfl-enac/epfl-eso/addlidar/potree-converter:latest"
           command: ["/bin/bash", "-c"]
           args:
             - |
