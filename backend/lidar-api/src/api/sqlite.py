@@ -4,6 +4,7 @@ from typing import List, Dict, Any, Optional
 import sqlite3
 import logging
 import os
+import time
 from pathlib import Path
 
 # Import settings
@@ -66,6 +67,20 @@ class PotreeMetacloudStateResponse(BaseModel):
     processing_time: Optional[int]
     processing_status: Optional[str]
     error_message: Optional[str]
+
+
+class FolderStateUpdate(BaseModel):
+    fingerprint: Optional[str] = None
+    processing_status: Optional[str]  # 'success', 'failed', 'empty'
+    processing_time: Optional[int] = None
+    error_message: Optional[str] = None
+
+
+class PotreeMetacloudStateUpdate(BaseModel):
+    fingerprint: Optional[str] = None
+    processing_status: Optional[str]  # 'success', 'failed', 'empty'
+    processing_time: Optional[int] = None
+    error_message: Optional[str] = None
 
 
 # Database connection helper
@@ -254,6 +269,84 @@ async def get_folder_state(
         )
 
 
+@internal_router.put("/folder_state/{folder_key:path}", response_model=Dict[str, Any])
+async def update_folder_state(folder_key: str, update_data: FolderStateUpdate):
+    """Update folder state record (Internal use only)"""
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        # Check if record exists
+        cursor.execute(
+            "SELECT folder_key FROM folder_state WHERE folder_key = ?", (folder_key,)
+        )
+        if not cursor.fetchone():
+            conn.close()
+            raise HTTPException(
+                status_code=404,
+                detail=f"Folder state record not found for folder_key: {folder_key}",
+            )
+
+        # Build update query dynamically based on provided fields
+        update_fields = ["last_processed = ?"]
+        update_values = [int(time.time())]  # Current timestamp
+
+        update_fields.append("processing_status = ?")
+        update_values.append(update_data.processing_status)
+
+        if update_data.fingerprint is not None:
+            update_fields.append("fp = ?")
+            update_values.append(update_data.fingerprint)
+
+        if update_data.processing_time is not None:
+            update_fields.append("processing_time = ?")
+            update_values.append(update_data.processing_time)
+
+        if update_data.error_message is not None:
+            update_fields.append("error_message = ?")
+            update_values.append(update_data.error_message)
+        else:
+            # Clear error message on success
+            if update_data.processing_status == "success":
+                update_fields.append("error_message = NULL")
+
+        # Add folder_key for WHERE clause
+        update_values.append(folder_key)
+
+        update_query = f"""
+        UPDATE folder_state 
+        SET {', '.join(update_fields)}
+        WHERE folder_key = ?
+        """
+
+        cursor.execute(update_query, update_values)
+        conn.commit()
+
+        # Return updated record
+        cursor.execute(
+            """SELECT folder_key, mission_key, fp, processing_status, 
+               processing_time, error_message, last_processed 
+               FROM folder_state WHERE folder_key = ?""",
+            (folder_key,),
+        )
+        updated_record = cursor.fetchone()
+        conn.close()
+
+        return {
+            "message": "Folder state updated successfully",
+            "record": dict(updated_record),
+        }
+
+    except sqlite3.Error as e:
+        logger.error(f"Database error updating folder state: {e}")
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+    except Exception as e:
+        logger.error(f"Error updating folder state: {e}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to update folder state: {str(e)}"
+        )
+
+
 @public_router.get("/folder_state/{subpath:path}", response_model=QueryResult)
 @internal_router.get("/folder_state/{subpath:path}", response_model=QueryResult)
 async def get_folder_state_by_subpath(
@@ -431,6 +524,89 @@ async def get_potree_metacloud_state(
         logger.error(f"Error querying potree metacloud state: {e}")
         raise HTTPException(
             status_code=500, detail=f"Failed to query potree metacloud state: {str(e)}"
+        )
+
+
+@internal_router.put(
+    "/potree_metacloud_state/{mission_key:path}", response_model=Dict[str, Any]
+)
+async def update_potree_metacloud_state(
+    mission_key: str, update_data: PotreeMetacloudStateUpdate
+):
+    """Update potree metacloud state record (Internal use only)"""
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+
+        # Check if record exists
+        cursor.execute(
+            "SELECT mission_key FROM potree_metacloud_state WHERE mission_key = ?",
+            (mission_key,),
+        )
+        if not cursor.fetchone():
+            conn.close()
+            raise HTTPException(
+                status_code=404,
+                detail=f"Potree metacloud state record not found for mission_key: {mission_key}",
+            )
+
+        # Build update query dynamically based on provided fields
+        update_fields = ["last_processed = ?"]
+        update_values = [int(time.time())]  # Current timestamp
+
+        update_fields.append("processing_status = ?")
+        update_values.append(update_data.processing_status)
+
+        if update_data.fingerprint is not None:
+            update_fields.append("fp = ?")
+            update_values.append(update_data.fingerprint)
+
+        if update_data.processing_time is not None:
+            update_fields.append("processing_time = ?")
+            update_values.append(update_data.processing_time)
+
+        if update_data.error_message is not None:
+            update_fields.append("error_message = ?")
+            update_values.append(update_data.error_message)
+        else:
+            # Clear error message on success
+            if update_data.processing_status == "success":
+                update_fields.append("error_message = NULL")
+
+        # Add mission_key for WHERE clause
+        update_values.append(mission_key)
+
+        update_query = f"""
+        UPDATE potree_metacloud_state 
+        SET {', '.join(update_fields)}
+        WHERE mission_key = ?
+        """
+
+        cursor.execute(update_query, update_values)
+        conn.commit()
+
+        # Return updated record
+        cursor.execute(
+            """SELECT mission_key, fp, processing_status, 
+               processing_time, error_message, last_processed 
+               FROM potree_metacloud_state WHERE mission_key = ?""",
+            (mission_key,),
+        )
+        updated_record = cursor.fetchone()
+        conn.close()
+
+        return {
+            "message": "Potree metacloud state updated successfully",
+            "record": dict(updated_record),
+        }
+
+    except sqlite3.Error as e:
+        logger.error(f"Database error updating potree metacloud state: {e}")
+        raise HTTPException(status_code=500, detail=f"Database error: {str(e)}")
+    except Exception as e:
+        logger.error(f"Error updating potree metacloud state: {e}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to update potree metacloud state: {str(e)}"
         )
 
 
