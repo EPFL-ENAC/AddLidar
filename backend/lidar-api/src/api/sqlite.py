@@ -15,9 +15,15 @@ logger = logging.getLogger(__name__)
 DATABASE_PATH = settings.DATABASE_PATH
 
 # Create router
-router = APIRouter(
+public_router = APIRouter(
     prefix="/sqlite",
     tags=["sqlite"],
+    responses={404: {"description": "Not found"}},
+)
+
+internal_router = APIRouter(
+    prefix="/sqlite",
+    tags=["sqlite-internal"],
     responses={404: {"description": "Not found"}},
 )
 
@@ -77,7 +83,8 @@ def get_db_connection():
         )
 
 
-@router.get("/tables", response_model=List[TableInfo])
+@public_router.get("/tables", response_model=List[TableInfo])
+@internal_router.get("/tables", response_model=List[TableInfo])
 async def get_tables():
     """Get list of all tables in the SQLite database"""
     try:
@@ -96,7 +103,8 @@ async def get_tables():
         raise HTTPException(status_code=500, detail=f"Failed to fetch tables: {str(e)}")
 
 
-@router.get("/schema/{table_name}", response_model=List[ColumnInfo])
+@public_router.get("/schema/{table_name}", response_model=List[ColumnInfo])
+@internal_router.get("/schema/{table_name}", response_model=List[ColumnInfo])
 async def get_table_schema(table_name: str):
     """Get schema information for a specific table"""
     try:
@@ -129,7 +137,8 @@ async def get_table_schema(table_name: str):
         raise HTTPException(status_code=500, detail=f"Failed to fetch schema: {str(e)}")
 
 
-@router.get("/query/{table_name}", response_model=QueryResult)
+@public_router.get("/query/{table_name}", response_model=QueryResult)
+@internal_router.get("/query/{table_name}", response_model=QueryResult)
 async def query_table(
     table_name: str,
     limit: int = Query(100, ge=1, le=1000),
@@ -189,7 +198,8 @@ async def query_table(
         raise HTTPException(status_code=500, detail=f"Failed to query table: {str(e)}")
 
 
-@router.get("/folder_state", response_model=QueryResult)
+@public_router.get("/folder_state", response_model=QueryResult)
+@internal_router.get("/folder_state", response_model=QueryResult)
 async def get_folder_state(
     limit: int = Query(100, ge=1, le=1000),
     offset: int = Query(0, ge=0),
@@ -244,7 +254,8 @@ async def get_folder_state(
         )
 
 
-@router.get("/folder_state/{subpath:path}", response_model=QueryResult)
+@public_router.get("/folder_state/{subpath:path}", response_model=QueryResult)
+@internal_router.get("/folder_state/{subpath:path}", response_model=QueryResult)
 async def get_folder_state_by_subpath(
     subpath: str,
     limit: int = Query(100, ge=1, le=1000),
@@ -309,7 +320,8 @@ async def get_folder_state_by_subpath(
         )
 
 
-@router.get("/folder_state/mission/{mission_key}", response_model=QueryResult)
+@public_router.get("/folder_state/mission/{mission_key}", response_model=QueryResult)
+@internal_router.get("/folder_state/mission/{mission_key}", response_model=QueryResult)
 async def get_folder_state_by_mission(
     mission_key: str,
     limit: int = Query(100, ge=1, le=1000),
@@ -369,7 +381,8 @@ async def get_folder_state_by_mission(
         )
 
 
-@router.get("/potree_metacloud_state", response_model=QueryResult)
+@public_router.get("/potree_metacloud_state", response_model=QueryResult)
+@internal_router.get("/potree_metacloud_state", response_model=QueryResult)
 async def get_potree_metacloud_state(
     limit: int = Query(100, ge=1, le=1000),
     offset: int = Query(0, ge=0),
@@ -421,7 +434,12 @@ async def get_potree_metacloud_state(
         )
 
 
-@router.get("/potree_metacloud_state/{mission_key}", response_model=Dict[str, Any])
+@public_router.get(
+    "/potree_metacloud_state/{mission_key}", response_model=Dict[str, Any]
+)
+@internal_router.get(
+    "/potree_metacloud_state/{mission_key}", response_model=Dict[str, Any]
+)
 async def get_potree_metacloud_state_by_mission(mission_key: str):
     """Get potree metacloud state for a specific mission"""
     try:
@@ -467,7 +485,8 @@ async def get_potree_metacloud_state_by_mission(mission_key: str):
         )
 
 
-@router.get("/processing_status", response_model=QueryResult)
+@public_router.get("/processing_status", response_model=QueryResult)
+@internal_router.get("/processing_status", response_model=QueryResult)
 async def get_processing_status():
     """Get processing status overview for both folder_state and potree_metacloud_state"""
     try:
@@ -515,7 +534,8 @@ async def get_processing_status():
         )
 
 
-@router.get("/settings", response_model=Dict[str, Any])
+@public_router.get("/settings", response_model=Dict[str, Any])
+@internal_router.get("/settings", response_model=Dict[str, Any])
 async def get_settings():
     """Get current settings"""
     try:

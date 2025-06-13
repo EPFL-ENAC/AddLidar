@@ -1,22 +1,30 @@
+import asyncio
+import uvicorn
 from fastapi import FastAPI, Request
-from src.api.routes import router
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, FileResponse
 from pydantic import ValidationError
-from src.api.sqlite import router as sqlite_router
-from src.config.settings import settings
+from pathlib import Path
 import logging
 
+from src.api.routes import router as public_router
+from src.api.sqlite import public_router as sqlite_public_router
+from src.api.sqlite import internal_router as sqlite_internal_router
+from src.config.settings import settings
 
-app = FastAPI(root_path=settings.PATH_PREFIX)
 
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    datefmt="%Y-%m-%d %H:%M:%S",
+# Create public app (external access)
+public_app = FastAPI(title="AddLidar API - Public", root_path=settings.PATH_PREFIX)
+
+# Create internal app (cluster-only access)
+internal_app = FastAPI(
+    title="AddLidar API - Internal",
+    root_path="/internal",  # Different root path for internal routes
 )
 
 
-@app.exception_handler(ValidationError)
+# Shared exception handler
+@public_app.exception_handler(ValidationError)
+@internal_app.exception_handler(ValidationError)
 async def validation_exception_handler(request: Request, exc: ValidationError):
     return JSONResponse(
         status_code=422,
@@ -27,17 +35,49 @@ async def validation_exception_handler(request: Request, exc: ValidationError):
     )
 
 
-# Optional: Serve the main HTML file at the root
-@app.get("/")
+# Public app routes
+@public_app.get("/")
 async def get_index():
-    from fastapi.responses import FileResponse
-    from pathlib import Path
-
     index_path = Path(__file__).parent.parent / "index.html"
     if index_path.exists():
         return FileResponse(index_path)
     return {"message": "Welcome to AddLidar API"}
 
 
-app.include_router(router)
-app.include_router(sqlite_router, tags=["sqlite"])
+# Internal app routes
+@internal_app.get("/")
+async def get_internal_index():
+    return {"message": "AddLidar Internal API - Cluster Access Only"}
+
+
+@internal_app.get("/health")
+async def internal_health():
+    return {"status": "healthy", "service": "internal"}
+
+
+# Register routers
+public_app.include_router(public_router)
+internal_app.include_router(sqlite_internal_router, tags=["sqlite"])
+public_app.include_router(sqlite_public_router, tags=["sqlite"])
+
+
+# Single startup function to run both servers
+async def run_servers():
+    config_public = uvicorn.Config(
+        app=public_app, host="0.0.0.0", port=8000, log_level="info"  # Public port
+    )
+    config_internal = uvicorn.Config(
+        app=internal_app, host="0.0.0.0", port=8001, log_level="info"  # Internal port
+    )
+
+    server_public = uvicorn.Server(config_public)
+    server_internal = uvicorn.Server(config_internal)
+
+    await asyncio.gather(server_public.serve(), server_internal.serve())
+
+
+if __name__ == "__main__":
+    asyncio.run(run_servers())
+
+# For backwards compatibility when running with uvicorn directly
+app = public_app
