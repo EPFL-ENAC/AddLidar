@@ -39,8 +39,9 @@ docker-build:
 
 docker-run: docker-build
 	@echo "Running docker image"
-	@echo "Open your browser at http://localhost:8081"
-	docker run -p 8081:8081 lidar-api:latest
+	@echo "Public API: http://localhost:8000"
+	@echo "Internal API: http://localhost:8001"
+	docker run -p 8000:8000 -p 8001:8001 lidar-api:latest
 
 
 
