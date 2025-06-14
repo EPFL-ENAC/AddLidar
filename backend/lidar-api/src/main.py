@@ -53,6 +53,11 @@ async def internal_health():
     return {"status": "healthy", "service": "internal"}
 
 
+@public_app.get("/health")
+async def public_health():
+    return {"status": "healthy", "service": "public"}
+
+
 # Register routers
 public_app.include_router(public_router)
 internal_app.include_router(sqlite_internal_router, tags=["sqlite"])
