@@ -7,8 +7,8 @@ from pathlib import Path
 import logging
 
 from src.api.routes import router as public_router
-from src.api.sqlite import public_router as sqlite_public_router
-from src.api.sqlite import internal_router as sqlite_internal_router
+from src.api.sqlite.index import public_router as sqlite_public_router
+from src.api.sqlite.index import internal_router as sqlite_internal_router
 from src.config.settings import settings
 
 
