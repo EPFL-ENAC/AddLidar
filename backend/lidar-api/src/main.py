@@ -1,4 +1,5 @@
 import asyncio
+import os
 import uvicorn
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse, FileResponse
@@ -16,10 +17,7 @@ from src.config.settings import settings
 public_app = FastAPI(title="AddLidar API - Public", root_path=settings.PATH_PREFIX)
 
 # Create internal app (cluster-only access)
-internal_app = FastAPI(
-    title="AddLidar API - Internal",
-    root_path="/internal",  # Different root path for internal routes
-)
+internal_app = FastAPI(title="AddLidar API - Internal", root_path=settings.PATH_PREFIX)
 
 
 # Shared exception handler
@@ -63,11 +61,21 @@ public_app.include_router(sqlite_public_router, tags=["sqlite"])
 
 # Single startup function to run both servers
 async def run_servers():
+
+    public_port = int(os.getenv("PUBLIC_PORT", 8000))
+    internal_port = int(os.getenv("INTERNAL_PORT", 8001))
+
     config_public = uvicorn.Config(
-        app=public_app, host="0.0.0.0", port=8000, log_level="info"  # Public port
+        app=public_app,
+        host="0.0.0.0",
+        port=public_port,
+        log_level="info",
     )
     config_internal = uvicorn.Config(
-        app=internal_app, host="0.0.0.0", port=8001, log_level="info"  # Internal port
+        app=internal_app,
+        host="0.0.0.0",
+        port=internal_port,
+        log_level="info",
     )
 
     server_public = uvicorn.Server(config_public)

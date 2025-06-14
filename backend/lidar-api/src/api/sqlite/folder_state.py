@@ -3,7 +3,7 @@ from pydantic import BaseModel
 from typing import Dict, Any, Optional
 import time
 
-from .base import get_db_connection, QueryResult, handle_db_errors, logger
+from .base import get_db_connection, QueryResult, logger
 
 
 # Pydantic models specific to folder state

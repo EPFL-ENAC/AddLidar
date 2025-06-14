@@ -2,7 +2,7 @@ from fastapi import APIRouter
 from typing import Dict, Any
 
 
-from .base import get_db_connection, QueryResult, handle_db_errors, logger
+from .base import get_db_connection, QueryResult, logger
 from .folder_state import (
     public_router as folder_state_public,
     internal_router as folder_state_internal,
@@ -46,7 +46,6 @@ internal_router.include_router(potree_metacloud_internal)
 # Shared endpoints that combine data from both tables
 @public_router.get("/processing_status", response_model=QueryResult)
 @internal_router.get("/processing_status", response_model=QueryResult)
-@handle_db_errors
 async def get_processing_status():
     """Get processing status overview for both folder_state and potree_metacloud_state"""
     conn = get_db_connection()
@@ -87,7 +86,6 @@ async def get_processing_status():
 
 @public_router.get("/settings", response_model=Dict[str, Any])
 @internal_router.get("/settings", response_model=Dict[str, Any])
-@handle_db_errors
 async def get_settings():
     """Get current settings"""
     # Convert settings to dictionary
