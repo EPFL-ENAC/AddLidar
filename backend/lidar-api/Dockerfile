@@ -38,7 +38,8 @@ COPY . .
 # Set the path to include the virtual environment's binaries
 ENV PATH="/app/.venv/bin:$PATH"
 
-EXPOSE 8081
+ENV PUBLIC_PORT=8000
+ENV INTERNAL_PORT=8001
 
-# Run the application using uv run
-CMD ["uv", "run", "uvicorn", "src.main:app", "--host", "0.0.0.0", "--port", "8081", "--proxy-headers", "--log-level", "debug", "--access-log"]
+# Run both servers using the new main.py startup method
+CMD ["uv", "run", "python", "-m", "src.main"]
