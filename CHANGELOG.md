@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.5.1](https://github.com/EPFL-ENAC/AddLidar/compare/v0.5.0...v0.5.1) (2025-06-15)
+
+
+### Bug Fixes
+
+* **scanner:** remove persist_state.sql copy instruction ([d409646](https://github.com/EPFL-ENAC/AddLidar/commit/d4096469f4a5c91f1c8b765369ecb51078231c80))
+
 ## [0.5.0](https://github.com/EPFL-ENAC/AddLidar/compare/v0.4.0...v0.5.0) (2025-06-15)
 
 
