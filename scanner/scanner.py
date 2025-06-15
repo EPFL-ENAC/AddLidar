@@ -4,6 +4,7 @@
 #   "kubernetes",
 #   "pydantic",
 #   "jinja2",
+#   "requests",
 # ]
 # ///
 """
@@ -29,6 +30,7 @@ try:
     # Import dependencies
     from kubernetes import client, config
     import jinja2
+    import requests
 except ImportError:
     print(
         "Error: required modules not found. Run this script with 'uv run' to auto-install dependencies."
@@ -55,6 +57,189 @@ DATABASE_PVC: str = ""
 BACKEND_URL: str = ""
 # We'll store parsed args globally so they can be accessed from other functions
 args = None
+
+
+# API Client Functions
+def api_get_folder_state(folder_key: str) -> Optional[Dict]:
+    """Get folder state from API by folder key"""
+    try:
+        url = f"{BACKEND_URL}/sqlite/folder_state/{folder_key}"
+        response = requests.get(url, timeout=30)
+        if response.status_code == 404:
+            return None
+        response.raise_for_status()
+        data = response.json()
+        # Return first record if available
+        if data.get("data") and len(data["data"]) > 0:
+            return data["data"][0]
+        return None
+    except Exception as e:
+        logger.error(f"Error fetching folder state for {folder_key}: {e}")
+        return None
+
+
+def api_check_mission_exists(mission_key: str) -> bool:
+    """Check if mission exists in folder_state via API"""
+    try:
+        url = f"{BACKEND_URL}/sqlite/folder_state/mission/{mission_key}"
+        response = requests.get(url, timeout=30)
+        if response.status_code == 404:
+            return False
+        response.raise_for_status()
+        data = response.json()
+        return data.get("count", 0) > 0
+    except Exception as e:
+        logger.error(f"Error checking mission existence for {mission_key}: {e}")
+        return False
+
+
+def api_get_potree_metacloud_state(mission_key: str) -> Optional[Dict]:
+    """Get potree metacloud state from API by mission key"""
+    try:
+        url = f"{BACKEND_URL}/sqlite/potree_metacloud_state/{mission_key}"
+        response = requests.get(url, timeout=30)
+        if response.status_code == 404:
+            return None
+        response.raise_for_status()
+        return response.json()
+    except Exception as e:
+        logger.error(f"Error fetching potree metacloud state for {mission_key}: {e}")
+        return None
+
+
+def api_create_folder_state(
+    folder_key: str,
+    mission_key: str,
+    fp: str,
+    size: int,
+    count: int,
+    output_path: str,
+    db_manager,
+) -> bool:
+    """Create or update folder state via API first, fallback to database for new records"""
+    try:
+        # First try to update existing record via API
+        url = f"{BACKEND_URL}/sqlite/folder_state/{folder_key}"
+        payload = {"fingerprint": fp, "processing_status": "pending"}
+        response = requests.put(url, json=payload, timeout=30)
+
+        if response.status_code == 404:
+            # Record doesn't exist - create it via direct database connection
+            logger.info(
+                f"Creating new folder state record via database for {folder_key}"
+            )
+            try:
+                with db_manager.get_connection() as conn:
+                    conn.execute(
+                        """INSERT INTO folder_state
+                        (folder_key, mission_key, fp, size_kb, file_count, last_checked, last_processed, processing_status, output_path)
+                        VALUES (?, ?, ?, ?, ?, ?, NULL, 'pending', ?)
+                        ON CONFLICT(folder_key) DO UPDATE SET
+                        mission_key = excluded.mission_key,
+                        fp = excluded.fp,
+                        size_kb = excluded.size_kb,
+                        file_count = excluded.file_count,
+                        last_checked = excluded.last_checked,
+                        last_processed = NULL,
+                        processing_status = 'pending',
+                        output_path = excluded.output_path""",
+                        (
+                            folder_key,
+                            mission_key,
+                            fp,
+                            size,
+                            count,
+                            int(time.time()),
+                            output_path,
+                        ),
+                    )
+                    conn.commit()
+                return True
+            except Exception as db_ex:
+                logger.error(
+                    f"Error creating folder state via database for {folder_key}: {db_ex}"
+                )
+                return False
+
+        response.raise_for_status()
+        return True
+    except Exception as e:
+        logger.error(f"Error creating/updating folder state for {folder_key}: {e}")
+        return False
+
+
+def api_create_potree_metacloud_state(
+    mission_key: str, fp: str, output_path: str, db_manager
+) -> bool:
+    """Create or update potree metacloud state via API first, fallback to database for new records"""
+    try:
+        # Try to update existing record via API
+        url = f"{BACKEND_URL}/sqlite/potree_metacloud_state/{mission_key}"
+        payload = {"fingerprint": fp, "processing_status": "pending"}
+        response = requests.put(url, json=payload, timeout=30)
+
+        if response.status_code == 404:
+            # Record doesn't exist - create it via direct database connection
+            logger.info(
+                f"Creating new potree metacloud state record via database for {mission_key}"
+            )
+            try:
+                current_time = int(time.time())
+                with db_manager.get_connection() as conn:
+                    conn.execute(
+                        """INSERT INTO potree_metacloud_state
+                        (mission_key, fp, output_path, last_checked, last_processed, processing_status)
+                        VALUES (?, ?, ?, ?, NULL, 'pending')
+                        ON CONFLICT(mission_key) DO UPDATE SET
+                        fp = excluded.fp,
+                        output_path = excluded.output_path,
+                        last_checked = excluded.last_checked,
+                        last_processed = NULL,
+                        processing_status = 'pending'""",
+                        (
+                            mission_key,
+                            fp,
+                            output_path,
+                            current_time,
+                        ),
+                    )
+                    conn.commit()
+                return True
+            except Exception as db_ex:
+                logger.error(
+                    f"Error creating potree metacloud state via database for {mission_key}: {db_ex}"
+                )
+                return False
+
+        response.raise_for_status()
+        return True
+    except Exception as e:
+        logger.error(
+            f"Error creating/updating potree metacloud state for {mission_key}: {e}"
+        )
+        return False
+
+
+def api_update_potree_metacloud_last_checked(mission_key: str) -> bool:
+    """Update only the last_checked timestamp for potree metacloud state"""
+    try:
+        # Get current state first to preserve other fields
+        current_state = api_get_potree_metacloud_state(mission_key)
+        if not current_state:
+            return False
+
+        url = f"{BACKEND_URL}/sqlite/potree_metacloud_state/{mission_key}"
+        payload = {
+            "processing_status": current_state.get("processing_status", "pending")
+        }
+        response = requests.put(url, json=payload, timeout=30)
+        response.raise_for_status()
+        return True
+    except Exception as e:
+        logger.error(
+            f"Error updating last_checked for potree metacloud state {mission_key}: {e}"
+        )
+        return False
 
 
 def fingerprint_file(file_path: str) -> str:
@@ -288,23 +473,14 @@ def scan_for_metacloud_files(
             )
 
             # Check if we have this mission key in folder_state
-            with db_manager.get_connection() as conn:
-                cursor = conn.execute(
-                    "SELECT 1 FROM folder_state WHERE mission_key=? LIMIT 1", (level1,)
+            if not api_check_mission_exists(level1):
+                logger.info(
+                    f"Mission {level1} not in folder_state, skipping metacloud processing"
                 )
-                if not cursor.fetchone():
-                    logger.info(
-                        f"Mission {level1} not in folder_state, skipping metacloud processing"
-                    )
-                    continue
+                continue
 
             # Check if the metacloud file has changed or needs reprocessing
-            with db_manager.get_connection() as conn:
-                cursor = conn.execute(
-                    "SELECT fp, processing_status FROM potree_metacloud_state WHERE mission_key=?",
-                    (level1,),
-                )
-                row = cursor.fetchone()
+            row = api_get_potree_metacloud_state(level1)
 
             # Check if metacloud file needs processing:
             # 1. New file (not in database)
@@ -314,14 +490,14 @@ def scan_for_metacloud_files(
             if not row:
                 logger.info(f"New .metacloud file detected for mission {level1}")
                 needs_processing = True
-            elif row[0] != metacloud_fp:
+            elif row.get("fp") != metacloud_fp:
                 logger.info(
                     f"Fingerprint change detected in .metacloud file for mission {level1}"
                 )
                 needs_processing = True
-            elif row[1] in ("pending", "failed", None):
+            elif row.get("processing_status") in ("pending", "failed", None):
                 logger.info(
-                    f"Incomplete processing detected for .metacloud file in mission {level1} (status: {row[1]})"
+                    f"Incomplete processing detected for .metacloud file in mission {level1} (status: {row.get('processing_status')})"
                 )
                 needs_processing = True
 
@@ -334,38 +510,15 @@ def scan_for_metacloud_files(
                 if not dry_run:
                     output_path = os.path.join(os.path.dirname(ZIP), "Potree", level1)
 
-                    with db_manager.get_connection() as conn:
-                        conn.execute(
-                            """INSERT INTO potree_metacloud_state
-                            (mission_key, fp, output_path, last_checked, last_processed, processing_status)
-                            VALUES (?, ?, ?, ?, NULL, 'pending')
-                            ON CONFLICT(mission_key) DO UPDATE SET
-                            fp = excluded.fp,
-                            output_path = excluded.output_path,
-                            last_checked = excluded.last_checked,
-                            last_processed = NULL,
-                            processing_status = 'pending'""",
-                            (
-                                level1,
-                                metacloud_fp,
-                                output_path,
-                                current_time,
-                            ),
-                        )
-                        conn.commit()
+                    api_create_potree_metacloud_state(
+                        level1, metacloud_fp, output_path, db_manager
+                    )
             else:
                 # Just update the last_checked timestamp for successful completions
                 if not dry_run:
-                    with db_manager.get_connection() as conn:
-                        conn.execute(
-                            """UPDATE potree_metacloud_state
-                            SET last_checked = ?
-                            WHERE mission_key = ?""",
-                            (current_time, level1),
-                        )
-                        conn.commit()
+                    api_update_potree_metacloud_last_checked(level1)
                 logger.debug(
-                    f"No processing needed for .metacloud file in mission {level1} (status: {row[1] if row else 'N/A'})"
+                    f"No processing needed for .metacloud file in mission {level1} (status: {row.get('processing_status') if row else 'N/A'})"
                 )
 
         except Exception as e:
@@ -406,12 +559,7 @@ def collect_changed_folders(
                 fp, size, count = get_directory_stats(src)
                 logger.info(f"Fingerprint: {fp}, Size: {size} KB, File Count: {count}")
 
-                with db_manager.get_connection() as conn:
-                    cursor = conn.execute(
-                        "SELECT fp, processing_status FROM folder_state WHERE folder_key=?",
-                        (rel,),
-                    )
-                    row = cursor.fetchone()
+                row = api_get_folder_state(rel)
 
                 # Check if folder needs processing:
                 # 1. New folder (not in database)
@@ -421,12 +569,12 @@ def collect_changed_folders(
                 if not row:
                     logger.info(f"New folder detected: {rel}")
                     needs_processing = True
-                elif row[0] != fp:
+                elif row.get("fp") != fp:
                     logger.info(f"Fingerprint change detected in {rel}")
                     needs_processing = True
-                elif row[1] in ("pending", "failed", None):
+                elif row.get("processing_status") in ("pending", "failed", None):
                     logger.info(
-                        f"Incomplete processing detected in {rel} (status: {row[1]})"
+                        f"Incomplete processing detected in {rel} (status: {row.get('processing_status')})"
                     )
                     needs_processing = True
 
@@ -435,34 +583,18 @@ def collect_changed_folders(
                     changed_folders.append([rel, fp])
 
                     if not dry_run:
-                        with db_manager.get_connection() as conn:
-                            conn.execute(
-                                """INSERT INTO folder_state
-                            (folder_key, mission_key, fp, size_kb, file_count, last_checked, last_processed, processing_status, output_path)
-                            VALUES (?, ?, ?, ?, ?, ?, NULL, 'pending', ?)
-                            ON CONFLICT(folder_key) DO UPDATE SET
-                            mission_key = excluded.mission_key,
-                            fp = excluded.fp,
-                            size_kb = excluded.size_kb,
-                            file_count = excluded.file_count,
-                            last_checked = excluded.last_checked,
-                            last_processed = NULL,
-                            processing_status = 'pending',
-                            output_path = excluded.output_path""",
-                                (
-                                    rel,
-                                    level1,
-                                    fp,
-                                    size,
-                                    count,
-                                    int(time.time()),
-                                    os.path.join(ZIP, f"{rel}.tar.gz"),
-                                ),
-                            )
-                            conn.commit()
+                        api_create_folder_state(
+                            rel,
+                            level1,
+                            fp,
+                            size,
+                            count,
+                            os.path.join(ZIP, f"{rel}.tar.gz"),
+                            db_manager,
+                        )
                 else:
                     logger.debug(
-                        f"No processing needed for {rel} (status: {row[1] if row else 'N/A'})"
+                        f"No processing needed for {rel} (status: {row.get('processing_status') if row else 'N/A'})"
                     )
 
             except Exception as e:
@@ -617,7 +749,6 @@ def queue_batch_zip_job(
             "db_path": DB,
             "db_dir": os.path.dirname(DB),
             "fts_addlidar_pvc_name": FTS_ADDLIDAR_PVC,
-            "database_pvc_name": DATABASE_PVC,
             "backend_url": BACKEND_URL,
             "compression_image_registry": os.environ.get("COMPRESSION_IMAGE_REGISTRY"),
             "compression_image_name": os.environ.get("COMPRESSION_IMAGE_NAME"),
