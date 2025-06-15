@@ -51,6 +51,8 @@ DB: str = ""
 FTS_ADDLIDAR_PVC: str = ""
 # Default PVC for database, can be overridden by command line argument
 DATABASE_PVC: str = ""
+# Default backend URL, can be overridden by command line argument
+BACKEND_URL: str = ""
 # We'll store parsed args globally so they can be accessed from other functions
 args = None
 
@@ -482,7 +484,7 @@ def queue_potree_conversion_jobs(
     Returns:
         Optional[int]: Number of jobs created (1 if batch job created) or None if no action was taken
     """
-    global ORIG, ZIP, DB, FTS_ADDLIDAR_PVC, DATABASE_PVC, args
+    global ORIG, ZIP, DB, FTS_ADDLIDAR_PVC, DATABASE_PVC, BACKEND_URL, args
 
     if not metacloud_files:
         logger.info("No metacloud files to process, skipping job creation")
@@ -521,6 +523,7 @@ def queue_potree_conversion_jobs(
             "db_dir": os.path.dirname(DB),
             "fts_addlidar_pvc_name": FTS_ADDLIDAR_PVC,
             "database_pvc_name": DATABASE_PVC,
+            "backend_url": BACKEND_URL,
             "potree_converter_image_registry": os.environ.get(
                 "POTREE_CONVERTER_IMAGE_REGISTRY"
             ),
@@ -578,7 +581,7 @@ def queue_batch_zip_job(
     Returns:
         Optional[int]: Number of folders processed or None if no action was taken
     """
-    global ORIG, ZIP, DB, DATABASE_PVC, FTS_ADDLIDAR_PVC, args
+    global ORIG, ZIP, DB, DATABASE_PVC, FTS_ADDLIDAR_PVC, BACKEND_URL, args
 
     if not folders:
         logger.info("No folders to process, skipping batch job creation")
@@ -615,6 +618,7 @@ def queue_batch_zip_job(
             "db_dir": os.path.dirname(DB),
             "fts_addlidar_pvc_name": FTS_ADDLIDAR_PVC,
             "database_pvc_name": DATABASE_PVC,
+            "backend_url": BACKEND_URL,
             "compression_image_registry": os.environ.get("COMPRESSION_IMAGE_REGISTRY"),
             "compression_image_name": os.environ.get("COMPRESSION_IMAGE_NAME"),
             "compression_image_tag": os.environ.get("COMPRESSION_IMAGE_TAG"),
@@ -653,7 +657,7 @@ def main() -> None:
     Main function to scan directories and enqueue archive jobs.
     """
     # Access global constants and args to modify them
-    global ORIG, ZIP, DB, FTS_ADDLIDAR_PVC, DATABASE_PVC, args
+    global ORIG, ZIP, DB, FTS_ADDLIDAR_PVC, DATABASE_PVC, BACKEND_URL, args
 
     parser = argparse.ArgumentParser(
         description="LiDAR Archive Scanner and Job Enqueuer"
@@ -689,6 +693,11 @@ def main() -> None:
         "--fts-addlidar-pvc",
         default="fts-addlidar",
         help="PVC name for the FTS AddLidar (default: 'fts-addlidar')",
+    )
+    parser.add_argument(
+        "--backend-url",
+        default="http://backend-internal",
+        help="Backend API URL for database updates (default: 'http://backend-internal')",
     )
     # parser.add_argument(
     #     "--execution-env",
@@ -731,6 +740,7 @@ def main() -> None:
     DB = args.db_path
     FTS_ADDLIDAR_PVC = args.fts_addlidar_pvc
     DATABASE_PVC = args.database_pvc
+    BACKEND_URL = args.backend_url
     execution_env = "batch"
 
     dry_run: bool = args.dry_run
