@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.6.0](https://github.com/EPFL-ENAC/AddLidar/compare/v0.5.1...v0.6.0) (2025-06-15)
+
+
+### Features
+
+* **scanner:** add function to update last_checked timestamp for folder state ([ab64a4a](https://github.com/EPFL-ENAC/AddLidar/commit/ab64a4acee86928579ddffb620e2b368892c4da1))
+
+
+### Bug Fixes
+
+* **scanner:** remove folder state condition for potree converter ([ab64a4a](https://github.com/EPFL-ENAC/AddLidar/commit/ab64a4acee86928579ddffb620e2b368892c4da1))
+
 ## [0.5.1](https://github.com/EPFL-ENAC/AddLidar/compare/v0.5.0...v0.5.1) (2025-06-15)
 
 
