@@ -194,6 +194,21 @@ def api_update_potree_metacloud_last_checked(mission_key: str) -> bool:
         return False
 
 
+def api_update_folder_last_checked(folder_key: str) -> bool:
+    """Update only the last_checked timestamp for folder state"""
+    try:
+        url = f"{BACKEND_URL}/sqlite/folder_state/{folder_key}/last_checked"
+        response = requests.patch(url, timeout=30)
+        if response.status_code == 404:
+            logger.warning(f"Folder state not found for {folder_key}")
+            return False
+        response.raise_for_status()
+        return True
+    except Exception as e:
+        logger.error(f"Error updating last_checked for folder {folder_key}: {e}")
+        return False
+
+
 def fingerprint_file(file_path: str) -> str:
     """
     Generate a unique fingerprint for a single file.
@@ -331,13 +346,6 @@ def scan_for_metacloud_files(dry_run: bool = False) -> List[List[str]]:
                 f"Found .metacloud file in {level1}, fingerprint: {metacloud_fp}"
             )
 
-            # Check if we have this mission key in folder_state
-            if not api_check_mission_exists(level1):
-                logger.info(
-                    f"Mission {level1} not in folder_state, skipping metacloud processing"
-                )
-                continue
-
             # Check if the metacloud file has changed or needs reprocessing
             row = api_get_potree_metacloud_state(level1)
 
@@ -446,6 +454,10 @@ def collect_changed_folders(dry_run: bool = False) -> List[List[str]]:
                             os.path.join(ZIP, f"{rel}.tar.gz"),
                         )
                 else:
+                    # Just update the last_checked timestamp for successful completions
+                    if not dry_run:
+                        answer = api_update_folder_last_checked(rel)
+                        logger.debug(f"Updated last_checked for {rel}: {answer}")
                     logger.debug(
                         f"No processing needed for {rel} (status: {row.get('processing_status') if row else 'N/A'})"
                     )
