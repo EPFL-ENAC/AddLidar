@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.5.0](https://github.com/EPFL-ENAC/AddLidar/compare/v0.4.0...v0.5.0) (2025-06-15)
+
+
+### Features
+
+* **api:** add create and update endpoints for folder and potree metacloud states ([b043867](https://github.com/EPFL-ENAC/AddLidar/commit/b0438672a3416ad76b4430e6db2a6997515d7fc5))
+* **api:** integrate backend URL for database updates in job templates and scanner ([198f2f1](https://github.com/EPFL-ENAC/AddLidar/commit/198f2f11603ae26e9c36b8258657e7f53fec8157))
+* **api:** refactor folder and potree metacloud state creation to use API exclusively ([97073ba](https://github.com/EPFL-ENAC/AddLidar/commit/97073ba9fc3c9b7a8ddffac31ddac1d81ce0e66b))
+* **api:** refactor scanner to use API for folder and potree metacloud state management ([1ccedd5](https://github.com/EPFL-ENAC/AddLidar/commit/1ccedd59e7c2b28e5331471fefbe47dceb357605))
+
 ## [0.4.0](https://github.com/EPFL-ENAC/AddLidar/compare/v0.3.0...v0.4.0) (2025-06-15)
 
 
