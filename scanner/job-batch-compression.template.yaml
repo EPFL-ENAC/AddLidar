@@ -164,8 +164,6 @@ spec:
               mountPath: "{{ zip_dir }}"
             - mountPath: /data
               name: data
-            - mountPath: "{{ db_dir }}"
-              name: db-dir
           resources:
             limits:
               cpu: "4"
@@ -179,6 +177,3 @@ spec:
         - name: fts-addlidar
           persistentVolumeClaim:
             claimName: "{{ fts_addlidar_pvc_name }}"
-        - name: db-dir
-          persistentVolumeClaim:
-            claimName: "{{ database_pvc_name }}"
