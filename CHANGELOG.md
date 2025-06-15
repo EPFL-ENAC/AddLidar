@@ -1,5 +1,17 @@
 # Changelog
 
+## [0.4.0](https://github.com/EPFL-ENAC/AddLidar/compare/v0.3.0...v0.4.0) (2025-06-15)
+
+
+### Features
+
+* **api:** add health check endpoint for public app ([f403762](https://github.com/EPFL-ENAC/AddLidar/commit/f403762983ffe27e3bd8cf73b5a5f5c132ef962b))
+* **api:** refactor main.py to utilize environment variables for server ports and clean up imports ([1e44e20](https://github.com/EPFL-ENAC/AddLidar/commit/1e44e2072b7d096e50d6081fb9e5691f8cd7c9ae))
+* **backend:** create two apps - public & internal to protect sensitives routes ([f628383](https://github.com/EPFL-ENAC/AddLidar/commit/f628383c2b949ee7a085d62ba0cc25cd081521f3))
+* **backend:** refactor SQLite api file by splitting functionality into separate modules ([1358662](https://github.com/EPFL-ENAC/AddLidar/commit/13586625b6f1e84ffa6365ecf38bba68e2f641a5))
+* **docker:** update Dockerfile and Makefile to expose public and internal ports 8000 and 8001 ([06ea382](https://github.com/EPFL-ENAC/AddLidar/commit/06ea3824a306ecaf4582e4f70ba92e1b2367e4b2))
+* **sqlite:** add update endpoints for folder and potree metacloud states - internal protected ([99d00d8](https://github.com/EPFL-ENAC/AddLidar/commit/99d00d80e14de122a7ad367f6add399d8ec1a5a8))
+
 ## [0.3.0](https://github.com/EPFL-ENAC/AddLidar/compare/v0.2.0...v0.3.0) (2025-06-12)
 
 
