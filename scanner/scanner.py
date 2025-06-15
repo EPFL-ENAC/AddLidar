@@ -48,11 +48,8 @@ logger = logging.getLogger("scanner.py")
 # Constants will be set in main() from arguments
 ORIG: str = ""
 ZIP: str = ""
-DB: str = ""
 # Default PVC for FTS AddLidar, can be overridden by command line argument
 FTS_ADDLIDAR_PVC: str = ""
-# Default PVC for database, can be overridden by command line argument
-DATABASE_PVC: str = ""
 # Default backend URL, can be overridden by command line argument
 BACKEND_URL: str = ""
 # We'll store parsed args globally so they can be accessed from other functions
@@ -108,13 +105,7 @@ def api_get_potree_metacloud_state(mission_key: str) -> Optional[Dict]:
 
 
 def api_create_folder_state(
-    folder_key: str,
-    mission_key: str,
-    fp: str,
-    size: int,
-    count: int,
-    output_path: str,
-    db_manager=None,  # No longer needed, kept for compatibility
+    folder_key: str, mission_key: str, fp: str, size: int, count: int, output_path: str
 ) -> bool:
     """Create or update folder state via API"""
     try:
@@ -151,7 +142,6 @@ def api_create_potree_metacloud_state(
     mission_key: str,
     fp: str,
     output_path: str,
-    db_manager=None,  # No longer needed, kept for compatibility
 ) -> bool:
     """Create or update potree metacloud state via API"""
     try:
@@ -479,7 +469,7 @@ def queue_potree_conversion_jobs(
     Returns:
         Optional[int]: Number of jobs created (1 if batch job created) or None if no action was taken
     """
-    global ORIG, ZIP, DB, FTS_ADDLIDAR_PVC, DATABASE_PVC, BACKEND_URL, args
+    global ORIG, ZIP, FTS_ADDLIDAR_PVC, BACKEND_URL, args
 
     if not metacloud_files:
         logger.info("No metacloud files to process, skipping job creation")
@@ -514,10 +504,7 @@ def queue_potree_conversion_jobs(
             "timestamp": timestamp,
             "metacloud_files": metacloud_files,
             "parallelism": parallelism,
-            "db_path": DB,
-            "db_dir": os.path.dirname(DB),
             "fts_addlidar_pvc_name": FTS_ADDLIDAR_PVC,
-            "database_pvc_name": DATABASE_PVC,
             "backend_url": BACKEND_URL,
             "potree_converter_image_registry": os.environ.get(
                 "POTREE_CONVERTER_IMAGE_REGISTRY"
@@ -576,7 +563,7 @@ def queue_batch_zip_job(
     Returns:
         Optional[int]: Number of folders processed or None if no action was taken
     """
-    global ORIG, ZIP, DB, DATABASE_PVC, FTS_ADDLIDAR_PVC, BACKEND_URL, args
+    global ORIG, ZIP, FTS_ADDLIDAR_PVC, BACKEND_URL, args
 
     if not folders:
         logger.info("No folders to process, skipping batch job creation")
@@ -609,8 +596,6 @@ def queue_batch_zip_job(
             "parallelism": args.parallelism,
             "orig_dir": ORIG,
             "zip_dir": ZIP,
-            "db_path": DB,
-            "db_dir": os.path.dirname(DB),
             "fts_addlidar_pvc_name": FTS_ADDLIDAR_PVC,
             "backend_url": BACKEND_URL,
             "compression_image_registry": os.environ.get("COMPRESSION_IMAGE_REGISTRY"),
@@ -651,7 +636,7 @@ def main() -> None:
     Main function to scan directories and enqueue archive jobs.
     """
     # Access global constants and args to modify them
-    global ORIG, ZIP, DB, FTS_ADDLIDAR_PVC, DATABASE_PVC, BACKEND_URL, args
+    global ORIG, ZIP, FTS_ADDLIDAR_PVC, BACKEND_URL, args
 
     parser = argparse.ArgumentParser(
         description="LiDAR Archive Scanner and Job Enqueuer"
@@ -666,21 +651,12 @@ def main() -> None:
         default="./zip_root",
         help="Root directory where compressed archives will be stored",
     )
-    parser.add_argument(
-        "--db-path",
-        default="./state/archive.db",
-        help="Path to the SQLite database file for tracking state",
-    )
+
     parser.add_argument(
         "--log-level",
         choices=["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"],
         default="INFO",
         help="Set logging level (default: INFO)",
-    )
-    parser.add_argument(
-        "--database-pvc",
-        default="database",
-        help="PVC name for the database (default: 'database')",
     )
 
     parser.add_argument(
@@ -731,9 +707,7 @@ def main() -> None:
     # Assign parsed arguments to global constants
     ORIG = args.original_root
     ZIP = args.zip_root
-    DB = args.db_path
     FTS_ADDLIDAR_PVC = args.fts_addlidar_pvc
-    DATABASE_PVC = args.database_pvc
     BACKEND_URL = args.backend_url
     execution_env = "batch"
 
@@ -751,13 +725,7 @@ def main() -> None:
         logger.warning(f"Zip root directory '{ZIP}' does not exist, creating it...")
         os.makedirs(ZIP, exist_ok=True)
 
-    # Ensure DB directory exists
-    db_dir = os.path.dirname(DB)
-    if db_dir and not os.path.isdir(db_dir):
-        logger.warning(f"Database directory '{db_dir}' does not exist, creating it...")
-        os.makedirs(db_dir, exist_ok=True)
-
-    logger.info(f"Starting scan: ORIG='{ORIG}', ZIP='{ZIP}', DB='{DB}'")
+    logger.info(f"Starting scan: ORIG='{ORIG}', ZIP='{ZIP}'")
     logger.info(
         f"Options: execution_env='{execution_env}', log_level='{log_level}', "
         f"dry-run={dry_run}, export_only={export_only}"
