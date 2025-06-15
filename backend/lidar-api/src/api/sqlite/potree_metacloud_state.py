@@ -25,6 +25,13 @@ class PotreeMetacloudStateUpdate(BaseModel):
     error_message: Optional[str] = None
 
 
+class PotreeMetacloudStateCreate(BaseModel):
+    mission_key: str
+    fingerprint: str
+    output_path: str
+    processing_status: Optional[str] = "pending"
+
+
 # Create routers
 public_router = APIRouter()
 internal_router = APIRouter()
@@ -187,3 +194,97 @@ async def get_potree_metacloud_state_by_mission(mission_key: str):
         )
 
     return dict(row)
+
+
+@internal_router.post("/potree_metacloud_state", response_model=Dict[str, Any])
+async def create_potree_metacloud_state(create_data: PotreeMetacloudStateCreate):
+    """Create new potree metacloud state record (Internal use only)"""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    current_time = int(time.time())
+
+    try:
+        cursor.execute(
+            """INSERT INTO potree_metacloud_state
+            (mission_key, fp, output_path, last_checked, last_processed, processing_status)
+            VALUES (?, ?, ?, ?, NULL, ?)
+            ON CONFLICT(mission_key) DO UPDATE SET
+            fp = excluded.fp,
+            output_path = excluded.output_path,
+            last_checked = excluded.last_checked,
+            last_processed = NULL,
+            processing_status = excluded.processing_status""",
+            (
+                create_data.mission_key,
+                create_data.fingerprint,
+                create_data.output_path,
+                current_time,
+                create_data.processing_status,
+            ),
+        )
+        conn.commit()
+
+        # Return created record
+        cursor.execute(
+            """SELECT mission_key, fp, output_path, processing_status, 
+               last_checked FROM potree_metacloud_state WHERE mission_key = ?""",
+            (create_data.mission_key,),
+        )
+        created_record = cursor.fetchone()
+        conn.close()
+
+        return {
+            "message": "Potree metacloud state created successfully",
+            "record": dict(created_record),
+        }
+    except Exception as e:
+        conn.close()
+        raise HTTPException(
+            status_code=500, detail=f"Error creating potree metacloud state: {str(e)}"
+        )
+
+
+@internal_router.patch(
+    "/potree_metacloud_state/{mission_key:path}/last_checked",
+    response_model=Dict[str, Any],
+)
+async def update_potree_metacloud_last_checked(mission_key: str):
+    """Update only the last_checked timestamp for potree metacloud state (Internal use only)"""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    # Check if record exists
+    cursor.execute(
+        "SELECT mission_key FROM potree_metacloud_state WHERE mission_key = ?",
+        (mission_key,),
+    )
+    if not cursor.fetchone():
+        conn.close()
+        raise HTTPException(
+            status_code=404,
+            detail=f"Potree metacloud state record not found for mission_key: {mission_key}",
+        )
+
+    # Update only last_checked timestamp
+    current_time = int(time.time())
+    cursor.execute(
+        "UPDATE potree_metacloud_state SET last_checked = ? WHERE mission_key = ?",
+        (current_time, mission_key),
+    )
+    conn.commit()
+
+    # Return updated record
+    cursor.execute(
+        """SELECT mission_key, fp, processing_status, 
+           processing_time, error_message, last_checked 
+           FROM potree_metacloud_state WHERE mission_key = ?""",
+        (mission_key,),
+    )
+    updated_record = cursor.fetchone()
+    conn.close()
+
+    return {
+        "message": "Potree metacloud state last_checked updated successfully",
+        "record": dict(updated_record),
+    }

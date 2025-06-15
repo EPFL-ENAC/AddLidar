@@ -28,6 +28,16 @@ class FolderStateUpdate(BaseModel):
     error_message: Optional[str] = None
 
 
+class FolderStateCreate(BaseModel):
+    folder_key: str
+    mission_key: str
+    fingerprint: str
+    size_kb: int
+    file_count: int
+    output_path: str
+    processing_status: Optional[str] = "pending"
+
+
 # Create routers
 public_router = APIRouter()
 internal_router = APIRouter()
@@ -255,3 +265,102 @@ async def get_folder_state_by_mission(
     data = [dict(row) for row in rows]
 
     return QueryResult(data=data, count=count)
+
+
+@internal_router.post("/folder_state", response_model=Dict[str, Any])
+async def create_folder_state(create_data: FolderStateCreate):
+    """Create new folder state record (Internal use only)"""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    current_time = int(time.time())
+
+    try:
+        cursor.execute(
+            """INSERT INTO folder_state
+            (folder_key, mission_key, fp, size_kb, file_count, last_checked, last_processed, processing_status, output_path)
+            VALUES (?, ?, ?, ?, ?, ?, NULL, ?, ?)
+            ON CONFLICT(folder_key) DO UPDATE SET
+            mission_key = excluded.mission_key,
+            fp = excluded.fp,
+            size_kb = excluded.size_kb,
+            file_count = excluded.file_count,
+            last_checked = excluded.last_checked,
+            last_processed = NULL,
+            processing_status = excluded.processing_status,
+            output_path = excluded.output_path""",
+            (
+                create_data.folder_key,
+                create_data.mission_key,
+                create_data.fingerprint,
+                create_data.size_kb,
+                create_data.file_count,
+                current_time,
+                create_data.processing_status,
+                create_data.output_path,
+            ),
+        )
+        conn.commit()
+
+        # Return created record
+        cursor.execute(
+            """SELECT folder_key, mission_key, fp, processing_status, 
+               size_kb, file_count, last_checked FROM folder_state WHERE folder_key = ?""",
+            (create_data.folder_key,),
+        )
+        created_record = cursor.fetchone()
+        conn.close()
+
+        return {
+            "message": "Folder state created successfully",
+            "record": dict(created_record),
+        }
+    except Exception as e:
+        conn.close()
+        raise HTTPException(
+            status_code=500, detail=f"Error creating folder state: {str(e)}"
+        )
+
+
+@internal_router.patch(
+    "/folder_state/{folder_key:path}/last_checked", response_model=Dict[str, Any]
+)
+async def update_folder_state_last_checked(folder_key: str):
+    """Update only the last_checked timestamp for folder state (Internal use only)"""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    # Check if record exists
+    cursor.execute(
+        "SELECT folder_key FROM folder_state WHERE folder_key = ?",
+        (folder_key,),
+    )
+    if not cursor.fetchone():
+        conn.close()
+        raise HTTPException(
+            status_code=404,
+            detail=f"Folder state record not found for folder_key: {folder_key}",
+        )
+
+    # Update only last_checked timestamp
+    current_time = int(time.time())
+    cursor.execute(
+        "UPDATE folder_state SET last_checked = ? WHERE folder_key = ?",
+        (current_time, folder_key),
+    )
+    conn.commit()
+
+    # Return updated record
+    cursor.execute(
+        """SELECT folder_key, mission_key, fp, processing_status, 
+           processing_time, error_message, last_checked 
+           FROM folder_state WHERE folder_key = ?""",
+        (folder_key,),
+    )
+    updated_record = cursor.fetchone()
+    conn.close()
+
+    return {
+        "message": "Folder state last_checked updated successfully",
+        "record": dict(updated_record),
+    }
