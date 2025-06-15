@@ -80,6 +80,9 @@ spec:
           command: ["/bin/bash", "-c"]
           args:
             - |
+              # Set backend URL for API calls
+              BACKEND_URL="{{ backend_url | default('http://backend-internal') }}"
+
               # Check if the folder is valid before proceeding
               if [ -e "/data/folder_valid.txt" ] && [ "$(cat /data/folder_valid.txt)" == "true" ]; then
                 INPUT_PATH=$(cat /data/input_path.txt)
@@ -93,24 +96,29 @@ spec:
                 if /usr/local/bin/archive_one_folder.sh /lidar/"$INPUT_PATH" /zips/"$OUTPUT_PATH"; then
                   echo "Archive created successfully: $OUTPUT_PATH"
                   
-                  # Update database with success status
+                  # Update database with success status via API
                   echo "Updating database for ${INPUT_PATH} with success status"
-                  TIMESTAMP=$(date +%s)
-                  PROCESSING_TIME=$((${TIMESTAMP} - ${START_TIME}))
-                  echo "Values to be updated: TIMESTAMP=${TIMESTAMP}, FINGERPRINT=${FINGERPRINT}, PROCESSING_TIME=${PROCESSING_TIME} for ${INPUT_PATH}"
-                  sqlite3 "{{ db_path }}" \
-                    "UPDATE folder_state SET last_processed = ${TIMESTAMP}, fp = '${FINGERPRINT}', processing_status = 'success', processing_time = ${PROCESSING_TIME} WHERE folder_key = '${INPUT_PATH}';" && \
+                  END_TIME=$(date +%s)
+                  PROCESSING_TIME=$((END_TIME - START_TIME))
+                  
+                  curl -X PUT "${BACKEND_URL}/sqlite/folder_state/${INPUT_PATH}" \
+                    -H "Content-Type: application/json" \
+                    -d "{\"fingerprint\":\"${FINGERPRINT}\",\"processing_status\":\"success\",\"processing_time\":${PROCESSING_TIME}}" \
+                    --max-time 30 --retry 3 && \
                   echo "Database updated successfully for ${INPUT_PATH}" || \
                   echo "Failed to update database for ${INPUT_PATH}"
                 else
                   echo "Archive creation failed for: $INPUT_PATH"
                   
-                  # Update database with failed status
+                  # Update database with failed status via API
                   echo "Updating database for ${INPUT_PATH} with failed status"
-                  TIMESTAMP=$(date +%s)
-                  PROCESSING_TIME=$((${TIMESTAMP} - ${START_TIME}))
-                  sqlite3 "{{ db_path }}" \
-                    "UPDATE folder_state SET last_processed = ${TIMESTAMP}, fp = '${FINGERPRINT}', processing_status = 'failed', processing_time = ${PROCESSING_TIME}, error_message = 'Archive creation failed' WHERE folder_key = '${INPUT_PATH}';" && \
+                  END_TIME=$(date +%s)
+                  PROCESSING_TIME=$((END_TIME - START_TIME))
+                  
+                  curl -X PUT "${BACKEND_URL}/sqlite/folder_state/${INPUT_PATH}" \
+                    -H "Content-Type: application/json" \
+                    -d "{\"fingerprint\":\"${FINGERPRINT}\",\"processing_status\":\"failed\",\"processing_time\":${PROCESSING_TIME},\"error_message\":\"Archive creation failed\"}" \
+                    --max-time 30 --retry 3 && \
                   echo "Database updated with failed status for ${INPUT_PATH}" || \
                   echo "Failed to update database for ${INPUT_PATH}"
                   
@@ -119,8 +127,8 @@ spec:
 
                 # Show the current state of the database record after update
                 echo "Database record state after update:"
-                sqlite3 -header -column "{{ db_path }}" \
-                  "SELECT folder_key, processing_status, error_message FROM folder_state WHERE folder_key = '${INPUT_PATH}';" || \
+                curl -s "${BACKEND_URL}/sqlite/folder_state/${INPUT_PATH}" \
+                  --max-time 10 | jq -r '.folder_key, .processing_status, .error_message' 2>/dev/null || \
                 echo "Failed to query database record"
               else
                 # Handle invalid or empty folder case
@@ -130,11 +138,13 @@ spec:
                   
                   echo "Skipping archive process - invalid or empty folder: ${INPUT_PATH}"
                   
-                  # Update database with failed status for invalid/empty folder
+                  # Update database with failed status for invalid/empty folder via API
                   echo "Updating database for ${INPUT_PATH} with failed status (invalid/empty folder)"
-                  TIMESTAMP=$(date +%s)
-                  sqlite3 "{{ db_path }}" \
-                    "UPDATE folder_state SET last_processed = ${TIMESTAMP}, processing_status = 'empty', processing_time = 0, error_message = 'Folder is invalid or empty' WHERE folder_key = '${INPUT_PATH}';" && \
+                  
+                  curl -X PUT "${BACKEND_URL}/sqlite/folder_state/${INPUT_PATH}" \
+                    -H "Content-Type: application/json" \
+                    -d "{\"fingerprint\":\"${FINGERPRINT}\",\"processing_status\":\"empty\",\"processing_time\":0,\"error_message\":\"Folder is invalid or empty\"}" \
+                    --max-time 30 --retry 3 && \
                   echo "Database updated with failed status for invalid folder ${INPUT_PATH}" || \
                   echo "Failed to update database for ${INPUT_PATH}"
                 else
