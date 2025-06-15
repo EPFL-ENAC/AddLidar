@@ -1,6 +1,7 @@
 import asyncio
 import os
 import uvicorn
+from contextlib import asynccontextmanager
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse, FileResponse
 from pydantic import ValidationError
@@ -11,13 +12,35 @@ from src.api.routes import router as public_router
 from src.api.sqlite.index import public_router as sqlite_public_router
 from src.api.sqlite.index import internal_router as sqlite_internal_router
 from src.config.settings import settings
+from src.config.database import initialize_database
+
+
+@asynccontextmanager
+async def lifespan(app: FastAPI):
+    """Handle application lifespan events"""
+    # Startup
+    try:
+        initialize_database()
+        logging.info("Database initialization completed successfully")
+    except Exception as e:
+        logging.error(f"Failed to initialize database during startup: {e}")
+        raise
+
+    yield
+
+    # Shutdown (if needed)
+    logging.info("Application shutting down")
 
 
 # Create public app (external access)
-public_app = FastAPI(title="AddLidar API - Public", root_path=settings.PATH_PREFIX)
+public_app = FastAPI(
+    title="AddLidar API - Public", root_path=settings.PATH_PREFIX, lifespan=lifespan
+)
 
 # Create internal app (cluster-only access)
-internal_app = FastAPI(title="AddLidar API - Internal", root_path=settings.PATH_PREFIX)
+internal_app = FastAPI(
+    title="AddLidar API - Internal", root_path=settings.PATH_PREFIX, lifespan=lifespan
+)
 
 
 # Shared exception handler
