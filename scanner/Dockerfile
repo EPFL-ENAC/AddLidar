@@ -20,4 +20,4 @@ RUN apk add --no-cache \
     sqlite-utils
 
 # Command to run the script with the specified arguments
-CMD ["python", "scanner.py", "--original-root", "/lidar", "--zip-root", "/zips", "--db-path", "/db-path/archive.db"]
+CMD ["python", "scanner.py", "--original-root", "/lidar", "--zip-root", "/zips"]
