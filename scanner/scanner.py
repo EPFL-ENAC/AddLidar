@@ -16,13 +16,13 @@ to create compressed archives of changed directories.
 
 import os
 import json
-import sqlite3
 import subprocess
 import time
 import uuid
 import logging
 import sys
 import argparse
+import hashlib
 from typing import Dict, List, Optional, Tuple, Set
 from datetime import datetime
 
@@ -114,9 +114,9 @@ def api_create_folder_state(
     size: int,
     count: int,
     output_path: str,
-    db_manager,
+    db_manager=None,  # No longer needed, kept for compatibility
 ) -> bool:
-    """Create or update folder state via API first, fallback to database for new records"""
+    """Create or update folder state via API"""
     try:
         # First try to update existing record via API
         url = f"{BACKEND_URL}/sqlite/folder_state/{folder_key}"
@@ -124,42 +124,21 @@ def api_create_folder_state(
         response = requests.put(url, json=payload, timeout=30)
 
         if response.status_code == 404:
-            # Record doesn't exist - create it via direct database connection
-            logger.info(
-                f"Creating new folder state record via database for {folder_key}"
-            )
-            try:
-                with db_manager.get_connection() as conn:
-                    conn.execute(
-                        """INSERT INTO folder_state
-                        (folder_key, mission_key, fp, size_kb, file_count, last_checked, last_processed, processing_status, output_path)
-                        VALUES (?, ?, ?, ?, ?, ?, NULL, 'pending', ?)
-                        ON CONFLICT(folder_key) DO UPDATE SET
-                        mission_key = excluded.mission_key,
-                        fp = excluded.fp,
-                        size_kb = excluded.size_kb,
-                        file_count = excluded.file_count,
-                        last_checked = excluded.last_checked,
-                        last_processed = NULL,
-                        processing_status = 'pending',
-                        output_path = excluded.output_path""",
-                        (
-                            folder_key,
-                            mission_key,
-                            fp,
-                            size,
-                            count,
-                            int(time.time()),
-                            output_path,
-                        ),
-                    )
-                    conn.commit()
-                return True
-            except Exception as db_ex:
-                logger.error(
-                    f"Error creating folder state via database for {folder_key}: {db_ex}"
-                )
-                return False
+            # Record doesn't exist - create it via API
+            logger.info(f"Creating new folder state record via API for {folder_key}")
+            create_url = f"{BACKEND_URL}/sqlite/folder_state"
+            create_payload = {
+                "folder_key": folder_key,
+                "mission_key": mission_key,
+                "fingerprint": fp,
+                "size_kb": size,
+                "file_count": count,
+                "output_path": output_path,
+                "processing_status": "pending",
+            }
+            create_response = requests.post(create_url, json=create_payload, timeout=30)
+            create_response.raise_for_status()
+            return True
 
         response.raise_for_status()
         return True
@@ -169,9 +148,12 @@ def api_create_folder_state(
 
 
 def api_create_potree_metacloud_state(
-    mission_key: str, fp: str, output_path: str, db_manager
+    mission_key: str,
+    fp: str,
+    output_path: str,
+    db_manager=None,  # No longer needed, kept for compatibility
 ) -> bool:
-    """Create or update potree metacloud state via API first, fallback to database for new records"""
+    """Create or update potree metacloud state via API"""
     try:
         # Try to update existing record via API
         url = f"{BACKEND_URL}/sqlite/potree_metacloud_state/{mission_key}"
@@ -179,37 +161,20 @@ def api_create_potree_metacloud_state(
         response = requests.put(url, json=payload, timeout=30)
 
         if response.status_code == 404:
-            # Record doesn't exist - create it via direct database connection
+            # Record doesn't exist - create it via API
             logger.info(
-                f"Creating new potree metacloud state record via database for {mission_key}"
+                f"Creating new potree metacloud state record via API for {mission_key}"
             )
-            try:
-                current_time = int(time.time())
-                with db_manager.get_connection() as conn:
-                    conn.execute(
-                        """INSERT INTO potree_metacloud_state
-                        (mission_key, fp, output_path, last_checked, last_processed, processing_status)
-                        VALUES (?, ?, ?, ?, NULL, 'pending')
-                        ON CONFLICT(mission_key) DO UPDATE SET
-                        fp = excluded.fp,
-                        output_path = excluded.output_path,
-                        last_checked = excluded.last_checked,
-                        last_processed = NULL,
-                        processing_status = 'pending'""",
-                        (
-                            mission_key,
-                            fp,
-                            output_path,
-                            current_time,
-                        ),
-                    )
-                    conn.commit()
-                return True
-            except Exception as db_ex:
-                logger.error(
-                    f"Error creating potree metacloud state via database for {mission_key}: {db_ex}"
-                )
-                return False
+            create_url = f"{BACKEND_URL}/sqlite/potree_metacloud_state"
+            create_payload = {
+                "mission_key": mission_key,
+                "fingerprint": fp,
+                "output_path": output_path,
+                "processing_status": "pending",
+            }
+            create_response = requests.post(create_url, json=create_payload, timeout=30)
+            create_response.raise_for_status()
+            return True
 
         response.raise_for_status()
         return True
@@ -223,16 +188,13 @@ def api_create_potree_metacloud_state(
 def api_update_potree_metacloud_last_checked(mission_key: str) -> bool:
     """Update only the last_checked timestamp for potree metacloud state"""
     try:
-        # Get current state first to preserve other fields
-        current_state = api_get_potree_metacloud_state(mission_key)
-        if not current_state:
+        url = f"{BACKEND_URL}/sqlite/potree_metacloud_state/{mission_key}/last_checked"
+        response = requests.patch(url, timeout=30)
+        if response.status_code == 404:
+            logger.warning(
+                f"Potree metacloud state not found for mission {mission_key}"
+            )
             return False
-
-        url = f"{BACKEND_URL}/sqlite/potree_metacloud_state/{mission_key}"
-        payload = {
-            "processing_status": current_state.get("processing_status", "pending")
-        }
-        response = requests.put(url, json=payload, timeout=30)
         response.raise_for_status()
         return True
     except Exception as e:
@@ -341,104 +303,11 @@ def get_directory_stats(path: str) -> Tuple[str, int, int]:
         raise
 
 
-class DatabaseManager:
-    """
-    Manages SQLite database connections with connection pooling and proper resource management.
-    Follows context manager protocol for safe resource handling.
-    """
-
-    _schema_initialized = False
-
-    def __init__(self, db_path: str):
-        """
-        Initialize the database manager.
-
-        Args:
-            db_path: Path to SQLite database file
-        """
-        self.db_path = db_path
-        # Ensure directory exists
-        os.makedirs(os.path.dirname(db_path), exist_ok=True)
-
-    @classmethod
-    def init_schema(cls, db_path: str) -> None:
-        """Initialize the database schema if not already done."""
-        if cls._schema_initialized:
-            return
-
-        # Ensure directory exists before trying to connect
-        os.makedirs(os.path.dirname(db_path), exist_ok=True)
-
-        # Create a temporary connection just for schema initialization
-        conn = sqlite3.connect(db_path, timeout=20.0)
-        try:
-            conn.execute("PRAGMA busy_timeout = 10000")  # 10 seconds
-            conn.execute("PRAGMA journal_mode=WAL")
-
-            # Read and execute the schema from persist_state.sql
-            sql_file_path = os.path.join(
-                os.path.dirname(os.path.abspath(__file__)), "persist_state.sql"
-            )
-            try:
-                with open(sql_file_path, "r") as f:
-                    schema_sql = f.read()
-                conn.executescript(schema_sql)
-                logger.info(f"Initialized database schema from {sql_file_path}")
-            except Exception as e:
-                logger.error(f"Failed to initialize database schema from file: {e}")
-                # Fall back to the inline schema as a backup
-                conn.execute(
-                    """CREATE TABLE IF NOT EXISTS folder_state (
-                            folder_key TEXT PRIMARY KEY, fp TEXT,
-                            size_kb INT, file_count INT,
-                            last_seen INT, archived_at INT, zip_path TEXT)"""
-                )
-
-                conn.execute(
-                    """CREATE INDEX IF NOT EXISTS idx_folder_key ON folder_state (folder_key)"""
-                )
-                logger.warning("Using fallback inline schema definition")
-
-            cls._schema_initialized = True
-        finally:
-            conn.close()
-
-    def get_connection(self) -> sqlite3.Connection:
-        """
-        Get a new database connection with optimized settings.
-
-        Returns:
-            A new SQLite connection
-        """
-        conn = sqlite3.connect(self.db_path, timeout=20.0)
-        conn.execute("PRAGMA busy_timeout = 10000")  # 10 seconds
-        return conn
-
-
-def init_database(db_path: str) -> DatabaseManager:
-    """
-    Initialize the SQLite database manager.
-
-    Args:
-        db_path: Path to SQLite database file
-
-    Returns:
-        Initialized database manager
-    """
-    # Initialize the schema once at startup
-    DatabaseManager.init_schema(db_path)
-    # Return a manager instance
-    return DatabaseManager(db_path)
-
-
-def scan_for_metacloud_files(
-    db_manager: DatabaseManager, dry_run: bool = False
-) -> List[List[str]]:
+def scan_for_metacloud_files(dry_run: bool = False) -> List[List[str]]:
     """
     Scan directories for .metacloud files and track changes.
 
     Args:
-        db_manager: Database manager instance
         dry_run: Whether to perform a dry run without modifying the database
 
     Returns:
@@ -510,9 +379,7 @@ def scan_for_metacloud_files(
                 if not dry_run:
                     output_path = os.path.join(os.path.dirname(ZIP), "Potree", level1)
 
-                    api_create_potree_metacloud_state(
-                        level1, metacloud_fp, output_path, db_manager
-                    )
+                    api_create_potree_metacloud_state(level1, metacloud_fp, output_path)
             else:
                 # Just update the last_checked timestamp for successful completions
                 if not dry_run:
@@ -527,14 +394,11 @@ def scan_for_metacloud_files(
     return metacloud_changes
 
 
-def collect_changed_folders(
-    db_manager: DatabaseManager, dry_run: bool = False
-) -> List[List[str]]:
+def collect_changed_folders(dry_run: bool = False) -> List[List[str]]:
     """
     Scan directories and collect paths of changed folders without immediately queueing jobs.
 
     Args:
-        db_manager: Database manager instance
         dry_run: Whether to perform a dry run without modifying the database
 
     Returns:
@@ -590,7 +454,6 @@ def collect_changed_folders(
                             size,
                             count,
                             os.path.join(ZIP, f"{rel}.tar.gz"),
-                            db_manager,
                         )
                 else:
                     logger.debug(
@@ -915,13 +778,11 @@ def main() -> None:
                 # Exit if Kubernetes mode is requested but config loading fails
                 sys.exit(1)
 
-    logger.info(f"Initializing database at path {DB}")
-    db_manager = init_database(DB)
-    logger.info(f"Initialized database at {DB}")
+    logger.info(f"Scanner initialized. Using backend at {BACKEND_URL}")
 
     # Process based on execution environment
     # Collect all changed folders first
-    changed_folders = collect_changed_folders(db_manager, dry_run)
+    changed_folders = collect_changed_folders(dry_run)
 
     # Limit folders if max_jobs is specified
     max_jobs = args.max_jobs
@@ -944,7 +805,7 @@ def main() -> None:
     # Process metacloud files if requested
     metacloud_count = 0
     logger.info("Scanning for .metacloud files...")
-    metacloud_changes = scan_for_metacloud_files(db_manager, dry_run)
+    metacloud_changes = scan_for_metacloud_files(dry_run)
     metacloud_count = len(metacloud_changes)
 
     if metacloud_changes:
