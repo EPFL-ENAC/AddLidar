@@ -7,7 +7,6 @@ WORKDIR /app
 COPY scanner.py .
 COPY job-batch-compression.template.yaml .
 COPY job-batch-potree-converter.template.yaml .
-COPY persist_state.sql .
 
 # Install required dependencies
 RUN apk add --no-cache \
