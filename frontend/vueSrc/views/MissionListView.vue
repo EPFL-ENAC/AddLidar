@@ -1,10 +1,5 @@
 <template>
   <div class="mission-list-container">
-    <div class="header">
-      <h1>Available Missions</h1>
-      <p>Select a mission to view its LiDAR data</p>
-    </div>
-
     <div v-if="isLoading" class="loading">
       <div class="loading-spinner"></div>
       <div class="q-mt-sm">Loading missions...</div>
@@ -15,54 +10,57 @@
       <div class="q-mt-sm">{{ error }}</div>
     </div>
 
-    <div v-else class="missions-grid">
-      <div
-        v-for="mission in enrichedMissions"
-        :key="mission.mission_key"
-        class="mission-card"
-        :class="{ 'mission-pending': mission.processing_status === 'pending' }"
-        @click="viewMission(mission.mission_key)"
-      >
-        <div class="mission-status">
-          <span
-            class="status-badge"
-            :class="`status-${mission.processing_status || 'unknown'}`"
-          >
-            {{ formatStatus(mission.processing_status) }}
-          </span>
-        </div>
+    <div v-else class="missions-layout">
+      <!-- Map on the left -->
+      <div class="map-section">
+        <mission-footprint-map
+          :missions="enrichedMissions"
+          :selected-mission="selectedMission"
+          @mission-select="onMissionSelect"
+          @mission-hover="onMissionHover"
+        />
+      </div>
 
-        <div class="mission-info">
-          <h3>{{ mission.mission_key }}</h3>
-          <p class="mission-details">
-            <strong>Output:</strong> {{ mission.output_path }}<br />
-            <strong>Last Checked:</strong>
-            {{ formatDate(mission.last_checked_time) }}<br />
-            <span v-if="mission.last_processed_time">
-              <strong>Processed:</strong>
-              {{ formatDate(mission.last_processed_time) }}
-            </span>
-            <span v-else> <strong>Status:</strong> Not yet processed </span>
+      <!-- Mission list on the right -->
+      <div class="missions-section">
+        <div class="missions-header">
+          <div class="header-content">
+            <h2>AddLidar - Missions</h2>
+            <div class="mission-count">
+              <span class="count-badge">{{ enrichedMissions.length }}</span>
+              <span class="count-text"
+                >{{
+                  enrichedMissions.length === 1 ? "mission" : "missions"
+                }}
+                available</span
+              >
+            </div>
+          </div>
+          <p class="header-subtitle">
+            Click on the map or select a mission card below to explore LiDAR
+            data
           </p>
-
-          <div v-if="mission.metadata" class="metadata-info">
-            <p>
-              <strong>Points:</strong> {{ formatNumber(mission.metadata.points)
-              }}<br />
-              <strong>Bounds:</strong>
-              {{ formatBounds(mission.metadata.boundingBox) }}
-            </p>
-          </div>
-
-          <div class="mission-actions">
-            <button class="view-btn" @click="viewMission(mission.mission_key)">
-              View Mission
-            </button>
-          </div>
         </div>
 
-        <div v-if="mission.error_message" class="error-message">
-          <strong>Error:</strong> {{ mission.error_message }}
+        <div class="missions-list">
+          <mission-card
+            v-for="mission in enrichedMissions"
+            :key="mission.mission_key"
+            :mission="mission"
+            :is-selected="mission.mission_key === selectedMission"
+            :is-hovered="mission.mission_key === hoveredMission"
+            @click="onMissionSelect"
+            @hover="onMissionHover"
+            @view="viewMission"
+          />
+
+          <div v-if="enrichedMissions.length === 0" class="no-missions">
+            <div class="no-missions-icon">📂</div>
+            <div class="no-missions-text">No missions available</div>
+            <div class="no-missions-subtitle">
+              Check back later or contact your administrator
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -73,6 +71,8 @@
 import { ref, onMounted, computed } from "vue";
 import { useRouter } from "vue-router";
 import { useDirectoryStore } from "@/stores/directoryStore";
+import MissionFootprintMap from "@/components/MissionFootprintMap.vue";
+import MissionCard from "@/components/MissionCard.vue";
 
 const router = useRouter();
 const directoryStore = useDirectoryStore();
@@ -80,6 +80,8 @@ const directoryStore = useDirectoryStore();
 const missions = ref([]);
 const isLoading = ref(true);
 const error = ref(null);
+const selectedMission = ref(null);
+const hoveredMission = ref(null);
 
 // Computed property to enrich missions with metadata
 const enrichedMissions = computed(() => {
@@ -134,6 +136,16 @@ async function loadMissions() {
   }
 }
 
+// Handle mission selection from map or card
+function onMissionSelect(missionKey) {
+  selectedMission.value = missionKey;
+}
+
+// Handle mission hover from map or card
+function onMissionHover(missionKey) {
+  hoveredMission.value = missionKey;
+}
+
 function viewMission(missionKey) {
   console.log("Viewing mission:", missionKey, missions.value);
   // Only allow viewing if not pending
@@ -176,141 +188,226 @@ onMounted(() => {
 <style scoped>
 .mission-list-container {
   padding: 20px;
-  max-width: 1200px;
-  margin: 0 auto;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
 .header {
   text-align: center;
-  margin-bottom: 30px;
+  margin-bottom: 20px;
+  flex-shrink: 0;
+}
+
+.header h1 {
+  margin: 0 0 10px 0;
+  color: #333;
+}
+
+.header p {
+  margin: 0;
+  color: #666;
 }
 
 .loading,
 .error {
   text-align: center;
   padding: 40px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
 
-.missions-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #007bff;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+.missions-layout {
+  flex: 1;
+  display: flex;
   gap: 20px;
+  min-height: 0; /* Important for flex children */
 }
 
-.mission-card {
+.map-section {
+  flex: 2;
+  min-width: 400px;
   border: 1px solid #ddd;
   border-radius: 8px;
   overflow: hidden;
-  cursor: pointer;
-  transition:
-    transform 0.2s,
-    box-shadow 0.2s;
-  background: white;
-  position: relative;
 }
 
-.mission-card:hover:not(.mission-pending) {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+.missions-section {
+  flex: 1;
+  min-width: 350px;
+  display: flex;
+  flex-direction: column;
 }
 
-.mission-pending {
-  opacity: 0.7;
+.missions-header {
+  margin-bottom: 20px;
+  padding-bottom: 18px;
+  border-bottom: 2px solid #f0f0f0;
 }
 
-.mission-status {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  z-index: 1;
+.header-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 8px;
 }
 
-.status-badge {
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 12px;
-  font-weight: bold;
-  text-transform: uppercase;
+.missions-header h2 {
+  margin: 0;
+  color: #2c3e50;
+  font-size: 22px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
 }
 
-.status-pending {
-  background: #ff9800;
+.mission-count {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.count-badge {
+  background: #007bff;
   color: white;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 13px;
+  font-weight: 600;
+  min-width: 20px;
+  text-align: center;
 }
 
-.status-completed,
-.status-processed {
-  background: #4caf50;
-  color: white;
+.count-text {
+  color: #6c757d;
+  font-size: 13px;
+  font-weight: 500;
 }
 
-.status-error {
-  background: #f44336;
-  color: white;
-}
-
-.status-unknown {
-  background: #9e9e9e;
-  color: white;
-}
-
-.mission-info {
-  padding: 15px;
-  padding-top: 35px; /* Account for status badge */
-}
-
-.mission-info h3 {
-  margin: 0 0 10px 0;
-  color: #333;
-}
-
-.mission-details {
-  margin: 0 0 15px 0;
-  color: #666;
+.header-subtitle {
+  margin: 0;
+  color: #6c757d;
   font-size: 14px;
+  font-style: italic;
   line-height: 1.4;
 }
 
-.metadata-info {
-  background: #f8f9fa;
-  padding: 10px;
-  border-radius: 4px;
-  margin-bottom: 15px;
+.missions-list {
+  flex: 1;
+  overflow-y: auto;
+  padding-right: 10px;
 }
 
-.metadata-info p {
-  margin: 0;
-  font-size: 13px;
-  color: #555;
+.missions-list::-webkit-scrollbar {
+  width: 6px;
 }
 
-.mission-actions {
-  text-align: right;
+.missions-list::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 3px;
 }
 
-.view-btn {
-  background: #007bff;
-  color: white;
-  border: none;
-  padding: 8px 16px;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: background 0.2s;
+.missions-list::-webkit-scrollbar-thumb {
+  background: #c1c1c1;
+  border-radius: 3px;
 }
 
-.view-btn:hover:not(:disabled) {
-  background: #0056b3;
+.missions-list::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8;
 }
 
-.view-btn:disabled {
-  background: #ccc;
+.no-missions {
+  text-align: center;
+  padding: 60px 20px;
+  color: #6c757d;
 }
 
-.error-message {
-  background: #ffebee;
-  color: #c62828;
-  padding: 10px;
-  border-top: 1px solid #ffcdd2;
-  font-size: 13px;
+.no-missions-icon {
+  font-size: 64px;
+  margin-bottom: 20px;
+  opacity: 0.7;
+}
+
+.no-missions-text {
+  font-size: 18px;
+  font-weight: 500;
+  margin-bottom: 8px;
+  color: #495057;
+}
+
+.no-missions-subtitle {
+  font-size: 14px;
+  color: #adb5bd;
+  font-style: italic;
+}
+
+/* Responsive design */
+@media (max-width: 1024px) {
+  .missions-layout {
+    flex-direction: column;
+  }
+
+  .map-section {
+    height: 400px;
+    min-width: auto;
+  }
+
+  .missions-section {
+    min-width: auto;
+  }
+}
+
+@media (max-width: 768px) {
+  .mission-list-container {
+    padding: 10px;
+  }
+
+  .missions-layout {
+    gap: 15px;
+  }
+
+  .map-section {
+    height: 300px;
+  }
+
+  .header-content {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 10px;
+  }
+
+  .missions-header h2 {
+    font-size: 20px;
+  }
+
+  .mission-count {
+    align-self: flex-end;
+  }
+
+  .header-subtitle {
+    font-size: 13px;
+  }
 }
 </style>

@@ -111,7 +111,7 @@ export const useDirectoryStore = defineStore("directory", () => {
   async function fetchAllMissions() {
     try {
       const response = await fetch(
-        `${apiBasePath.value}/sqlite/potree_metacloud_state?limit=100&offset=0`,
+        `${apiBasePath.value}/sqlite/potree_metacloud_state`,
       );
 
       if (!response.ok) {
@@ -166,6 +166,23 @@ export const useDirectoryStore = defineStore("directory", () => {
     }
   }
 
+  // Fetch geojson for a specific poincloud
+  async function fetchPointcloudGeojson(missionName: string) {
+    try {
+      const response = await fetch(
+        `${staticBasePath.value}/Footprints/${missionName}.geojson`,
+      );
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! Status: ${response.status}`);
+      }
+      return await response.json();
+    } catch (err) {
+      console.error(`Error fetching data for mission ${missionName}:`, err);
+      throw err;
+    }
+  }
+
   watch(
     () => activeMission.value,
     async (newMission) => {
@@ -201,6 +218,7 @@ export const useDirectoryStore = defineStore("directory", () => {
     staticBasePath,
     activeMission,
     fetchAllDirectoryData,
+    fetchPointcloudGeojson,
     fetchMissionData,
     getDownloadUrl,
     configurePaths,
