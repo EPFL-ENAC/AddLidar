@@ -10,7 +10,7 @@ CREATE TABLE IF NOT EXISTS folder_state (
     processing_time INTEGER,               -- time taken for archiving in seconds
     processing_status TEXT,                -- 'success', 'failed', 'pending', NULL if never attempted
     error_message   TEXT,               -- error message if processing failed
-    detailed_error_message TEXT, -- detailed error message if processing failed
+    detailed_error_message TEXT -- detailed error message if processing failed
 );
 
 CREATE TABLE IF NOT EXISTS potree_metacloud_state (
