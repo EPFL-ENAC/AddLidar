@@ -92,8 +92,16 @@ spec:
                 
                 echo "Processing folder: $INPUT_PATH"
                 
-                # Attempt to create archive and capture exit code
-                if /usr/local/bin/archive_one_folder.sh /lidar/"$INPUT_PATH" /zips/"$OUTPUT_PATH"; then
+                # Create temporary log file for capturing detailed output
+                TEMP_LOG_FILE="/tmp/archive_${INPUT_PATH//\//_}_$$.log"
+                
+                echo "Starting archive creation - logs will be visible here and saved to: $TEMP_LOG_FILE"
+                echo "==================== ARCHIVE PROCESS START ===================="
+                
+                # Use tee to show logs in real-time AND save to file
+                # The logs will be visible when you kubectl logs or kubectl exec into the pod
+                if /usr/local/bin/archive_one_folder.sh /lidar/"$INPUT_PATH" /zips/"$OUTPUT_PATH" 2>&1 | tee "$TEMP_LOG_FILE"; then
+                  echo "==================== ARCHIVE PROCESS SUCCESS ==================="
                   echo "Archive created successfully: $OUTPUT_PATH"
                   
                   # Update database with success status via API
@@ -107,21 +115,41 @@ spec:
                     --max-time 30 --retry 3 && \
                   echo "Database updated successfully for ${INPUT_PATH}" || \
                   echo "Failed to update database for ${INPUT_PATH}"
-                else
-                  echo "Archive creation failed for: $INPUT_PATH"
                   
-                  # Update database with failed status via API
-                  echo "Updating database for ${INPUT_PATH} with failed status"
+                  # Clean up log file on success
+                  rm -f "$TEMP_LOG_FILE"
+                else
+                  echo "==================== ARCHIVE PROCESS FAILED ===================="
+                  echo "Archive creation failed for: $INPUT_PATH"
+                  echo "Log file contents (last 50 lines):"
+                  echo "--------------------"
+                  
+                  # Show the error logs in real-time output as well
+                  if [ -f "$TEMP_LOG_FILE" ]; then
+                    tail -n 50 "$TEMP_LOG_FILE"
+                    echo "--------------------"
+                    
+                    # Capture detailed error logs for database
+                    DETAILED_ERROR_MSG=$(tail -n 50 "$TEMP_LOG_FILE" | sed 's/\\/\\\\/g; s/"/\\"/g; s/$/\\n/' | tr -d '\n' | sed 's/\\n$//')
+                  else
+                    echo "No log file found"
+                    DETAILED_ERROR_MSG="No detailed logs available"
+                  fi
+                  
+                  # Update database with failed status and detailed error via API
+                  echo "Updating database for ${INPUT_PATH} with failed status and detailed logs"
                   END_TIME=$(date +%s)
                   PROCESSING_TIME=$((END_TIME - START_TIME))
                   
                   curl -X PUT "${BACKEND_URL}/sqlite/folder_state/${INPUT_PATH}" \
                     -H "Content-Type: application/json" \
-                    -d "{\"fingerprint\":\"${FINGERPRINT}\",\"processing_status\":\"failed\",\"processing_time\":${PROCESSING_TIME},\"error_message\":\"Archive creation failed\"}" \
+                    -d "{\"fingerprint\":\"${FINGERPRINT}\",\"processing_status\":\"failed\",\"processing_time\":${PROCESSING_TIME},\"error_message\":\"Archive creation failed\",\"detailed_error_message\":\"${DETAILED_ERROR_MSG}\"}" \
                     --max-time 30 --retry 3 && \
                   echo "Database updated with failed status for ${INPUT_PATH}" || \
                   echo "Failed to update database for ${INPUT_PATH}"
                   
+                  # Clean up log file
+                  rm -f "$TEMP_LOG_FILE"
                   exit 1
                 fi
 
@@ -138,12 +166,15 @@ spec:
                   
                   echo "Skipping archive process - invalid or empty folder: ${INPUT_PATH}"
                   
+                  # Create detailed error message for invalid/empty folder
+                  DETAILED_ERROR_MSG="Folder validation failed:\\nFolder path: /lidar/${INPUT_PATH}\\nFolder exists: $([ -d \"/lidar/${INPUT_PATH}\" ] && echo 'true' || echo 'false')\\nFolder empty: $([ -d \"/lidar/${INPUT_PATH}\" ] && [ -z \"$(ls -A \"/lidar/${INPUT_PATH}\" 2>/dev/null)\" ] && echo 'true' || echo 'false')\\nTimestamp: $(date -u)"
+                  
                   # Update database with failed status for invalid/empty folder via API
                   echo "Updating database for ${INPUT_PATH} with failed status (invalid/empty folder)"
                   
                   curl -X PUT "${BACKEND_URL}/sqlite/folder_state/${INPUT_PATH}" \
                     -H "Content-Type: application/json" \
-                    -d "{\"fingerprint\":\"${FINGERPRINT}\",\"processing_status\":\"empty\",\"processing_time\":0,\"error_message\":\"Folder is invalid or empty\"}" \
+                    -d "{\"fingerprint\":\"${FINGERPRINT}\",\"processing_status\":\"empty\",\"processing_time\":0,\"error_message\":\"Folder is invalid or empty\",\"detailed_error_message\":\"${DETAILED_ERROR_MSG}\"}" \
                     --max-time 30 --retry 3 && \
                   echo "Database updated with failed status for invalid folder ${INPUT_PATH}" || \
                   echo "Failed to update database for ${INPUT_PATH}"

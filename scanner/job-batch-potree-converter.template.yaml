@@ -102,13 +102,22 @@ spec:
                 echo "Converting metacloud file: ${INPUT_FILE} for mission ${MISSION_KEY} from ${INPUT_DIR}"
                 echo "Output directory: ${OUTPUT_DIR}"
                 
-                # Run the entrypoint script and capture exit code
-                if /entrypoint.sh; then
+                # Create temporary log file for capturing detailed output
+                TEMP_LOG_FILE="/tmp/potree_${MISSION_KEY//\//_}_$$.log"
+                
+                echo "Starting potree conversion - logs will be visible here and saved to: $TEMP_LOG_FILE"
+                echo "==================== POTREE CONVERSION START ===================="
+                
+                # Use tee to show logs in real-time AND save to file
+                # The logs will be visible when you kubectl logs or kubectl exec into the pod
+                if /entrypoint.sh 2>&1 | tee "$TEMP_LOG_FILE"; then
+                  echo "==================== POTREE CONVERSION SUCCESS =================="
+                  echo "Potree conversion successful for ${MISSION_KEY}"
+                  
                   # Success
                   END_TIME=$(date +%s)
                   PROCESSING_TIME=$((END_TIME - START_TIME))
                   
-                  echo "Potree conversion successful for ${MISSION_KEY}"
                   echo "Updating database for ${MISSION_KEY} with success status"
                   
                   curl -X PUT "${BACKEND_URL}/sqlite/potree_metacloud_state/${MISSION_KEY}" \
@@ -117,23 +126,45 @@ spec:
                     --max-time 30 --retry 3 && \
                   echo "Database updated successfully for ${MISSION_KEY}" || \
                   echo "Failed to update database for ${MISSION_KEY}"
+                  
+                  # Clean up log file on success
+                  rm -f "$TEMP_LOG_FILE"
                 else
+                  echo "==================== POTREE CONVERSION FAILED ==================="
                   # Failure
                   RESULT=$?
                   END_TIME=$(date +%s)
                   PROCESSING_TIME=$((END_TIME - START_TIME))
-                  ERROR_MSG="Conversion failed with exit code ${RESULT}"
                   
                   echo "Potree conversion failed for ${MISSION_KEY} with exit code ${RESULT}"
-                  echo "Updating database for ${MISSION_KEY} with failed status"
+                  echo "Log file contents (last 100 lines):"
+                  echo "--------------------"
+                  
+                  # Show the error logs in real-time output as well
+                  if [ -f "$TEMP_LOG_FILE" ]; then
+                    tail -n 100 "$TEMP_LOG_FILE"
+                    echo "--------------------"
+                    
+                    # Capture detailed error logs for database (potree logs can be longer)
+                    DETAILED_ERROR_MSG=$(tail -n 100 "$TEMP_LOG_FILE" | sed 's/\\/\\\\/g; s/"/\\"/g; s/$/\\n/' | tr -d '\n' | sed 's/\\n$//')
+                  else
+                    echo "No log file found"
+                    DETAILED_ERROR_MSG="No detailed logs available"
+                  fi
+                  
+                  ERROR_MSG="Conversion failed with exit code ${RESULT}"
+                  
+                  echo "Updating database for ${MISSION_KEY} with failed status and detailed logs"
                   
                   curl -X PUT "${BACKEND_URL}/sqlite/potree_metacloud_state/${MISSION_KEY}" \
                     -H "Content-Type: application/json" \
-                    -d "{\"fingerprint\":\"${METACLOUD_FP}\",\"processing_status\":\"failed\",\"processing_time\":${PROCESSING_TIME},\"error_message\":\"${ERROR_MSG}\"}" \
+                    -d "{\"fingerprint\":\"${METACLOUD_FP}\",\"processing_status\":\"failed\",\"processing_time\":${PROCESSING_TIME},\"error_message\":\"${ERROR_MSG}\",\"detailed_error_message\":\"${DETAILED_ERROR_MSG}\"}" \
                     --max-time 30 --retry 3 && \
                   echo "Database updated with failed status for ${MISSION_KEY}" || \
                   echo "Failed to update database for ${MISSION_KEY}"
                   
+                  # Clean up log file
+                  rm -f "$TEMP_LOG_FILE"
                   exit $RESULT
                 fi
 
@@ -150,12 +181,16 @@ spec:
                   
                   echo "Skipping potree conversion - invalid or missing metacloud file for mission: ${MISSION_KEY}"
                   
+                  # Create detailed error message for invalid/missing metacloud file
+                  METACLOUD_FILE_PATH="/lidar/${MISSION_KEY}/${MISSION_KEY}.metacloud"
+                  DETAILED_ERROR_MSG="Metacloud file validation failed:\\nExpected file: ${METACLOUD_FILE_PATH}\\nFile exists: $([ -f \"${METACLOUD_FILE_PATH}\" ] && echo 'true' || echo 'false')\\nFile size: $([ -f \"${METACLOUD_FILE_PATH}\" ] && stat -c%s \"${METACLOUD_FILE_PATH}\" || echo 'N/A')\\nInput directory exists: $([ -d \"${INPUT_DIR}\" ] && echo 'true' || echo 'false')\\nTimestamp: $(date -u)"
+                  
                   # Update database with failed status for invalid/missing file via API
                   echo "Updating database for ${MISSION_KEY} with failed status (invalid/missing metacloud file)"
                   
                   curl -X PUT "${BACKEND_URL}/sqlite/potree_metacloud_state/${MISSION_KEY}" \
                     -H "Content-Type: application/json" \
-                    -d "{\"fingerprint\":\"${METACLOUD_FP}\",\"processing_status\":\"empty\",\"processing_time\":0,\"error_message\":\"Metacloud file is invalid or missing\"}" \
+                    -d "{\"fingerprint\":\"${METACLOUD_FP}\",\"processing_status\":\"empty\",\"processing_time\":0,\"error_message\":\"Metacloud file is invalid or missing\",\"detailed_error_message\":\"${DETAILED_ERROR_MSG}\"}" \
                     --max-time 30 --retry 3 && \
                   echo "Database updated with failed status for invalid metacloud file ${MISSION_KEY}" || \
                   echo "Failed to update database for ${MISSION_KEY}"
