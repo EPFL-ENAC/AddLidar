@@ -52,12 +52,44 @@
     </div>
 
     <div v-if="mission.error_message" class="error-message">
-      <strong>Error:</strong> {{ mission.error_message }}
+      <div class="error-header" @click="toggleErrorDetails">
+        <span><strong>Error:</strong> {{ mission.error_message }}</span>
+        <span class="error-toggle">
+          <i :class="showErrorDetails ? 'arrow-up' : 'arrow-down'"></i>
+          {{ showErrorDetails ? "Hide Details" : "Show Details" }}
+        </span>
+      </div>
+      <div
+        v-if="showErrorDetails && mission.detailed_error_message"
+        class="error-details"
+      >
+        <div class="error-details-header">
+          <strong>Detailed Logs:</strong>
+          <button
+            class="copy-btn"
+            @click.stop="copyErrorDetails"
+            :disabled="!mission.detailed_error_message"
+          >
+            {{ copyButtonText }}
+          </button>
+        </div>
+        <pre class="error-logs">{{
+          formatDetailedError(mission.detailed_error_message)
+        }}</pre>
+      </div>
+      <div
+        v-else-if="showErrorDetails && !mission.detailed_error_message"
+        class="error-details"
+      >
+        <p class="no-details">No detailed error logs available.</p>
+      </div>
     </div>
   </div>
 </template>
 
 <script setup lang="ts">
+import { ref } from "vue";
+
 interface Mission {
   mission_key: string;
   output_path: string;
@@ -65,6 +97,7 @@ interface Mission {
   last_checked_time: string;
   last_processed_time?: string;
   error_message?: string;
+  detailed_error_message?: string;
   metadata?: {
     points: number;
     boundingBox: {
@@ -74,17 +107,46 @@ interface Mission {
   };
 }
 
-defineProps<{
-  mission: Mission;
-  isSelected?: boolean;
-  isHovered?: boolean;
-}>();
-
 defineEmits<{
   click: [missionKey: string];
   hover: [missionKey: string | null];
   view: [missionKey: string];
 }>();
+
+// Reactive state for error details expansion
+const showErrorDetails = ref(false);
+const copyButtonText = ref("Copy");
+
+// Get props reference for access in functions
+const props = defineProps<{
+  mission: Mission;
+  isSelected?: boolean;
+  isHovered?: boolean;
+}>();
+
+function toggleErrorDetails() {
+  showErrorDetails.value = !showErrorDetails.value;
+}
+
+async function copyErrorDetails() {
+  if (!props.mission.detailed_error_message) return;
+
+  try {
+    await navigator.clipboard.writeText(
+      formatDetailedError(props.mission.detailed_error_message),
+    );
+    copyButtonText.value = "Copied!";
+    setTimeout(() => {
+      copyButtonText.value = "Copy";
+    }, 2000);
+  } catch (err) {
+    console.error("Failed to copy error details:", err);
+    copyButtonText.value = "Failed";
+    setTimeout(() => {
+      copyButtonText.value = "Copy";
+    }, 2000);
+  }
+}
 
 function formatStatus(status: string | undefined): string {
   if (!status) return "Unknown";
@@ -109,6 +171,16 @@ function formatBounds(
   return `[${min[0].toFixed(1)}, ${min[1].toFixed(1)}] to [${max[0].toFixed(
     1,
   )}, ${max[1].toFixed(1)}]`;
+}
+
+function formatDetailedError(detailedError: string | undefined): string {
+  if (!detailedError) return "No detailed error information available.";
+
+  // Replace \\n with actual newlines for better readability
+  return detailedError
+    .replace(/\\n/g, "\n")
+    .replace(/\\"/g, '"')
+    .replace(/\\\\/g, "\\");
 }
 </script>
 
@@ -238,8 +310,96 @@ function formatBounds(
 .error-message {
   background: #ffebee;
   color: #c62828;
-  padding: 10px;
   border-top: 1px solid #ffcdd2;
   font-size: 12px;
+}
+
+.error-header {
+  padding: 10px;
+  cursor: pointer;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  transition: background-color 0.2s;
+}
+
+.error-header:hover {
+  background: #ffcdd2;
+}
+
+.error-toggle {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  color: #ad1457;
+  font-weight: normal;
+}
+
+.arrow-down::before {
+  content: "▼";
+  font-size: 10px;
+}
+
+.arrow-up::before {
+  content: "▲";
+  font-size: 10px;
+}
+
+.error-details {
+  border-top: 1px solid #ffcdd2;
+  background: #fce4ec;
+}
+
+.error-details-header {
+  padding: 10px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #f8bbd9;
+}
+
+.copy-btn {
+  background: #e91e63;
+  color: white;
+  border: none;
+  padding: 4px 8px;
+  border-radius: 3px;
+  cursor: pointer;
+  font-size: 10px;
+  transition: background-color 0.2s;
+}
+
+.copy-btn:hover:not(:disabled) {
+  background: #c2185b;
+}
+
+.copy-btn:disabled {
+  background: #f8bbd9;
+  cursor: not-allowed;
+}
+
+.error-logs {
+  padding: 10px;
+  margin: 0;
+  background: #fff;
+  border: 1px solid #f8bbd9;
+  border-radius: 4px;
+  margin: 10px;
+  max-height: 300px;
+  overflow-y: auto;
+  font-family: "Courier New", monospace;
+  font-size: 11px;
+  line-height: 1.4;
+  color: #333;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.no-details {
+  padding: 10px;
+  margin: 0;
+  font-style: italic;
+  color: #999;
 }
 </style>
