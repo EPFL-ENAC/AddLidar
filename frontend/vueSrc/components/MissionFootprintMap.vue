@@ -49,6 +49,7 @@ const emit = defineEmits<{
 const props = defineProps<{
   missions: Mission[];
   selectedMission?: string | null;
+  zoomToMission?: string | null;
 }>();
 
 const directoryStore = useDirectoryStore();
@@ -247,6 +248,16 @@ watch(
   },
 );
 
+// Watch for zoom to mission requests
+watch(
+  () => props.zoomToMission,
+  (missionKey) => {
+    if (missionKey) {
+      zoomToMission(missionKey);
+    }
+  },
+);
+
 // Load footprints for all missions
 async function loadMissionFootprints() {
   if (!map || !props.missions.length) return;
@@ -342,6 +353,42 @@ async function loadMissionFootprints() {
     console.error("Error loading mission footprints:", error);
   } finally {
     isLoading.value = false;
+  }
+}
+
+// Zoom to a specific mission's footprint
+function zoomToMission(missionKey: string) {
+  if (!map || !missionFootprints.value[missionKey]) return;
+
+  const geojson = missionFootprints.value[missionKey];
+  if (!geojson || !geojson.features || geojson.features.length === 0) return;
+
+  // Calculate bounds for the mission's footprint
+  const bounds = new maplibregl.LngLatBounds();
+  geojson.features.forEach((feature: any) => {
+    if (feature.geometry.type === "Polygon") {
+      feature.geometry.coordinates[0].forEach((coord: number[]) => {
+        if (coord.length >= 2) {
+          bounds.extend([coord[0], coord[1]]);
+        }
+      });
+    } else if (feature.geometry.type === "MultiPolygon") {
+      feature.geometry.coordinates.forEach((polygon: number[][][]) => {
+        polygon[0].forEach((coord: number[]) => {
+          if (coord.length >= 2) {
+            bounds.extend([coord[0], coord[1]]);
+          }
+        });
+      });
+    }
+  });
+
+  // Fit to the mission's bounds with some padding
+  if (!bounds.isEmpty()) {
+    map.fitBounds(bounds, {
+      padding: 100,
+      duration: 1000, // Smooth animation duration in milliseconds
+    });
   }
 }
 

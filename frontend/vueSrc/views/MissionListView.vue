@@ -16,6 +16,7 @@
         <mission-footprint-map
           :missions="enrichedMissions"
           :selected-mission="selectedMission"
+          :zoom-to-mission="zoomToMission"
           @mission-select="onMissionSelect"
           @mission-hover="onMissionHover"
         />
@@ -82,6 +83,7 @@ const isLoading = ref(true);
 const error = ref(null);
 const selectedMission = ref(null);
 const hoveredMission = ref(null);
+const zoomToMission = ref(null);
 
 // Computed property to enrich missions with metadata
 const enrichedMissions = computed(() => {
@@ -139,6 +141,12 @@ async function loadMissions() {
 // Handle mission selection from map or card
 function onMissionSelect(missionKey) {
   selectedMission.value = missionKey;
+  // Trigger zoom to the selected mission
+  zoomToMission.value = missionKey;
+  // Reset zoom trigger after a short delay to allow for future zoom requests
+  setTimeout(() => {
+    zoomToMission.value = null;
+  }, 100);
 }
 
 // Handle mission hover from map or card
