@@ -16,6 +16,7 @@ class PotreeMetacloudStateResponse(BaseModel):
     processing_time: Optional[int]
     processing_status: Optional[str]
     error_message: Optional[str]
+    detailed_error_message: Optional[str]
 
 
 class PotreeMetacloudStateUpdate(BaseModel):
@@ -23,6 +24,7 @@ class PotreeMetacloudStateUpdate(BaseModel):
     processing_status: Optional[str]  # 'success', 'failed', 'empty'
     processing_time: Optional[int] = None
     error_message: Optional[str] = None
+    detailed_error_message: Optional[str] = None
 
 
 class PotreeMetacloudStateCreate(BaseModel):
@@ -58,6 +60,7 @@ async def get_potree_metacloud_state(
       processing_time,
       processing_status,
       error_message,
+      detailed_error_message,
       datetime(last_checked,'unixepoch') AS last_checked_time,
       datetime(last_processed,'unixepoch') AS last_processed_time
     FROM potree_metacloud_state
@@ -126,6 +129,14 @@ async def update_potree_metacloud_state(
         if update_data.processing_status == "success":
             update_fields.append("error_message = NULL")
 
+    if update_data.detailed_error_message is not None:
+        update_fields.append("detailed_error_message = ?")
+        update_values.append(update_data.detailed_error_message)
+    else:
+        # Clear detailed error message on success
+        if update_data.processing_status == "success":
+            update_fields.append("detailed_error_message = NULL")
+
     # Add mission_key for WHERE clause
     update_values.append(mission_key)
 
@@ -141,7 +152,7 @@ async def update_potree_metacloud_state(
     # Return updated record
     cursor.execute(
         """SELECT mission_key, fp, processing_status, 
-           processing_time, error_message, last_processed 
+           processing_time, error_message, detailed_error_message, last_processed 
            FROM potree_metacloud_state WHERE mission_key = ?""",
         (mission_key,),
     )
@@ -176,6 +187,7 @@ async def get_potree_metacloud_state_by_mission(mission_key: str):
       processing_time,
       processing_status,
       error_message,
+      detailed_error_message,
       datetime(last_checked,'unixepoch') AS last_checked_time,
       datetime(last_processed,'unixepoch') AS last_processed_time
     FROM potree_metacloud_state
@@ -277,7 +289,7 @@ async def update_potree_metacloud_last_checked(mission_key: str):
     # Return updated record
     cursor.execute(
         """SELECT mission_key, fp, processing_status, 
-           processing_time, error_message, last_checked 
+           processing_time, error_message, detailed_error_message, last_checked 
            FROM potree_metacloud_state WHERE mission_key = ?""",
         (mission_key,),
     )
