@@ -67,7 +67,7 @@ COPY --from=base /usr/lib/x86_64-linux-gnu/libboost_regex.so* /usr/lib/x86_64-li
 COPY --from=base /usr/lib/x86_64-linux-gnu/libboost_iostreams.so* /usr/lib/x86_64-linux-gnu/
 
 RUN apt-get update && \
-    apt-get install -y sqlite3 && \
+    apt-get install -y curl && \
     rm -rf /var/lib/apt/lists/*
 
 # Create app directory
