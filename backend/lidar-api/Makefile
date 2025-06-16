@@ -57,3 +57,45 @@ test:
 
 scout:
 	docker scout cves local://lidar-api:latest
+
+# Database snapshot management
+snapshot-list:
+	@echo "Listing local database snapshots..."
+	./snapshot.sh list
+
+snapshot-download:
+	@echo "Downloading latest snapshot from production..."
+	./snapshot.sh download
+
+snapshot-backup:
+	@echo "Creating backup of current database..."
+	./snapshot.sh backup
+
+snapshot-switch:
+	@echo "Available snapshots:"
+	@./snapshot.sh list
+	@echo ""
+	@echo "To switch to a snapshot, use: make snapshot-switch-to SNAPSHOT=<path>"
+	@echo "Example: make snapshot-switch-to SNAPSHOT=./snapshots/snapshot_prod_2025_06_16_120000.db"
+
+snapshot-switch-to:
+	@if [ -z "$(SNAPSHOT)" ]; then \
+		echo "Error: SNAPSHOT variable is required"; \
+		echo "Usage: make snapshot-switch-to SNAPSHOT=<path>"; \
+		exit 1; \
+	fi
+	@echo "Switching to snapshot: $(SNAPSHOT)"
+	./snapshot.sh switch "$(SNAPSHOT)"
+
+snapshot-help:
+	@echo "Database Snapshot Management Commands:"
+	@echo "  make snapshot-list        - List all local snapshots"
+	@echo "  make snapshot-download     - Download latest from production"
+	@echo "  make snapshot-backup       - Backup current database"
+	@echo "  make snapshot-switch       - Show available snapshots and instructions"
+	@echo "  make snapshot-switch-to SNAPSHOT=<path> - Switch to specific snapshot"
+	@echo ""
+	@echo "Examples:"
+	@echo "  make snapshot-download"
+	@echo "  make snapshot-list"
+	@echo "  make snapshot-switch-to SNAPSHOT=./snapshots/snapshot_prod_2025_06_16_120000.db"

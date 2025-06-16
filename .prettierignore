@@ -51,3 +51,9 @@ CITATION.cff
 
 # Ignore SQL files (if you don't want prettier-plugin-sql to format them)
 *.sql
+
+# Ignore database files and snapshots
+*.db
+**/snapshots/
+backend/lidar-api/snapshots/
+backend/lidar-api/data/

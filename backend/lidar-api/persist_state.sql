@@ -9,7 +9,8 @@ CREATE TABLE IF NOT EXISTS folder_state (
     last_processed  INTEGER,               -- epoch, NULL = needs processing (formerly archived_at)
     processing_time INTEGER,               -- time taken for archiving in seconds
     processing_status TEXT,                -- 'success', 'failed', 'pending', NULL if never attempted
-    error_message   TEXT                   -- error message if processing failed
+    error_message   TEXT,               -- error message if processing failed
+    detailed_error_message TEXT, -- detailed error message if processing failed
 );
 
 CREATE TABLE IF NOT EXISTS potree_metacloud_state (
@@ -21,5 +22,6 @@ CREATE TABLE IF NOT EXISTS potree_metacloud_state (
     processing_time   INTEGER,               -- time taken for conversion in seconds (formerly conversion_time)
     processing_status TEXT,                  -- 'success', 'failed', 'pending', NULL if never attempted (formerly conversion_status)
     error_message     TEXT,                  -- error message if conversion failed
+    detailed_error_message TEXT, -- detailed error message if processing failed
     FOREIGN KEY (mission_key) REFERENCES folder_state(mission_key)
 );
