@@ -1,5 +1,25 @@
 # Changelog
 
+## [0.6.0](https://github.com/EPFL-ENAC/AddLidar/compare/v0.5.1...v0.6.0) (2025-06-16)
+
+
+### Features
+
+* **api:** add detailed_error_message field to folder and potree metacloud state models ([905e3c5](https://github.com/EPFL-ENAC/AddLidar/commit/905e3c5884f9eb1b1e2837ec3795eb92b13b486f))
+* **backend:** add database snapshot management system ([7cfbcf4](https://github.com/EPFL-ENAC/AddLidar/commit/7cfbcf423743f42c2af7d2b6aa38fa9e515e8906))
+* **compression:** remove sqlite & add curl ([8f15562](https://github.com/EPFL-ENAC/AddLidar/commit/8f155628285bd36a8dac126a7444a350358f21e1))
+* **frontend:** add MissionCard and MissionFootprintMap components for mission visualization ([6dd4038](https://github.com/EPFL-ENAC/AddLidar/commit/6dd4038531ac4cf0c292e591365050ea3f14049f))
+* **frontend:** implement zoom to mission functionality in MissionFootprintMap ([15b39da](https://github.com/EPFL-ENAC/AddLidar/commit/15b39da7c464515e482986f5ffb7aff60456f465))
+* **potree-converter:** add curl & remove sqlite in docker image ([f2243f4](https://github.com/EPFL-ENAC/AddLidar/commit/f2243f49c195c16eef9bbcb3e22f09ee6aeaf5f4))
+* **scanner:** add detailed logging to API for compression and potree convert ([ec75fa5](https://github.com/EPFL-ENAC/AddLidar/commit/ec75fa5bf6121c2bc667d46ab6b36da4b3fcfcf4))
+* **scanner:** add function to update last_checked timestamp for folder state ([ab64a4a](https://github.com/EPFL-ENAC/AddLidar/commit/ab64a4acee86928579ddffb620e2b368892c4da1))
+
+
+### Bug Fixes
+
+* **scanner:** remove folder state condition for potree converter ([ab64a4a](https://github.com/EPFL-ENAC/AddLidar/commit/ab64a4acee86928579ddffb620e2b368892c4da1))
+* **sql:** remove trailing comma in detailed_error_message column definition ([da788a9](https://github.com/EPFL-ENAC/AddLidar/commit/da788a98fcd3b82c6e6e6cd95ce1e64e83a7d3a9))
+
 ## [0.5.1](https://github.com/EPFL-ENAC/AddLidar/compare/v0.5.0...v0.5.1) (2025-06-15)
 
 
