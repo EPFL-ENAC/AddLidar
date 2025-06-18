@@ -26,6 +26,13 @@ spec:
                       values:
                         - compression
                 topologyKey: "kubernetes.io/hostname"
+      tolerations:
+        - key: dedicated
+          value: rcpHAAS
+          operator: Equal
+          effect: NoExecute
+      nodeSelector:
+        rcpnas3: available
       restartPolicy: Never
       initContainers:
         - name: "prepare-folders"
@@ -190,8 +197,8 @@ spec:
               subPath: "fts-addlidar/LiDAR"
               mountPath: "{{ orig_dir }}"
               readOnly: true
-            - name: fts-addlidar
-              subPath: "fts-addlidar/LiDAR-Zips"
+            - name: nas-rcp-flash-addlidar
+              subPath: "ENACIT4R-Files"
               mountPath: "{{ zip_dir }}"
             - mountPath: /data
               name: data
@@ -208,3 +215,6 @@ spec:
         - name: fts-addlidar
           persistentVolumeClaim:
             claimName: "{{ fts_addlidar_pvc_name }}"
+        - name: nas-rcp-flash-addlidar
+          persistentVolumeClaim:
+            claimName: "{{ nas_rcp_flash_pvc_name | default('nas-rcp-flash-addlidar') }}"

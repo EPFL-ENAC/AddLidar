@@ -50,6 +50,8 @@ ORIG: str = ""
 ZIP: str = ""
 # Default PVC for FTS AddLidar, can be overridden by command line argument
 FTS_ADDLIDAR_PVC: str = ""
+# Default PVC for NAS RCP Flash, can be overridden by command line argument
+NAS_RCP_FLASH_PVC: str = ""
 # Default backend URL, can be overridden by command line argument
 BACKEND_URL: str = ""
 # We'll store parsed args globally so they can be accessed from other functions
@@ -481,7 +483,7 @@ def queue_potree_conversion_jobs(
     Returns:
         Optional[int]: Number of jobs created (1 if batch job created) or None if no action was taken
     """
-    global ORIG, ZIP, FTS_ADDLIDAR_PVC, BACKEND_URL, args
+    global ORIG, ZIP, FTS_ADDLIDAR_PVC, NAS_RCP_FLASH_PVC, BACKEND_URL, args
 
     if not metacloud_files:
         logger.info("No metacloud files to process, skipping job creation")
@@ -517,6 +519,7 @@ def queue_potree_conversion_jobs(
             "metacloud_files": metacloud_files,
             "parallelism": parallelism,
             "fts_addlidar_pvc_name": FTS_ADDLIDAR_PVC,
+            "nas_rcp_flash_pvc_name": NAS_RCP_FLASH_PVC,
             "backend_url": BACKEND_URL,
             "potree_converter_image_registry": os.environ.get(
                 "POTREE_CONVERTER_IMAGE_REGISTRY"
@@ -575,7 +578,7 @@ def queue_batch_zip_job(
     Returns:
         Optional[int]: Number of folders processed or None if no action was taken
     """
-    global ORIG, ZIP, FTS_ADDLIDAR_PVC, BACKEND_URL, args
+    global ORIG, ZIP, FTS_ADDLIDAR_PVC, NAS_RCP_FLASH_PVC, BACKEND_URL, args
 
     if not folders:
         logger.info("No folders to process, skipping batch job creation")
@@ -609,6 +612,7 @@ def queue_batch_zip_job(
             "orig_dir": ORIG,
             "zip_dir": ZIP,
             "fts_addlidar_pvc_name": FTS_ADDLIDAR_PVC,
+            "nas_rcp_flash_pvc_name": NAS_RCP_FLASH_PVC,
             "backend_url": BACKEND_URL,
             "compression_image_registry": os.environ.get("COMPRESSION_IMAGE_REGISTRY"),
             "compression_image_name": os.environ.get("COMPRESSION_IMAGE_NAME"),
@@ -648,7 +652,7 @@ def main() -> None:
     Main function to scan directories and enqueue archive jobs.
     """
     # Access global constants and args to modify them
-    global ORIG, ZIP, FTS_ADDLIDAR_PVC, BACKEND_URL, args
+    global ORIG, ZIP, FTS_ADDLIDAR_PVC, NAS_RCP_FLASH_PVC, BACKEND_URL, args
 
     parser = argparse.ArgumentParser(
         description="LiDAR Archive Scanner and Job Enqueuer"
@@ -675,6 +679,11 @@ def main() -> None:
         "--fts-addlidar-pvc",
         default="fts-addlidar",
         help="PVC name for the FTS AddLidar (default: 'fts-addlidar')",
+    )
+    parser.add_argument(
+        "--nas-rcp-flash-pvc",
+        default="nas-rcp-flash-addlidar",
+        help="PVC name for the NAS RCP Flash storage (default: 'nas-rcp-flash-addlidar')",
     )
     parser.add_argument(
         "--backend-url",
@@ -720,6 +729,7 @@ def main() -> None:
     ORIG = args.original_root
     ZIP = args.zip_root
     FTS_ADDLIDAR_PVC = args.fts_addlidar_pvc
+    NAS_RCP_FLASH_PVC = args.nas_rcp_flash_pvc
     BACKEND_URL = args.backend_url
     execution_env = "batch"
 
