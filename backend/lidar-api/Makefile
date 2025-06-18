@@ -99,3 +99,129 @@ snapshot-help:
 	@echo "  make snapshot-download"
 	@echo "  make snapshot-list"
 	@echo "  make snapshot-switch-to SNAPSHOT=./snapshots/snapshot_prod_2025_06_16_120000.db"
+
+# Database deployment to Kubernetes environments
+db-push-dev:
+	@echo "Finding backend pod in dev environment..."
+	$(eval DEV_POD := $(shell kubectl get pods -n epfl-eso-addlidar-dev | grep backend | grep Running | awk '{print $$1}' | head -1))
+	@if [ -z "$(DEV_POD)" ]; then \
+		echo "Error: No running backend pod found in epfl-eso-addlidar-dev namespace"; \
+		exit 1; \
+	fi
+	@echo "Pushing database to dev pod: $(DEV_POD)"
+	kubectl cp -n epfl-eso-addlidar-dev ./data/database.db $(DEV_POD):/db-path/lidar-archive.db
+	@echo "Database successfully pushed to dev environment"
+
+db-push-prod:
+	@echo "Finding backend pod in prod environment..."
+	$(eval PROD_POD := $(shell kubectl get pods -n epfl-eso-addlidar-prod | grep backend | grep Running | awk '{print $$1}' | head -1))
+	@if [ -z "$(PROD_POD)" ]; then \
+		echo "Error: No running backend pod found in epfl-eso-addlidar-prod namespace"; \
+		exit 1; \
+	fi
+	@echo "Pushing database to prod pod: $(PROD_POD)"
+	kubectl cp -n epfl-eso-addlidar-prod ./data/database.db $(PROD_POD):/db-path/lidar-archive.db
+	@echo "Database successfully pushed to prod environment"
+
+db-push-rcp-haas:
+	@echo "Finding backend pod in rcp-haas environment..."
+	$(eval RCP_POD := $(shell kubectl get pods -n epfl-eso-addlidar-rcp-haas | grep backend | grep Running | awk '{print $$1}' | head -1))
+	@if [ -z "$(RCP_POD)" ]; then \
+		echo "Error: No running backend pod found in epfl-eso-addlidar-rcp-haas namespace"; \
+		exit 1; \
+	fi
+	@echo "Pushing database to rcp-haas pod: $(RCP_POD)"
+	kubectl cp -n epfl-eso-addlidar-rcp-haas ./data/database.db $(RCP_POD):/db-path/lidar-archive.db
+	@echo "Database successfully pushed to rcp-haas environment"
+
+db-push-all:
+	@echo "Pushing database to all environments..."
+	@$(MAKE) db-push-dev
+	@$(MAKE) db-push-prod  
+	@$(MAKE) db-push-rcp-haas
+	@echo "Database successfully pushed to all environments"
+
+db-pull-dev:
+	@echo "Finding backend pod in dev environment..."
+	$(eval DEV_POD := $(shell kubectl get pods -n epfl-eso-addlidar-dev | grep backend | grep Running | awk '{print $$1}' | head -1))
+	@if [ -z "$(DEV_POD)" ]; then \
+		echo "Error: No running backend pod found in epfl-eso-addlidar-dev namespace"; \
+		exit 1; \
+	fi
+	@echo "Pulling database from dev pod: $(DEV_POD)"
+	kubectl cp -n epfl-eso-addlidar-dev $(DEV_POD):/db-path/lidar-archive.db ./data/database-from-dev.db
+	@echo "Database pulled from dev environment to ./data/database-from-dev.db"
+
+db-pull-prod:
+	@echo "Finding backend pod in prod environment..."
+	$(eval PROD_POD := $(shell kubectl get pods -n epfl-eso-addlidar-prod | grep backend | grep Running | awk '{print $$1}' | head -1))
+	@if [ -z "$(PROD_POD)" ]; then \
+		echo "Error: No running backend pod found in epfl-eso-addlidar-prod namespace"; \
+		exit 1; \
+	fi
+	@echo "Pulling database from prod pod: $(PROD_POD)"
+	kubectl cp -n epfl-eso-addlidar-prod $(PROD_POD):/db-path/lidar-archive.db ./data/database-from-prod.db
+	@echo "Database pulled from prod environment to ./data/database-from-prod.db"
+
+db-pull-rcp-haas:
+	@echo "Finding backend pod in rcp-haas environment..."
+	$(eval RCP_POD := $(shell kubectl get pods -n epfl-eso-addlidar-rcp-haas | grep backend | grep Running | awk '{print $$1}' | head -1))
+	@if [ -z "$(RCP_POD)" ]; then \
+		echo "Error: No running backend pod found in epfl-eso-addlidar-rcp-haas namespace"; \
+		exit 1; \
+	fi
+	@echo "Pulling database from rcp-haas pod: $(RCP_POD)"
+	kubectl cp -n epfl-eso-addlidar-rcp-haas $(RCP_POD):/db-path/lidar-archive.db ./data/database-from-rcp-haas.db
+	@echo "Database pulled from rcp-haas environment to ./data/database-from-rcp-haas.db"
+
+db-status:
+	@echo "Checking database status in all environments..."
+	@echo ""
+	@echo "=== DEV Environment ==="
+	$(eval DEV_POD := $(shell kubectl get pods -n epfl-eso-addlidar-dev | grep backend | grep Running | awk '{print $$1}' | head -1))
+	@if [ -n "$(DEV_POD)" ]; then \
+		echo "Pod: $(DEV_POD)"; \
+		kubectl exec -n epfl-eso-addlidar-dev $(DEV_POD) -- ls -la /db-path/ 2>/dev/null || echo "Database path not accessible"; \
+	else \
+		echo "No running backend pod found"; \
+	fi
+	@echo ""
+	@echo "=== PROD Environment ==="
+	$(eval PROD_POD := $(shell kubectl get pods -n epfl-eso-addlidar-prod | grep backend | grep Running | awk '{print $$1}' | head -1))
+	@if [ -n "$(PROD_POD)" ]; then \
+		echo "Pod: $(PROD_POD)"; \
+		kubectl exec -n epfl-eso-addlidar-prod $(PROD_POD) -- ls -la /db-path/ 2>/dev/null || echo "Database path not accessible"; \
+	else \
+		echo "No running backend pod found"; \
+	fi
+	@echo ""
+	@echo "=== RCP-HAAS Environment ==="
+	$(eval RCP_POD := $(shell kubectl get pods -n epfl-eso-addlidar-rcp-haas | grep backend | grep Running | awk '{print $$1}' | head -1))
+	@if [ -n "$(RCP_POD)" ]; then \
+		echo "Pod: $(RCP_POD)"; \
+		kubectl exec -n epfl-eso-addlidar-rcp-haas $(RCP_POD) -- ls -la /db-path/ 2>/dev/null || echo "Database path not accessible"; \
+	else \
+		echo "No running backend pod found"; \
+	fi
+	@echo ""
+	@echo "=== LOCAL Database ==="
+	@ls -la ./data/database.db 2>/dev/null || echo "Local database not found"
+
+db-help:
+	@echo "Database Kubernetes Deployment Commands:"
+	@echo "  make db-push-dev          - Push local database to dev environment"
+	@echo "  make db-push-prod         - Push local database to prod environment"
+	@echo "  make db-push-rcp-haas     - Push local database to rcp-haas environment"
+	@echo "  make db-push-all          - Push local database to all environments"
+	@echo ""
+	@echo "  make db-pull-dev          - Pull database from dev environment"
+	@echo "  make db-pull-prod         - Pull database from prod environment"
+	@echo "  make db-pull-rcp-haas     - Pull database from rcp-haas environment"
+	@echo ""
+	@echo "  make db-status            - Show database status in all environments"
+	@echo "  make db-help              - Show this help message"
+	@echo ""
+	@echo "Examples:"
+	@echo "  make db-push-rcp-haas     # Push to rcp-haas only"
+	@echo "  make db-push-all          # Push to all environments"
+	@echo "  make db-status            # Check all environments"
