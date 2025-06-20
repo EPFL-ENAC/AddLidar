@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.1](https://github.com/EPFL-ENAC/AddLidar/compare/v0.7.0...v0.7.1) (2025-06-20)
+
+
+### Bug Fixes
+
+* **scanner:** add pipefail option to ensure pipeline failures are caught ([e4f15cf](https://github.com/EPFL-ENAC/AddLidar/commit/e4f15cf231a363f393f448f907899187d8e327f8))
+
 ## [0.7.0](https://github.com/EPFL-ENAC/AddLidar/compare/v0.6.0...v0.7.0) (2025-06-20)
 
 
