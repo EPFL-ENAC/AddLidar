@@ -1,5 +1,19 @@
 # Changelog
 
+## [0.7.0](https://github.com/EPFL-ENAC/AddLidar/compare/v0.6.0...v0.7.0) (2025-06-20)
+
+
+### Features
+
+* **database:** add new production snapshot for lidar API ([1aa6586](https://github.com/EPFL-ENAC/AddLidar/commit/1aa65864caff76b435dfa6516894fb0859698705))
+* **frontend:** enhance error handling with detailed logs and copy functionality ([a2ec35a](https://github.com/EPFL-ENAC/AddLidar/commit/a2ec35a2479b9e1d4f41c10bac7c27294ce6c93f))
+* **makefile:** add database deployment and management commands for Kubernetes environments ([7249f3e](https://github.com/EPFL-ENAC/AddLidar/commit/7249f3e47656cc52738b90419af2a8818d8d5bdf))
+
+
+### Bug Fixes
+
+* **scanner:** update subPath for Potree volume mount to correct directory ([683ab49](https://github.com/EPFL-ENAC/AddLidar/commit/683ab49dbcd40a0e88656fe8dc2634ea79b5b8a1))
+
 ## [0.6.0](https://github.com/EPFL-ENAC/AddLidar/compare/v0.5.1...v0.6.0) (2025-06-16)
 
 
