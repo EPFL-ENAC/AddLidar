@@ -83,6 +83,11 @@ spec:
           command: ["/bin/bash", "-c"]
           args:
             - |
+
+              # Ensure pipeline failures are caught
+              set -o pipefail
+
+
               # Set backend URL for API calls
               BACKEND_URL="{{ backend_url | default('http://backend-internal') }}"
 
