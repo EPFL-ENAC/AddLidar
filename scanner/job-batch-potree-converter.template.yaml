@@ -207,7 +207,7 @@ spec:
               mountPath: "/lidar"
               readOnly: true
             - name: fts-addlidar
-              subPath: "fts-addlidar/Potree"
+              subPath: "fts-addlidar/LiDAR-Zips/Potree"
               mountPath: "/potree"
             - mountPath: "/data"
               name: data
