@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.7.2](https://github.com/EPFL-ENAC/AddLidar/compare/v0.7.1...v0.7.2) (2025-06-30)
+
+
+### Bug Fixes
+
+* **scanner:** reduce memory limit for potree-converter from 16Gi to 12Gi ([58af0c7](https://github.com/EPFL-ENAC/AddLidar/commit/58af0c76ad8ec318b8e34c81214b7625fc7b26df))
+
 ## [0.7.1](https://github.com/EPFL-ENAC/AddLidar/compare/v0.7.0...v0.7.1) (2025-06-20)
 
 
