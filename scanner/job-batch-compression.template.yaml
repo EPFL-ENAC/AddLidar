@@ -94,6 +94,9 @@ spec:
           image: "{{ compression_image_registry | default('ghcr.io') }}/{{ compression_image_name | default('epfl-enac/epfl-eso/addlidar/compression') }}:{{ compression_image_tag | default('latest') }}{% if compression_image_sha256 %}@sha256:{{ compression_image_sha256 }}{% endif %}"
           imagePullPolicy: IfNotPresent
           command: ["/bin/bash", "-c"]
+          envFrom:
+            - configMapRef:
+                name: scanner-cm
           args:
             - |
 
@@ -216,12 +219,12 @@ spec:
             - mountPath: /data
               name: data
           resources:
-            limits:
-              cpu: "4"
-              memory: "4Gi"
             requests:
-              cpu: "500m"
-              memory: "1Gi"
+              cpu: "{{ compression_cpu_request | default('500m') }}"
+              memory: "{{ compression_memory_request | default('1Gi') }}"
+            limits:
+              cpu: "{{ compression_cpu_limit | default('2') }}"
+              memory: "{{ compression_memory_limit | default('4Gi') }}"
       volumes:
         - name: data
           emptyDir: {}

@@ -97,6 +97,9 @@ spec:
           image: "{{ potree_converter_image_registry | default('ghcr.io') }}/{{ potree_converter_image_name | default('epfl-enac/epfl-eso/addlidar/potree-converter') }}:{{ potree_converter_image_tag | default('latest') }}{% if potree_converter_image_sha256 %}@sha256:{{ potree_converter_image_sha256 }}{% endif %}"
           imagePullPolicy: IfNotPresent
           command: ["/bin/bash", "-c"]
+          envFrom:
+            - configMapRef:
+                name: scanner-cm
           args:
             - |
 
@@ -233,12 +236,12 @@ spec:
             - mountPath: "/data"
               name: data
           resources:
-            limits:
-              cpu: "4"
-              memory: "22Gi"
             requests:
-              cpu: "500m"
-              memory: "1Gi"
+              cpu: "{{ potree_cpu_request | default('1') }}"
+              memory: "{{ potree_memory_request | default('2Gi') }}"
+            limits:
+              cpu: "{{ potree_cpu_limit | default('4') }}"
+              memory: "{{ potree_memory_limit | default('8Gi') }}"
       volumes:
         - name: data
           emptyDir: {}

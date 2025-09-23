@@ -56,6 +56,29 @@ BACKEND_URL: str = ""
 args = None
 
 
+def get_resource_config_from_env():
+    """
+    Read resource configuration from environment variables (ConfigMap).
+    Returns values ready for Jinja2 template.
+    """
+    import os
+
+    return {
+        # Compression resources
+        "compression_cpu_request": os.environ.get("COMPRESSION_CPU_REQUEST", "500m"),
+        "compression_memory_request": os.environ.get(
+            "COMPRESSION_MEMORY_REQUEST", "1Gi"
+        ),
+        "compression_cpu_limit": os.environ.get("COMPRESSION_CPU_LIMIT", "2"),
+        "compression_memory_limit": os.environ.get("COMPRESSION_MEMORY_LIMIT", "4Gi"),
+        # Potree resources
+        "potree_cpu_request": os.environ.get("POTREE_CPU_REQUEST", "1"),
+        "potree_memory_request": os.environ.get("POTREE_MEMORY_REQUEST", "2Gi"),
+        "potree_cpu_limit": os.environ.get("POTREE_CPU_LIMIT", "4"),
+        "potree_memory_limit": os.environ.get("POTREE_MEMORY_LIMIT", "8Gi"),
+    }
+
+
 def get_current_namespace():
     """
     Get the current Kubernetes namespace where the scanner is running.
@@ -638,6 +661,9 @@ def queue_potree_conversion_jobs(
         # Get node scheduling configuration for HAAS nodes
         tolerations, node_selector = get_node_scheduling_config()
 
+        # Get resource configuration from environment variables
+        resource_config = get_resource_config_from_env()
+
         # Prepare template context
         parallelism = min(
             len(metacloud_files), 4
@@ -652,6 +678,7 @@ def queue_potree_conversion_jobs(
             "job_namespace": current_namespace,
             "tolerations": tolerations,
             "node_selector": node_selector,
+            **resource_config,
             "potree_converter_image_registry": os.environ.get(
                 "POTREE_CONVERTER_IMAGE_REGISTRY"
             ),
@@ -724,6 +751,9 @@ def queue_batch_zip_job(
     # Get node scheduling configuration for HAAS nodes
     tolerations, node_selector = get_node_scheduling_config()
 
+    # Get resource configuration from environment variables
+    resource_config = get_resource_config_from_env()
+
     try:
         # Load Jinja2 template
         template_path = os.path.join(
@@ -753,6 +783,7 @@ def queue_batch_zip_job(
             "tolerations": tolerations,
             "node_selector": node_selector,
             "job_namespace": current_namespace,
+            **resource_config,
             "compression_image_registry": os.environ.get("COMPRESSION_IMAGE_REGISTRY"),
             "compression_image_name": os.environ.get("COMPRESSION_IMAGE_NAME"),
             "compression_image_tag": os.environ.get("COMPRESSION_IMAGE_TAG"),
