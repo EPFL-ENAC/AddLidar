@@ -57,3 +57,6 @@ CITATION.cff
 **/snapshots/
 backend/lidar-api/snapshots/
 backend/lidar-api/data/
+
+
+*.template.yaml

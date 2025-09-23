@@ -26,6 +26,22 @@ spec:
                       values:
                         - potree-converter
                 topologyKey: "kubernetes.io/hostname"
+      # RCP-HAAS node scheduling (conditional)
+      {% if tolerations %}
+      tolerations:
+        {% for toleration in tolerations %}
+        - key: {{ toleration.key }}
+          value: {{ toleration.value }}
+          operator: {{ toleration.operator }}
+          effect: {{ toleration.effect }}
+        {% endfor %}
+      {% endif %}
+      {% if node_selector %}
+      nodeSelector:
+        {% for key, value in node_selector.items() %}
+        {{ key }}: {{ value }}
+        {% endfor %}
+      {% endif %}
       restartPolicy: Never
       initContainers:
         - name: "prepare-metacloud"

@@ -148,6 +148,39 @@ def validate_environment_consistency():
     return current_namespace
 
 
+def get_node_scheduling_config():
+    """
+    Get node scheduling configuration based on current environment.
+
+    Returns:
+        tuple: (tolerations, node_selector) for job templates
+    """
+    current_namespace = get_current_namespace()
+
+    # Check if we're running in RCP-HAAS environment
+    if "rcp-haas" in current_namespace.lower():
+        logger.info("Detected RCP-HAAS environment - configuring jobs for HAAS nodes")
+
+        tolerations = [
+            {
+                "key": "dedicated",
+                "value": "rcpHAAS",
+                "operator": "Equal",
+                "effect": "NoExecute",
+            }
+        ]
+
+        node_selector = {"rcpnas3": "available"}
+
+        return tolerations, node_selector
+
+    else:
+        logger.info(
+            "Standard environment detected - no special node scheduling required"
+        )
+        return None, None
+
+
 # API Client Functions
 def api_get_folder_state(folder_key: str) -> Optional[Dict]:
     """Get folder state from API by folder key"""
@@ -602,6 +635,9 @@ def queue_potree_conversion_jobs(
         # Get the current namespace dynamically
         current_namespace = get_current_namespace()
 
+        # Get node scheduling configuration for HAAS nodes
+        tolerations, node_selector = get_node_scheduling_config()
+
         # Prepare template context
         parallelism = min(
             len(metacloud_files), 4
@@ -614,6 +650,8 @@ def queue_potree_conversion_jobs(
             "fts_addlidar_pvc_name": FTS_ADDLIDAR_PVC,
             "backend_url": BACKEND_URL,
             "job_namespace": current_namespace,
+            "tolerations": tolerations,
+            "node_selector": node_selector,
             "potree_converter_image_registry": os.environ.get(
                 "POTREE_CONVERTER_IMAGE_REGISTRY"
             ),
@@ -679,8 +717,13 @@ def queue_batch_zip_job(
 
     # Generate timestamp for unique job name
     timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
+
     # Get the current namespace dynamically
     current_namespace = get_current_namespace()
+
+    # Get node scheduling configuration for HAAS nodes
+    tolerations, node_selector = get_node_scheduling_config()
+
     try:
         # Load Jinja2 template
         template_path = os.path.join(
@@ -707,6 +750,8 @@ def queue_batch_zip_job(
             "zip_dir": ZIP,
             "fts_addlidar_pvc_name": FTS_ADDLIDAR_PVC,
             "backend_url": BACKEND_URL,
+            "tolerations": tolerations,
+            "node_selector": node_selector,
             "job_namespace": current_namespace,
             "compression_image_registry": os.environ.get("COMPRESSION_IMAGE_REGISTRY"),
             "compression_image_name": os.environ.get("COMPRESSION_IMAGE_NAME"),
