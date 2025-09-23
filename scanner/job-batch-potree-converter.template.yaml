@@ -2,7 +2,7 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: "potree-converter"
-  namespace: "epfl-eso-addlidar-prod"
+  namespace: "{{ job_namespace }}"
 spec:
   ttlSecondsAfterFinished: 3600 # 1 hour
   # prettier-ignore

@@ -56,6 +56,98 @@ BACKEND_URL: str = ""
 args = None
 
 
+def get_current_namespace():
+    """
+    Get the current Kubernetes namespace where the scanner is running.
+
+    Returns:
+        str: The namespace name, defaults to 'default' if not found
+    """
+    try:
+        # Try to read the namespace from the service account token (running in-cluster)
+        if os.path.exists("/var/run/secrets/kubernetes.io/serviceaccount/namespace"):
+            with open(
+                "/var/run/secrets/kubernetes.io/serviceaccount/namespace", "r"
+            ) as f:
+                namespace = f.read().strip()
+                logger.info(
+                    f"Detected current namespace from service account: {namespace}"
+                )
+                return namespace
+    except Exception as e:
+        logger.warning(f"Failed to read namespace from service account: {e}")
+
+    try:
+        # Fallback: Try to get from kubectl context (for local development)
+        import subprocess
+
+        result = subprocess.run(
+            [
+                "kubectl",
+                "config",
+                "view",
+                "--minify",
+                "--output",
+                "jsonpath={..namespace}",
+            ],
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+        if result.returncode == 0 and result.stdout.strip():
+            namespace = result.stdout.strip()
+            logger.info(f"Detected current namespace from kubectl context: {namespace}")
+            return namespace
+    except Exception as e:
+        logger.warning(f"Failed to get namespace from kubectl: {e}")
+
+    # Default fallback - this should be overridden in production
+    logger.warning(
+        "Could not detect namespace, using 'default'. This should be configured properly!"
+    )
+    return "default"
+
+
+def validate_environment_consistency():
+    """
+    Validate that the detected namespace matches the expected environment.
+    This prevents accidental cross-environment job creation.
+    """
+    current_namespace = get_current_namespace()
+
+    # Define expected namespace patterns for each environment
+    environment_namespaces = {
+        "dev": "epfl-eso-addlidar-dev",
+        "prod": "epfl-eso-addlidar-prod",
+        "rcp": "epfl-eso-addlidar-rcp-haas",
+    }
+
+    # Check if current namespace matches any known pattern
+    detected_env = None
+    for env, expected_ns in environment_namespaces.items():
+        if current_namespace == expected_ns:
+            detected_env = env
+            break
+
+    if detected_env is None:
+        logger.warning(f"Running in unexpected namespace: {current_namespace}")
+        logger.warning("Expected one of: " + ", ".join(environment_namespaces.values()))
+    else:
+        logger.info(
+            f"Detected environment: {detected_env} (namespace: {current_namespace})"
+        )
+
+    # Optional: Add strict validation for production safety
+    if os.environ.get("STRICT_NAMESPACE_VALIDATION", "").lower() == "true":
+        if detected_env is None:
+            logger.error(
+                "STRICT_NAMESPACE_VALIDATION enabled but namespace is unexpected. Exiting."
+            )
+            sys.exit(1)
+
+    return current_namespace
+
+
 # API Client Functions
 def api_get_folder_state(folder_key: str) -> Optional[Dict]:
     """Get folder state from API by folder key"""
@@ -507,6 +599,9 @@ def queue_potree_conversion_jobs(
         # Generate timestamp for unique job name
         timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
 
+        # Get the current namespace dynamically
+        current_namespace = get_current_namespace()
+
         # Prepare template context
         parallelism = min(
             len(metacloud_files), 4
@@ -518,6 +613,7 @@ def queue_potree_conversion_jobs(
             "parallelism": parallelism,
             "fts_addlidar_pvc_name": FTS_ADDLIDAR_PVC,
             "backend_url": BACKEND_URL,
+            "job_namespace": current_namespace,
             "potree_converter_image_registry": os.environ.get(
                 "POTREE_CONVERTER_IMAGE_REGISTRY"
             ),
@@ -583,7 +679,8 @@ def queue_batch_zip_job(
 
     # Generate timestamp for unique job name
     timestamp = datetime.now().strftime("%Y%m%d%H%M%S")
-
+    # Get the current namespace dynamically
+    current_namespace = get_current_namespace()
     try:
         # Load Jinja2 template
         template_path = os.path.join(
@@ -610,6 +707,7 @@ def queue_batch_zip_job(
             "zip_dir": ZIP,
             "fts_addlidar_pvc_name": FTS_ADDLIDAR_PVC,
             "backend_url": BACKEND_URL,
+            "job_namespace": current_namespace,
             "compression_image_registry": os.environ.get("COMPRESSION_IMAGE_REGISTRY"),
             "compression_image_name": os.environ.get("COMPRESSION_IMAGE_NAME"),
             "compression_image_tag": os.environ.get("COMPRESSION_IMAGE_TAG"),
@@ -759,6 +857,9 @@ def main() -> None:
                 sys.exit(1)
 
     logger.info(f"Scanner initialized. Using backend at {BACKEND_URL}")
+    # Validate environment before processing
+    current_namespace = validate_environment_consistency()
+    logger.info(f"Current Kubernetes namespace: {current_namespace}")
 
     # Process based on execution environment
     # Collect all changed folders first

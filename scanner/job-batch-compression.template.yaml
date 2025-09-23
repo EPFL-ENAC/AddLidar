@@ -2,7 +2,7 @@ apiVersion: batch/v1
 kind: Job
 metadata:
   name: "compression"
-  namespace: "epfl-eso-addlidar-prod"
+  namespace: "{{ job_namespace }}"
 spec:
   ttlSecondsAfterFinished: 3600 # Clean up 1 hour after job completes
   activeDeadlineSeconds: 86400 # Job timeout of 24 hours
