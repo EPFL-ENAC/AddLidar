@@ -94,9 +94,6 @@ spec:
           image: "{{ compression_image_registry | default('ghcr.io') }}/{{ compression_image_name | default('epfl-enac/epfl-eso/addlidar/compression') }}:{{ compression_image_tag | default('latest') }}{% if compression_image_sha256 %}@sha256:{{ compression_image_sha256 }}{% endif %}"
           imagePullPolicy: IfNotPresent
           command: ["/bin/bash", "-c"]
-          envFrom:
-            - configMapRef:
-                name: scanner-cm
           args:
             - |
 
