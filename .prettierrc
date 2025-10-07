@@ -1,0 +1,12 @@
+{
+  "plugins": ["prettier-plugin-jinja-template"],
+  "overrides": [
+    {
+      "files": ["*.template.yaml", "*.j2"],
+      "options": {
+        "parser": "yaml",
+        "printWidth": 120
+      }
+    }
+  ]
+}
