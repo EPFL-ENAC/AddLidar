@@ -37,15 +37,18 @@ flowchart LR
 ```
 
 1. **Researcher Adds New Files (NAS RCP)**:
+
    - The researcher places new LiDAR files in the NAS RCP storage (e.g., `/0001_Mission_Root/...`).
 
 2. **Enter Mission Metadata (MMGIS)**:
+
    - The researcher manually enters the mission's metadata into MMGIS, including:
      - Mission footprint in GeoJSON
      - Flight date
      - File path referencing the newly added LiDAR files on NAS RCP
 
 3. **Automated Conversion & Upload**:
+
    - Adding a new mission in MMGIS automatically triggers a Kubernetes job
    - The job runs Potree Converter to process the LiDAR files
    - The optimized dataset (e.g., octree.bin, metadata.json, hierarchy.bin) is uploaded to ENAC IT CDN
@@ -82,29 +85,35 @@ flowchart TD
 ```
 
 1. **Dataset Selection (MMGIS)**:
+
    - A user browses the mission list in MMGIS, which displays mission footprints as GeoJSON overlays
    - User selects a mission of interest
    - The system provides a link to Potree for visualization
 
 2. **Visualization (Potree)**:
+
    - Potree loads the pre-processed LiDAR files directly from ENAC IT CDN
    - The user can explore the dataset through Potree's 3D viewer (pan, zoom, measure, etc.)
 
 3. **Download Options**:
+
    - **Static Files**: Users can directly download original or pre-processed static files associated with the mission
    - **Custom Processing**: Users can request on-demand processing with custom parameters
 
 4. **Request Processed Dataset (Custom Processing)**:
+
    - Within Potree, the user fills out the download form (filters, density, output format, ROI, etc.)
    - Submitting the form sends these parameters as a request to the API Wrapper
 
 5. **On-Demand Processing Pipeline**:
+
    - API Wrapper receives the request and initiates a Kubernetes job
    - A WebSocket connection is established between the client and server
    - The job executes the LidarDataManager CLI with the requested parameters
    - The CLI accesses the raw data via a read-only Persistent Volume Claim (PVC)
 
 6. **Real-time Progress Updates**:
+
    - The processing job sends status updates via WebSocket to the client
    - Users see a progress bar/indicator showing the current status of their request
 

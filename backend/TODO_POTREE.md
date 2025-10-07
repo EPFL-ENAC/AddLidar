@@ -141,6 +141,7 @@ Fields:
 
 - **During Scanning:**  
   When your CronJob runs and scans the folder:
+
   1. **Check for Existence:** Look up the Redis hash for a given file key (`file:/path/to/file.las`).
   2. **Compare Timestamps:**
      - If the current file’s modification timestamp (obtained from the filesystem) is newer than `timestamp_file` stored in Redis, mark it as needing reprocessing.
@@ -292,6 +293,7 @@ then separating them into two images and Kubernetes jobs is likely a better arch
 For example, you could have:
 
 1. **Conversion Job:**
+
    - Uses the PotreeConverter image to process input files and write output to a PVC.
    - On success, it writes a record (or triggers an event) indicating the conversion is complete.
 

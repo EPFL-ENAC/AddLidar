@@ -3,7 +3,8 @@
     "@commitlint/cli": "^17.1.2",
     "@commitlint/config-conventional": "^17.1.0",
     "@evilmartians/lefthook": "^1.5.0",
-    "prettier": "^3.5.3"
+    "prettier": "^3.5.3",
+    "prettier-plugin-jinja-template": "^2.1.0"
   },
   "version": "0.7.4"
 }
