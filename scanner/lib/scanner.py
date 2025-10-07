@@ -4,6 +4,7 @@ import os
 import time
 import logging
 from typing import List
+import shutil
 
 from .api_client import APIClient
 from .filesystem import get_directory_stats, fingerprint_file
@@ -18,6 +19,62 @@ class DirectoryScanner:
         self.api_client = api_client
         self.original_root = original_root
         self.zip_root = zip_root
+
+    def copy_footprint_files(self) -> None:
+        """Copy footprint.geojson files to zip_root/Footprints/ directory."""
+        footprints_dir = os.path.join(self.zip_root, "Footprints")
+
+        # Create Footprints directory if it doesn't exist
+        os.makedirs(footprints_dir, exist_ok=True)
+        logger.info(f"Footprints directory: {footprints_dir}")
+
+        if not os.path.exists(self.original_root):
+            logger.warning(
+                f"Original root directory {self.original_root} does not exist"
+            )
+            return
+
+        copied_count = 0
+        skipped_count = 0
+
+        try:
+            # Iterate through all directories in original_root (level1 directories)
+            for level1 in os.listdir(self.original_root):
+                project_path = os.path.join(self.original_root, level1)
+
+                # Skip if not a directory
+                if not os.path.isdir(project_path):
+                    continue
+
+                # Look for footprint.geojson in the project directory
+                footprint_source = os.path.join(project_path, "footprint.geojson")
+
+                if os.path.exists(footprint_source):
+                    # Destination file named after the project directory
+                    footprint_dest = os.path.join(footprints_dir, f"{level1}.geojson")
+
+                    try:
+                        # Copy the footprint file
+                        shutil.copy2(footprint_source, footprint_dest)
+                        logger.debug(
+                            f"Copied footprint: {footprint_source} -> {footprint_dest}"
+                        )
+                        copied_count += 1
+
+                    except Exception as e:
+                        logger.error(f"Failed to copy footprint for {level1}: {e}")
+
+                else:
+                    logger.debug(f"No footprint.geojson found in {project_path}")
+                    skipped_count += 1
+
+        except Exception as e:
+            logger.error(f"Error scanning for footprint files: {e}")
+            return
+
+        logger.info(
+            f"Footprint copying completed: {copied_count} copied, {skipped_count} skipped"
+        )
 
     def scan_for_metacloud_files(self, dry_run: bool = False) -> List[List[str]]:
         """Scan directories for .metacloud files and track changes."""

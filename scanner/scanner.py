@@ -247,6 +247,10 @@ def main() -> None:
 
     logger.info(f"Scanner initialized. Using backend at {args.backend_url}")
 
+    # Copy footprint files before processing changes
+    logger.info("Copying footprint.geojson files...")
+    scanner.copy_footprint_files()
+
     # Scan for changed folders
     changed_folders = scanner.collect_changed_folders(args.dry_run)
 
