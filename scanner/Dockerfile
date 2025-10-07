@@ -5,6 +5,7 @@ WORKDIR /app
 
 # Copy the necessary files into the container
 COPY scanner.py .
+COPY lib/ ./lib/
 COPY job-batch-compression.template.yaml .
 COPY job-batch-potree-converter.template.yaml .
 
@@ -14,6 +15,7 @@ RUN apk add --no-cache \
     bash \
     && pip install --no-cache-dir \
     kubernetes \
+    requests \
     pydantic \
     jinja2 \
     sqlite-utils
