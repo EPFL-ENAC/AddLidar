@@ -1,123 +1,242 @@
 # AddLidar
 
-The AddLidar Project is a web-based system for storing, processing, and visualizing LiDAR datasets collected from airborne missions. The goal is to provide researchers with an efficient pipeline to access, process, and visualize large LiDAR datasets via a Kubernetes-based infrastructure.
+A web-based platform for storing, processing, and visualizing LiDAR datasets from airborne missions. Built for EPFL's CRYOS laboratory.
 
-**Access the platform here:**
+**🌐 Platform URLs:**
 
-**dev url: [https://AddLidar-dev.addlidar-potree/](https://AddLidar-dev.addlidar-potree/)**  
-**prod url: [https://AddLidar.addlidar-potree/](https://AddLidar.addlidar-potree/)**
+- **Dev:** [https://addlidar-dev.epfl.ch/](https://addlidar-dev.epfl.ch/)
+- **Prod:** [https://addlidar.epfl.ch/](https://addlidar.epfl.ch/)
+- **Stage:** [https://addlidar-stage.epfl.ch/](https://addlidar-stage.epfl.ch/)
 
-## Contributors
+## Table of Contents
 
-- EPFL - (Research & Data): Jan Skaloud
-- EPFL - ENAC-IT4R (Implementation):
-- EPFL - ENAC-IT4R (Project Management):
-- EPFL - ENAC-IT4R (Contributors):
+- [Project Structure](#project-structure)
+- [System Overview](#system-overview)
+- [Development](#development)
+- [Deployment](#deployment)
+- [Contributing](#contributing)
 
-## Tech Stack
+## Project Structure
 
-### Frontend
+```
+AddLidar/
+├── backend/
+│   ├── lidar-api/              # FastAPI service
+│   │   ├── app/                # API application
+│   │   ├── data/               # SQLite database
+│   │   └── Makefile            # Dev commands
+│   └── LidarDataManager/       # Processing CLI tool
+│
+├── frontend/                    # Vue.js + Potree viewer
+│   ├── vueSrc/                 # Vue 3 + Quasar app
+│   ├── src/                    # Potree source
+│   └── libs/                   # Potree libraries
+│
+├── scanner/                     # Automated data detection
+│   ├── scanner.py              # Folder scanning logic
+│   └── job-batch-*.template.yaml
+│
+├── compression/                 # Archive creation tool
+│   └── archive.py              # Parallel compression (pigz)
+│
+├── potree-converter/           # Web optimization tool
+│   └── entrypoint.sh           # Conversion wrapper
+│
+└── docs/                       # Documentation
+```
 
-- [Vue.js 3](https://vuejs.org/) - Progressive JavaScript Framework
-- [Quasar](https://quasar.dev/) - Vue.js Framework
-- [OpenLayers](https://openlayers.org/) - Mapping Library
-- [ECharts](https://echarts.apache.org/) - Data Visualization
-- [nginx](https://nginx.org/) - Web Server
+### Component Overview
 
-### Backend
+**backend/lidar-api**
+FastAPI service that manages processing jobs via Kubernetes. Provides REST API, WebSocket updates, and SQLite database for job tracking.
 
-- [Python](https://www.python.org/) with FastAPI
-- [PostgreSQL](https://www.postgresql.org/) - Database
+**backend/LidarDataManager**
+CLI tool that runs inside Kubernetes jobs to filter, transform, and export LiDAR point clouds.
 
-### Infrastructure
+**frontend**
+Vue.js single-page application with embedded Potree 3D viewer. Allows users to browse datasets, visualize point clouds, and submit custom processing requests.
 
-- [Docker](https://www.docker.com/) - Containerization
-- [Traefik](https://traefik.io/) - Edge Router
+**scanner**
+Python service that runs as a CronJob (daily @ 8pm) to detect new LiDAR data on NAS storage and create batch processing jobs.
 
-_Note: Update this section with your actual tech stack_
+**compression**
+Containerized worker using pigz for parallel compression. Runs as Kubernetes batch jobs (4 workers) to create tar.gz archives.
+
+**potree-converter**
+Docker wrapper for PotreeConverter that generates web-optimized octree structures from `.metacloud` files. Runs as Kubernetes batch jobs (2 workers).
+
+## System Overview
+
+### Architecture
+
+Three main services deployed on Kubernetes:
+
+1. **Backend API** - FastAPI + SQLite + K8s job orchestration
+2. **Frontend** - Vue.js + Quasar + Potree 3D viewer
+3. **Static Server** - Nginx serving compressed archives
+
+### Data Flow
+
+```mermaid
+flowchart LR
+    A[NAS Storage] --> B[Scanner CronJob<br/>Daily @ 8pm]
+    B --> C[Batch Jobs]
+    C --> D[Compressed Archives]
+    C --> E[Potree Datasets]
+
+    F[User] --> G[Frontend]
+    G --> H{Action}
+    H -->|Browse| I[View Potree]
+    H -->|Download| J[Static Server]
+    H -->|Process| K[API Job]
+    K --> L[Result Download]
+```
+
+### Automated Processing
+
+- **Scanner CronJob**: Detects new folders using fingerprints, creates batch jobs
+- **Compression Jobs**: 4 parallel workers compress folders to tar.gz
+- **Potree Jobs**: 2 parallel workers convert `.metacloud` to octree format
+- **Cleanup CronJob**: Removes temp files older than 12h (Sunday midnight)
+
+### Storage
+
+- **fts-addlidar PVC**: NAS mount for raw data and processed files
+  - `/LiDAR`: Original datasets
+  - `/LiDAR-Zips`: Compressed archives
+  - `/Potree`: Web-optimized datasets
+- **lidardatamanager-output PVC**: Temporary processing outputs (100Gi)
+- **database PVC**: SQLite for job tracking (1Gi)
+
+### Routing
+
+```
+addlidar.epfl.ch/
+├── /api/*      → Backend API
+├── /static/*   → Static file server
+└── /*          → Frontend SPA
+```
 
 ## Development
 
 ### Prerequisites
 
-- Node.js (v22+)
-- npm
-- Python 3
+- Node.js 20+
+- Python 3.9+
 - Docker
+- Kubernetes cluster access (optional)
 
-### Setup & Usage
-
-You can use Make with the following commands:
+### Backend
 
 ```bash
+cd backend/lidar-api
+
+# Install dependencies
 make install
-make clean
-make uninstall
-make lint
+
+# Run dev server
+make dev
+
+# Format & lint
 make format
+make lint
+
+# Database management
+make db-status          # Check all environments
+make db-push-dev        # Push to dev
+make db-pull-prod       # Pull from prod
 ```
 
-_Note: Update these commands based on your project's actual build system_
+### Frontend
 
-### Development Environment
+```bash
+cd frontend
 
-The development environment includes:
+# Install and run
+npm install
+npm run dev             # Starts on port 9000
 
-- Frontend at http://localhost:9000
-- Backend API at https://localhost:8060
-- Traefik Dashboard at http://localhost:8080
+# Build
+npm run build
+```
 
-## Data Management
+### Scanner
 
-Data for the platform is organized the following way:
+```bash
+cd scanner
 
-### Application Data
+# Build image
+docker build -t addlidar-scanner .
 
-- Location: `./`
-- Contains:
-  - Application-specific data
+# Test locally (dry-run)
+python scanner.py --export-only
+```
 
-Data is version-controlled and regularly updated to reflect the latest research findings
+### Git Hooks
 
-The platform supports multiple languages including English, French, and Arabic. Translations are managed through i18n files located in `frontend/src/i18n/`. based on `frontend/src/assets/i18n`
+```bash
+# Set up automatic format/lint on commit
+make setup-hooks
 
-## Contributing
+# Skip hooks if needed
+git commit --no-verify
+```
 
-Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on our code of conduct and the process for submitting pull requests.
+## Deployment
 
-## Status
+The platform is deployed on Kubernetes with three environments managed via Kustomize:
 
-Under active development. [Report bugs here](https://github.com/EPFL-ENAC/AddLidar/issues).
+- **dev**: `epfl-eso-addlidar-dev`
+- **prod**: `epfl-eso-addlidar-prod`
+- **rcp-haas**: `epfl-eso-addlidar-rcp-haas` (high-performance nodes)
+
+### Key Resources
+
+**Deployments:**
+
+- backend: FastAPI (500m-1 CPU, 256Mi-2Gi memory)
+- frontend: Vue.js SPA (50m-1 CPU, 128Mi-2Gi memory)
+- static-files: Nginx (50m-1 CPU, 128Mi-2Gi memory)
+
+**CronJobs:**
+
+- scanner: Daily @ 8pm (`0 20 * * *`)
+- file-cleanup: Sunday midnight (`0 0 * * 0`)
+
+**Limits:**
+
+- Max 16 jobs per namespace
+- Max 30 pods per namespace
+- Job TTL: 2 hours after completion
+- Temp file cleanup: 12 hours
+
+### Environment Variables
+
+Backend (`.env`):
+
+```bash
+ENVIRONMENT=development
+IMAGE_NAME=ghcr.io/epfl-enac/lidardatamanager
+IMAGE_TAG=latest
+NAMESPACE=epfl-eso-addlidar-dev
+PVC_NAME=fts-addlidar
+PVC_OUTPUT_NAME=lidardatamanager-output
+OUTPUT_PATH=/output
+DATABASE_PATH=/data/database.sqlite
+```
+
+**Report Issues:** [GitHub Issues](https://github.com/EPFL-ENAC/AddLidar/issues)
+
+## Contributors
+
+- **EPFL CRYOS** - Jan Skaloud (Research & Data)
+- **EPFL ENAC-IT4R** - Implementation and Project Management
 
 ## License
 
-This project is licensed under the [GNU General Public License v3.0](LICENSE) - see the LICENSE file for details.
+This project is licensed under the [GNU General Public License v3.0](LICENSE).
 
-This is free software: you can redistribute it and/or modify it under the terms of the GPL-3.0 as published by the Free Software Foundation.
+---
 
-# Setup Checklist Completed
-
-The following items from the original setup checklist have been automatically completed:
-
-- [x] Replace `{ YOUR-REPO-NAME }` in all files by the name of your repo
-- [x] Replace `{ YOUR-LAB-NAME }` in all files by the name of your lab
-- [x] Replace `{ DESCRIPTION }` with project description
-- [x] Replace assignees: githubusernameassignee by the github handle of your assignee
-- [x] Handle CITATION.cff file (kept/removed based on preference)
-- [x] Handle release-please workflow (kept/removed based on preference)
-- [x] Configure project-specific settings
-
-## Remaining Manual Tasks
-
-Please complete these tasks manually:
-
-- [ ] Add token for the github action secrets called: MY_RELEASE_PLEASE_TOKEN (since you kept the release-please workflow)
-- [ ] Check if you need all the labels: https://github.com/EPFL-ENAC/AddLidar/labels
-- [ ] Create your first milestone: https://github.com/EPFL-ENAC/AddLidar/milestones
-- [ ] Protect your branch if you're a pro user: https://github.com/EPFL-ENAC/AddLidar/settings/branches
-- [ ] [Activate discussion](https://github.com/EPFL-ENAC/AddLidar/settings)
-
-## Helpful links
-
-- [How to format citations ?](https://docs.github.com/en/repositories/managing-your-repositorys-settings-and-features/customizing-your-repository/about-citation-files)
-- [Learn how to use github template repository](https://docs.github.com/en/repositories/creating-and-managing-repositories/creating-a-repository-from-a-template)
+**Status**: Under active development  
+**Support**: Contact EPFL ENAC-IT4R team
