@@ -40,7 +40,7 @@ export default defineConfig({
         rewriteWsOrigin: true,
       },
       "/static": {
-        target: "https://addlidar-potree-dev.epfl.ch",
+        target: "https://addlidar.epfl.ch",
         changeOrigin: true,
         secure: false,
         ws: true,

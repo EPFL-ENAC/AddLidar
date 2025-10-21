@@ -7,7 +7,7 @@
   "scripts": {
     "dev": "vite",
     "start": "gulp watch",
-    "build-potree-dev": "gulp build pack && cp -r build/* vueSrc/public/build/",
+    "build-potree-dev": "mkdir vueSrc/public/build/ && mkdir vueSrc/public/libs && cp -r libs/* vueSrc/public/libs/ && gulp build pack && cp -r build/* vueSrc/public/build/",
     "build-potree": "gulp build pack",
     "build": "vite build"
   },
