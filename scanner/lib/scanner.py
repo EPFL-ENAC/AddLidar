@@ -119,6 +119,9 @@ class DirectoryScanner:
                     )
                     needs_processing = True
 
+                # Extract just the filename from the full path
+                metacloud_filename = os.path.basename(metacloud_file)
+
                 if needs_processing:
                     metacloud_changes.append([level1, metacloud_file, metacloud_fp])
                     if not dry_run:
@@ -126,11 +129,16 @@ class DirectoryScanner:
                             os.path.dirname(self.zip_root), "Potree", level1
                         )
                         self.api_client.create_potree_metacloud_state(
-                            level1, metacloud_fp, output_path
+                            level1,
+                            metacloud_fp,
+                            output_path,
+                            metacloud_filename=metacloud_filename,
                         )
                 else:
                     if not dry_run:
-                        self.api_client.update_potree_metacloud_last_checked(level1)
+                        self.api_client.update_potree_metacloud_last_checked(
+                            level1, metacloud_filename=metacloud_filename
+                        )
 
             except Exception as e:
                 logger.error(f"Error processing metacloud file in {level1}: {e}")

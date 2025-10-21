@@ -178,14 +178,22 @@ const number = ref(1000);
 // Store the file path, defaulting to the standard path
 const filePath = ref("");
 
-// Set up the default file path or use query parameter if available
 onMounted(() => {
-  // Check for filename in query parameters
-  if (route.query.filename && typeof route.query.filename === "string") {
-    filePath.value = route.query.filename;
+  if (
+    directoryStore.activeMission &&
+    directoryStore.missionData &&
+    directoryStore.missionData.metacloud_filename
+  ) {
+    // Construct the full path using the active mission from directory store
+    const missionKey = directoryStore.activeMission;
+    const metacloudFilename = directoryStore.missionData.metacloud_filename;
+    filePath.value = `/LiDAR/${missionKey}/${metacloudFilename}`;
   } else {
     // Use the default path
-    filePath.value = `/LiDAR/0001_Mission_Root/02_LAS_PCD/all_grouped_high_veg_10th_point.las`;
+    console.error(
+      "No metacloud_filename found in mission data.",
+      directoryStore.missionData,
+    );
   }
 
   console.log("Using file path:", filePath.value);

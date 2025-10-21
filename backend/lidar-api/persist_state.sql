@@ -23,5 +23,6 @@ CREATE TABLE IF NOT EXISTS potree_metacloud_state (
     processing_status TEXT,                  -- 'success', 'failed', 'pending', NULL if never attempted (formerly conversion_status)
     error_message     TEXT,                  -- error message if conversion failed
     detailed_error_message TEXT, -- detailed error message if processing failed
+    metacloud_filename TEXT,                 -- filename of the .metacloud file
     FOREIGN KEY (mission_key) REFERENCES folder_state(mission_key)
 );

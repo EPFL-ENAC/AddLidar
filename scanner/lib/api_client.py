@@ -96,12 +96,14 @@ class APIClient:
             return False
 
     def create_potree_metacloud_state(
-        self, mission_key: str, fp: str, output_path: str
+        self, mission_key: str, fp: str, output_path: str, metacloud_filename: str = None
     ) -> bool:
         """Create or update potree metacloud state via API"""
         try:
             url = f"{self.backend_url}/sqlite/potree_metacloud_state/{mission_key}"
             payload = {"fingerprint": fp, "processing_status": "pending"}
+            if metacloud_filename:
+                payload["metacloud_filename"] = metacloud_filename
             response = requests.put(url, json=payload, timeout=30)
 
             if response.status_code == 404:
@@ -115,6 +117,8 @@ class APIClient:
                     "output_path": output_path,
                     "processing_status": "pending",
                 }
+                if metacloud_filename:
+                    create_payload["metacloud_filename"] = metacloud_filename
                 create_response = requests.post(
                     create_url, json=create_payload, timeout=30
                 )
@@ -123,17 +127,14 @@ class APIClient:
 
             response.raise_for_status()
             return True
-        except Exception as e:
-            logger.error(
-                f"Error creating/updating potree metacloud state for {mission_key}: {e}"
-            )
-            return False
-
-    def update_potree_metacloud_last_checked(self, mission_key: str) -> bool:
+    def update_potree_metacloud_last_checked(self, mission_key: str, metacloud_filename: str = None) -> bool:
         """Update only the last_checked timestamp for potree metacloud state"""
         try:
             url = f"{self.backend_url}/sqlite/potree_metacloud_state/{mission_key}/last_checked"
-            response = requests.patch(url, timeout=30)
+            payload = {}
+            if metacloud_filename:
+                payload["metacloud_filename"] = metacloud_filename
+            response = requests.patch(url, json=payload, timeout=30)
             if response.status_code == 404:
                 logger.warning(
                     f"Potree metacloud state not found for mission {mission_key}"

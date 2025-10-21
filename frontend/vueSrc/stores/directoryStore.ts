@@ -1,5 +1,5 @@
 import { defineStore } from "pinia";
-import { ref, watch } from "vue";
+import { computed, ref, watch } from "vue";
 
 export interface DirectoryNode {
   folder_key: string;
@@ -25,6 +25,7 @@ export interface PotreeMetacloudState {
   processing_status: string;
   error_message: string | null;
   last_checked_time: string;
+  metacloud_filename: string | null;
   last_processed_time: string | null;
 }
 
@@ -38,6 +39,13 @@ export const useDirectoryStore = defineStore("directory", () => {
   // For same-domain deployment, we can use relative URLs
   const apiBasePath = ref("/api");
   const staticBasePath = ref("/static");
+
+  const missionData = computed<PotreeMetacloudState | null>(() => {
+    if (activeMission.value) {
+      return getMissionByKey(activeMission.value) || null;
+    }
+    return null;
+  });
 
   // Configure API paths and set active mission (for single mission view)
   function configurePaths(
@@ -127,6 +135,9 @@ export const useDirectoryStore = defineStore("directory", () => {
       throw err;
     }
   }
+
+  fetchAllMissions();
+
   // Helper function to get mission keys only
   function getMissionKeys(): string[] {
     return allMissions.value.map((mission) => mission.mission_key);
@@ -220,6 +231,7 @@ export const useDirectoryStore = defineStore("directory", () => {
     fetchAllDirectoryData,
     fetchPointcloudGeojson,
     fetchMissionData,
+    missionData,
     getDownloadUrl,
     configurePaths,
     setActiveMission,

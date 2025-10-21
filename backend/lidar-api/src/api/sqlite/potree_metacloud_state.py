@@ -17,6 +17,7 @@ class PotreeMetacloudStateResponse(BaseModel):
     processing_status: Optional[str]
     error_message: Optional[str]
     detailed_error_message: Optional[str]
+    metacloud_filename: Optional[str]
 
 
 class PotreeMetacloudStateUpdate(BaseModel):
@@ -32,6 +33,7 @@ class PotreeMetacloudStateCreate(BaseModel):
     fingerprint: str
     output_path: str
     processing_status: Optional[str] = "pending"
+    metacloud_filename: Optional[str] = None
 
 
 # Create routers
@@ -61,6 +63,7 @@ async def get_potree_metacloud_state(
       processing_status,
       error_message,
       detailed_error_message,
+      metacloud_filename,
       datetime(last_checked,'unixepoch') AS last_checked_time,
       datetime(last_processed,'unixepoch') AS last_processed_time
     FROM potree_metacloud_state
@@ -137,6 +140,14 @@ async def update_potree_metacloud_state(
         if update_data.processing_status == "success":
             update_fields.append("detailed_error_message = NULL")
 
+    # Add metacloud_filename if provided
+    if (
+        hasattr(update_data, "metacloud_filename")
+        and update_data.metacloud_filename is not None
+    ):
+        update_fields.append("metacloud_filename = ?")
+        update_values.append(update_data.metacloud_filename)
+
     # Add mission_key for WHERE clause
     update_values.append(mission_key)
 
@@ -188,6 +199,7 @@ async def get_potree_metacloud_state_by_mission(mission_key: str):
       processing_status,
       error_message,
       detailed_error_message,
+      metacloud_filename,
       datetime(last_checked,'unixepoch') AS last_checked_time,
       datetime(last_processed,'unixepoch') AS last_processed_time
     FROM potree_metacloud_state
@@ -219,20 +231,22 @@ async def create_potree_metacloud_state(create_data: PotreeMetacloudStateCreate)
     try:
         cursor.execute(
             """INSERT INTO potree_metacloud_state
-            (mission_key, fp, output_path, last_checked, last_processed, processing_status)
-            VALUES (?, ?, ?, ?, NULL, ?)
+            (mission_key, fp, output_path, last_checked, last_processed, processing_status, metacloud_filename)
+            VALUES (?, ?, ?, ?, NULL, ?, ?)
             ON CONFLICT(mission_key) DO UPDATE SET
             fp = excluded.fp,
             output_path = excluded.output_path,
             last_checked = excluded.last_checked,
             last_processed = NULL,
-            processing_status = excluded.processing_status""",
+            processing_status = excluded.processing_status,
+            metacloud_filename = excluded.metacloud_filename""",
             (
                 create_data.mission_key,
                 create_data.fingerprint,
                 create_data.output_path,
                 current_time,
                 create_data.processing_status,
+                create_data.metacloud_filename,
             ),
         )
         conn.commit()
