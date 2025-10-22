@@ -481,11 +481,89 @@ def generate_k8s_addlidarmanager_job(
     logger.info(f"Using PVC: {settings_dict['PVC_NAME']}")
     logger.info(f"Using PVC OUTPOUT: {settings_dict['PVC_OUTPUT_NAME']}")
 
-    # Define job container
+    # Define job container with debugging
+    debug_script = f"""
+set -e
+echo "=== DEBUGGING LidarDataManager Job ==="
+echo "Working directory: $(pwd)"
+echo "Environment variables:"
+env | sort
+echo ""
+echo "Mount points and disk usage:"
+df -h
+echo ""
+echo "Files in /data directory:"
+find /data -type f -name "*.metacloud" -o -name "*.las" -o -name "*.laz" | head -20 || echo "No metacloud/las/laz files found"
+echo ""
+echo "Contents of /data:"
+ls -la /data/ || echo "Cannot list /data"
+echo ""
+# Extract the input file from CLI args to debug it specifically
+INPUT_FILE="{cli_args[0] if cli_args else 'unknown'}"
+echo "Input file specified: $INPUT_FILE"
+if [[ "$INPUT_FILE" == *.metacloud ]]; then
+    echo "Debugging metacloud file: $INPUT_FILE"
+    if [[ -f "$INPUT_FILE" ]]; then
+        echo "✓ Metacloud file exists"
+        echo "File size: $(stat -c%s "$INPUT_FILE") bytes"
+        echo "File permissions: $(stat -c%A "$INPUT_FILE")"
+        echo "First 10 lines of metacloud file:"
+        head -10 "$INPUT_FILE" || echo "Cannot read metacloud file"
+        echo ""
+        echo "Checking referenced files in metacloud:"
+        # Parse the metacloud file and check if referenced files exist
+        METACLOUD_DIR=$(dirname "$INPUT_FILE")
+        echo "Metacloud directory: $METACLOUD_DIR"
+        cd "$METACLOUD_DIR" || echo "Cannot cd to metacloud directory"
+        echo "Current working directory: $(pwd)"
+        echo "Files in metacloud directory:"
+        ls -la . || echo "Cannot list metacloud directory"
+        echo ""
+        echo "Checking referenced LAS files:"
+        grep -E "^\./.*\.(las|laz)$" "$INPUT_FILE" | head -5 | while read -r rel_path; do
+            full_path="$METACLOUD_DIR/$rel_path"
+            clean_path=$(echo "$rel_path" | sed 's|^\./||')
+            full_clean_path="$METACLOUD_DIR/$clean_path"
+            echo "  Checking: $rel_path"
+            echo "    Full path: $full_path"
+            echo "    Clean path: $full_clean_path"
+            if [[ -f "$full_path" ]]; then
+                echo "    ✓ File exists at: $full_path"
+            elif [[ -f "$full_clean_path" ]]; then
+                echo "    ✓ File exists at: $full_clean_path"
+            else
+                echo "    ✗ File NOT found"
+                echo "    Contents of $(dirname "$full_clean_path"):"
+                ls -la "$(dirname "$full_clean_path")" 2>/dev/null || echo "    Directory does not exist"
+            fi
+            echo ""
+        done
+    else
+        echo "✗ Metacloud file does not exist!"
+        echo "Directory contents where it should be:"
+        ls -la "$(dirname "$INPUT_FILE")" || echo "Directory does not exist"
+    fi
+else
+    echo "Input file is not a metacloud file"
+    if [[ -f "$INPUT_FILE" ]]; then
+        echo "✓ Input file exists"
+        echo "File size: $(stat -c%s "$INPUT_FILE") bytes"
+    else
+        echo "✗ Input file does not exist!"
+    fi
+fi
+echo ""
+echo "=== END DEBUGGING ==="
+echo ""
+echo "Running LidarDataManager with args: {' '.join(full_cli_args)}"
+./lidarDataManager {' '.join(full_cli_args)}
+"""
+
     container = client.V1Container(
         name="lidar-container",
         image=container_image,
-        args=full_cli_args,
+        command=["/bin/bash", "-c"],
+        args=[debug_script],
         volume_mounts=volume_mounts,
         resources=client.V1ResourceRequirements(
             requests={

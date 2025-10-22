@@ -4,7 +4,7 @@ from typing import Optional
 
 class Settings(BaseSettings):
     ENVIRONMENT: str = "development"
-    IMAGE_NAME: str = "ghcr.io/epfl-enac/lidardatamanager"
+    IMAGE_NAME: str = "lvjospinepfl/lidardatamanager"
     IMAGE_TAG: str = "latest"
     PATH_PREFIX: str = "/api"
     NAMESPACE: Optional[str] = None  # If None, will use runtime detection
