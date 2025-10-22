@@ -4,6 +4,7 @@
 #   "kubernetes",
 #   "pydantic",
 #   "jinja2",
+#   "pyyaml",
 #   "requests",
 # ]
 # ///
