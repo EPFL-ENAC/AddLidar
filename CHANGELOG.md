@@ -1,5 +1,29 @@
 # Changelog
 
+## [0.8.0](https://github.com/EPFL-ENAC/AddLidar/compare/v0.7.4...v0.8.0) (2025-10-22)
+
+
+### Features
+
+* add metacloud_filename to potree_metacloud_state and related components ([f46c2a8](https://github.com/EPFL-ENAC/AddLidar/commit/f46c2a861c9ec112eff7ffbd26d17331ad85695a))
+* add prettier-plugin-jinja-template for improved Jinja template formatting ([a1466ba](https://github.com/EPFL-ENAC/AddLidar/commit/a1466ba75936f0cf3e92963cfaa64905c29812fb))
+* **prettier:** add Prettier configuration for Jinja templates ([295216f](https://github.com/EPFL-ENAC/AddLidar/commit/295216f383c8a7a29f09c50195e4e6cb61c30164))
+* **scanner:** add node scheduling configuration for RCP-HAAS environment ([93e1b22](https://github.com/EPFL-ENAC/AddLidar/commit/93e1b22738dad29793762b9e26bb261f07172e5b))
+* **scanner:** add resource limits to compression and potree converter jobs from env ([a5ad43b](https://github.com/EPFL-ENAC/AddLidar/commit/a5ad43b6e79d3d9b57fa1e38a2935bc7a0ce6476))
+* **scanner:** implement copy_footprint_files method to handle footprint.geojson files ([b60d107](https://github.com/EPFL-ENAC/AddLidar/commit/b60d10759e45cb318e6d589b6c97530784cd49e7))
+* update backend to use namespace detection to spawn lidarmanager jobs ([c6cab13](https://github.com/EPFL-ENAC/AddLidar/commit/c6cab13e644586255b026d395b6aeb0259d00c15))
+
+
+### Bug Fixes
+
+* **backend:** adjust file path validation to handle /LiDAR prefix for mounted volumes ([6babe8d](https://github.com/EPFL-ENAC/AddLidar/commit/6babe8d855fb6d358906de3e28f748fa1278847b))
+* **backend:** change working directory to metacloud file location before running LidarDataManager ([c545fdb](https://github.com/EPFL-ENAC/AddLidar/commit/c545fdb827bf15dde661bead2dc4fbda0902b093))
+* **backend:** update image name in settings and add debugging script to job container ([92e5113](https://github.com/EPFL-ENAC/AddLidar/commit/92e511302c30af16a59840c0486932e327f7ac28))
+* **backend:** update path to lidarDataManager in debugging output ([0fe8f2d](https://github.com/EPFL-ENAC/AddLidar/commit/0fe8f2d9e100c663bc9b39b5880777f88538bac3))
+* dynamic namespace detection for scanner jobs ([cb2ff37](https://github.com/EPFL-ENAC/AddLidar/commit/cb2ff376210766e5c34c05cdf2326cb967dc7374))
+* **scanner:** remove envFrom configuration from compression and potree converter jobs ([72239fb](https://github.com/EPFL-ENAC/AddLidar/commit/72239fb9dc2c64dcbf863aea934b0ce2e77ea2a1))
+* update build-potree-dev script to create necessary directories and change static target URL ([b497b8a](https://github.com/EPFL-ENAC/AddLidar/commit/b497b8a020d68429a5b41e065c191a24481e49f4))
+
 ## [0.7.4](https://github.com/EPFL-ENAC/AddLidar/compare/v0.7.3...v0.7.4) (2025-06-30)
 
 
