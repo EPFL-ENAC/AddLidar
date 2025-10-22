@@ -1,8 +1,14 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: "potree-converter"
+  name: "potree-converter-{{ timestamp }}"
   namespace: "{{ job_namespace }}"
+  labels:
+    app: "{{ argocd_app_name }}"
+    argocd.argoproj.io/instance: "{{ argocd_app_name }}"
+    addlidar.io/job-type: "potree-conversion"
+  annotations:
+    argocd.argoproj.io/instance: "{{ argocd_app_name }}"
 spec:
   ttlSecondsAfterFinished: 3600 # 1 hour
   # prettier-ignore
