@@ -7,6 +7,7 @@ from pydantic import BaseModel
 from datetime import datetime
 from typing import Optional, List, Dict, Any
 from src.config.settings import settings
+from src.utils.kubernetes_utils import get_node_scheduling_config
 
 # from src.services.job_status import job_status_manager
 
@@ -595,6 +596,29 @@ fi
         app_name = "addlidar-api-dev"
 
     annotations["argocd.argoproj.io/instance"] = app_name
+
+    # Get node scheduling configuration using utility function
+    tolerations_config, node_selector_config = get_node_scheduling_config()
+
+    # Convert tolerations from dict format to Kubernetes client objects if needed
+    tolerations = []
+    if tolerations_config:
+        for tol in tolerations_config:
+            tolerations.append(
+                client.V1Toleration(
+                    key=tol["key"],
+                    value=tol["value"],
+                    operator=tol["operator"],
+                    effect=tol["effect"],
+                )
+            )
+        logger.info(f"Added tolerations for node scheduling: {tolerations_config}")
+
+    # Use node selector as-is if provided
+    node_selector = node_selector_config if node_selector_config else {}
+    if node_selector:
+        logger.info(f"Added node selector: {node_selector}")
+
     # Define job
     job = client.V1Job(
         api_version="batch/v1",
@@ -609,7 +633,11 @@ fi
             template=client.V1PodTemplateSpec(
                 metadata=client.V1ObjectMeta(labels={"app": app_name}),
                 spec=client.V1PodSpec(
-                    containers=[container], volumes=volumes, restart_policy="Never"
+                    containers=[container],
+                    volumes=volumes,
+                    restart_policy="Never",
+                    tolerations=tolerations if tolerations else None,
+                    node_selector=node_selector if node_selector else None,
                 ),
             ),
             backoff_limit=3,  # No retries

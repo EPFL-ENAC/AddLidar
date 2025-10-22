@@ -64,8 +64,11 @@ def get_node_scheduling_config() -> Tuple[Optional[List[Dict]], Optional[Dict]]:
     """Get node scheduling configuration based on current environment."""
     current_namespace = get_current_namespace()
 
-    if "rcp-haas" in current_namespace.lower():
-        logger.info("Detected RCP-HAAS environment - configuring jobs for HAAS nodes")
+    # Check if this is a production environment that should use RCP HAAS nodes
+    if current_namespace == "epfl-eso-addlidar-prod":
+        logger.info(
+            "Detected production environment - configuring jobs for RCP HAAS nodes"
+        )
         tolerations = [
             {
                 "key": "dedicated",
@@ -78,7 +81,7 @@ def get_node_scheduling_config() -> Tuple[Optional[List[Dict]], Optional[Dict]]:
         return tolerations, node_selector
     else:
         logger.info(
-            "Standard environment detected - no special node scheduling required"
+            f"Standard environment detected ({current_namespace}) - no special node scheduling required"
         )
         return None, None
 

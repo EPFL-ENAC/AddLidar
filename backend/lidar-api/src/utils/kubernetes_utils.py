@@ -1,28 +1,26 @@
 """Kubernetes utilities for namespace detection."""
 
 ## WARNING : IF YOU UPDATE THIS FILE UPDATE THE ONE IN SCANNER/LIB/KUBERNETES_UTILS.PY TOO ##
-
 import os
 import logging
 import subprocess
-from typing import Optional
+import sys
+from typing import Optional, Tuple, List, Dict, Any
+from datetime import datetime
+
+try:
+    from kubernetes import client, config, utils
+    import jinja2
+    import yaml
+except ImportError:
+    print("Error: required modules not found.")
+    sys.exit(1)
 
 logger = logging.getLogger(__name__)
 
 
 def get_current_namespace() -> str:
-    """
-    Get the current Kubernetes namespace where the application is running.
-
-    This function tries multiple methods to detect the current namespace:
-    1. Read from service account (when running inside a Kubernetes pod)
-    2. Use kubectl to get the current context namespace
-    3. Fall back to 'default' namespace
-
-    Returns:
-        str: The detected namespace or 'default' as fallback
-    """
-    # Method 1: Try to read from service account (when running in a pod)
+    """Get the current Kubernetes namespace where the scanner is running."""
     try:
         if os.path.exists("/var/run/secrets/kubernetes.io/serviceaccount/namespace"):
             with open(
@@ -36,7 +34,6 @@ def get_current_namespace() -> str:
     except Exception as e:
         logger.warning(f"Failed to read namespace from service account: {e}")
 
-    # Method 2: Try to get namespace from kubectl context
     try:
         result = subprocess.run(
             [
@@ -58,23 +55,78 @@ def get_current_namespace() -> str:
     except Exception as e:
         logger.warning(f"Failed to get namespace from kubectl: {e}")
 
-    # Method 3: Fall back to default namespace
     logger.warning("Could not detect namespace, using 'default'")
     return "default"
 
 
-def get_namespace_with_fallback(configured_namespace: Optional[str] = None) -> str:
-    """
-    Get the namespace to use, with runtime detection as fallback.
+def get_node_scheduling_config() -> Tuple[Optional[List[Dict]], Optional[Dict]]:
+    """Get node scheduling configuration based on current environment."""
+    current_namespace = get_current_namespace()
 
-    Args:
-        configured_namespace: Explicitly configured namespace (from settings)
+    # Check if this is a production environment that should use RCP HAAS nodes
+    if current_namespace == "epfl-eso-addlidar-prod":
+        logger.info(
+            "Detected production environment - configuring jobs for RCP HAAS nodes"
+        )
+        tolerations = [
+            {
+                "key": "dedicated",
+                "value": "rcpHAAS",
+                "operator": "Equal",
+                "effect": "NoExecute",
+            }
+        ]
+        node_selector = {"rcpnas3": "available"}
+        return tolerations, node_selector
+    else:
+        logger.info(
+            f"Standard environment detected ({current_namespace}) - no special node scheduling required"
+        )
+        return None, None
 
-    Returns:
-        str: The namespace to use
-    """
-    if configured_namespace and configured_namespace.strip():
-        logger.info(f"Using configured namespace: {configured_namespace}")
-        return configured_namespace
 
-    return get_current_namespace()
+def get_resource_config_from_env() -> Dict[str, str]:
+    """Read resource configuration from environment variables."""
+    return {
+        "compression_cpu_request": os.environ.get("COMPRESSION_CPU_REQUEST", "500m"),
+        "compression_memory_request": os.environ.get(
+            "COMPRESSION_MEMORY_REQUEST", "1Gi"
+        ),
+        "compression_cpu_limit": os.environ.get("COMPRESSION_CPU_LIMIT", "2"),
+        "compression_memory_limit": os.environ.get("COMPRESSION_MEMORY_LIMIT", "4Gi"),
+        "potree_cpu_request": os.environ.get("POTREE_CPU_REQUEST", "1"),
+        "potree_memory_request": os.environ.get("POTREE_MEMORY_REQUEST", "2Gi"),
+        "potree_cpu_limit": os.environ.get("POTREE_CPU_LIMIT", "4"),
+        "potree_memory_limit": os.environ.get("POTREE_MEMORY_LIMIT", "8Gi"),
+    }
+
+
+def create_kubernetes_job(
+    template_path: str, context: Dict[str, Any], export_only: bool = False
+) -> Optional[int]:
+    """Create a Kubernetes job from a Jinja2 template."""
+    try:
+        if not os.path.exists(template_path):
+            logger.error(f"Template file not found at {template_path}")
+            return None
+
+        with open(template_path, "r") as f:
+            template_content = f.read()
+
+        template = jinja2.Template(template_content)
+        job_yaml = template.render(**context)
+
+        if export_only:
+            print(job_yaml)
+            return 1
+
+        job_dict = yaml.safe_load(job_yaml)
+        result = utils.create_from_dict(client.ApiClient(), job_dict, True)
+        job_name = job_dict["metadata"]["name"]
+        logger.info(f"Created job '{job_name}'")
+        logger.debug(f"Job creation result: {result}")
+        return 1
+
+    except Exception as e:
+        logger.error(f"Failed to create Kubernetes job: {e}")
+        return None
