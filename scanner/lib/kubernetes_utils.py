@@ -1,5 +1,7 @@
 """Kubernetes utilities and job management."""
 
+## WARNING : IF YOU UPDATE THIS FILE UPDATE THE ONE IN BACKEND/LIDAR-API/SRC/UTILS/KUBERNETES_UTILS.PY TOO ##
+
 import os
 import logging
 import subprocess

@@ -115,7 +115,7 @@ async def stop_job(job_name: str):
     try:
         # Stop the Kubernetes job
         # Assuming you have a function `delete_k8s_job` to delete the job
-        delete_k8s_job(job_name, namespace=settings.NAMESPACE)
+        delete_k8s_job(job_name, namespace=settings.effective_namespace)
         logger.info(f"Stopped Kubernetes job: {job_name}")
 
         # Delete the output file if it exists
@@ -182,7 +182,7 @@ async def start_job(payload: PointCloudRequest):
         job_name = create_k8s_job(job_name, cli_args)
 
         # Start watching the job status in a separate thread
-        start_watching_job(job_name, namespace=settings.NAMESPACE)
+        start_watching_job(job_name, namespace=settings.effective_namespace)
 
         # Return the job name and the WebSocket URL for status tracking
         return {"job_name": job_name, "status_url": f"/ws/job-status/{job_name}"}

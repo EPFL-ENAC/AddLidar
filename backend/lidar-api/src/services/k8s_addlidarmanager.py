@@ -97,9 +97,12 @@ def get_settings() -> Dict[str, Any]:
     Get settings from environment variables or use defaults.
 
     Returns:
-        Dict[str, Any]: Dictionary of configuration settings
+        Dict[str, Any]: Dictionary of configuration settings with effective namespace
     """
-    return settings.dict()
+    settings_dict = settings.dict()
+    # Use the effective namespace (with runtime detection)
+    settings_dict["NAMESPACE"] = settings.effective_namespace
+    return settings_dict
 
 
 def get_pod_info(pod_name: str) -> str:

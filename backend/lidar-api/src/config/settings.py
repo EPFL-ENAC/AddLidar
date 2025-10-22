@@ -1,4 +1,5 @@
 from pydantic_settings import BaseSettings, SettingsConfigDict
+from typing import Optional
 
 
 class Settings(BaseSettings):
@@ -6,7 +7,7 @@ class Settings(BaseSettings):
     IMAGE_NAME: str = "ghcr.io/epfl-enac/lidardatamanager"
     IMAGE_TAG: str = "latest"
     PATH_PREFIX: str = "/api"
-    NAMESPACE: str = "epfl-eso-addlidar-dev"
+    NAMESPACE: Optional[str] = None  # If None, will use runtime detection
     MOUNT_PATH: str = "/data"
     SUB_PATH: str = "fts-addlidar/LiDAR"
     DATABASE_PATH: str = "./data/database.db"  # Default path for SQLite database
@@ -15,6 +16,27 @@ class Settings(BaseSettings):
     PVC_NAME: str = "lidar-data-pvc"  # Default to our created PVC
     JOB_TIMEOUT: int = 300  # Timeout in seconds for job completion
     DEFAULT_OUTPUT_ROOT: str = "/output"  # Default root path based on environment
+
+    @property
+    def effective_namespace(self) -> str:
+        """Get the effective namespace to use, with runtime detection if not configured."""
+        if self.NAMESPACE:
+            return self.NAMESPACE
+
+        # Import here to avoid circular imports
+        from src.utils.kubernetes_utils import get_current_namespace
+
+        return get_current_namespace()
+
+    @property
+    def is_production(self) -> bool:
+        """Check if running in production environment."""
+        return self.ENVIRONMENT.lower() == "production"
+
+    @property
+    def is_rcp_haas(self) -> bool:
+        """Check if running in RCP-HAAS environment."""
+        return "rcp-haas" in self.effective_namespace.lower()
 
 
 settings = Settings()
