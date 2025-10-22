@@ -556,6 +556,14 @@ echo ""
 echo "=== END DEBUGGING ==="
 echo ""
 echo "Running LidarDataManager with args: {' '.join(full_cli_args)}"
+# Change to the directory containing the metacloud file before running LidarDataManager
+# This ensures relative paths in the metacloud file work correctly
+if [[ "$INPUT_FILE" == *.metacloud ]]; then
+    METACLOUD_DIR=$(dirname "$INPUT_FILE")
+    echo "Changing working directory to: $METACLOUD_DIR"
+    cd "$METACLOUD_DIR" || echo "Cannot cd to metacloud directory"
+    echo "New working directory: $(pwd)"
+fi
 /lidarDataManager {' '.join(full_cli_args)}
 """
 
