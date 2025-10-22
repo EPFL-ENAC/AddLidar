@@ -36,11 +36,17 @@ class PointCloudRequest(BaseModel):
     def validate_file_exists(cls, v: Path) -> Path:
         # Convert to absolute path if relative
         if v.is_absolute():
-            # Prepend /data to absolute paths if not already starting with /data
-            if not str(v).startswith("/data"):
+            # Handle paths that start with /LiDAR - these need to be adjusted for the subPath mount
+            path_str = str(v)
+            if path_str.startswith("/LiDAR/"):
+                # Remove /LiDAR prefix since the volume is mounted with subPath fts-addlidar/LiDAR
+                # So /LiDAR/mission/file becomes /data/mission/file
+                relative_path = path_str[7:]  # Remove "/LiDAR/"
+                v = Path("/data") / relative_path
+            elif not path_str.startswith("/data"):
+                # Prepend /data to other absolute paths
                 v = Path("/data") / v.relative_to("/")
-            else:
-                v = v
+            # else: path already starts with /data, keep as is
         else:
             raise ValueError("Path must be absolute")
         # We don't check if file exist, since it may not exist yet because of docker volumes
