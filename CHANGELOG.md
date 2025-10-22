@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.8.1](https://github.com/EPFL-ENAC/AddLidar/compare/v0.8.0...v0.8.1) (2025-10-22)
+
+
+### Bug Fixes
+
+* **backend:** add node scheduling configuration for production environment instead of rcp-haas ([9cfd558](https://github.com/EPFL-ENAC/AddLidar/commit/9cfd5584f91530150b3cdbb4095bba26032e9ad1))
+
 ## [0.8.0](https://github.com/EPFL-ENAC/AddLidar/compare/v0.7.4...v0.8.0) (2025-10-22)
 
 
