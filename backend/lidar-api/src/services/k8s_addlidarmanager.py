@@ -549,19 +549,25 @@ fi
     if node_selector:
         logger.info(f"Added node selector: {node_selector}")
 
-    # Define job
+    # Define job with labels matching existing deployment pattern
+    job_labels = {
+        "app": app_name,
+        "argocd.argoproj.io/instance": app_name,  # This is the key label for ArgoCD tracking
+        "addlidar.io/job-type": "lidar-processing",
+    }
+
     job = client.V1Job(
         api_version="batch/v1",
         kind="Job",
         metadata=client.V1ObjectMeta(
             name=job_name,
             namespace=settings_dict["NAMESPACE"],
-            labels={"app": app_name},
+            labels=job_labels,
             annotations=annotations,
         ),
         spec=client.V1JobSpec(
             template=client.V1PodTemplateSpec(
-                metadata=client.V1ObjectMeta(labels={"app": app_name}),
+                metadata=client.V1ObjectMeta(labels=job_labels),
                 spec=client.V1PodSpec(
                     containers=[container],
                     volumes=volumes,
