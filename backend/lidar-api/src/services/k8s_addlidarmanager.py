@@ -517,13 +517,13 @@ fi
     )
     # Create labels based on environment
     annotations = {}
-    app_name = "addlidar-api"
+    app_name = "addlidar"
     environment = settings_dict["ENVIRONMENT"]
 
     if environment == "production":
-        app_name = "addlidar-api-prod"
+        app_name = "addlidar-prod"
     else:  # development or any other environment
-        app_name = "addlidar-api-dev"
+        app_name = "addlidar-dev"
 
     annotations["argocd.argoproj.io/instance"] = app_name
 
