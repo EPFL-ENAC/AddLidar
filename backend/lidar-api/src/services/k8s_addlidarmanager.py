@@ -556,7 +556,7 @@ echo ""
 echo "=== END DEBUGGING ==="
 echo ""
 echo "Running LidarDataManager with args: {' '.join(full_cli_args)}"
-./lidarDataManager {' '.join(full_cli_args)}
+/lidarDataManager {' '.join(full_cli_args)}
 """
 
     container = client.V1Container(
