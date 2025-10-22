@@ -18,6 +18,7 @@ RUN apk add --no-cache \
     requests \
     pydantic \
     jinja2 \
+    pyyaml \
     sqlite-utils
 
 # Command to run the script with the specified arguments
