@@ -11,10 +11,8 @@ from datetime import datetime
 
 try:
     from kubernetes import client, config, utils
-    import jinja2
-    import yaml
 except ImportError:
-    print("Error: required modules not found.")
+    print("Error: kubernetes module not found.")
     sys.exit(1)
 
 logger = logging.getLogger(__name__)

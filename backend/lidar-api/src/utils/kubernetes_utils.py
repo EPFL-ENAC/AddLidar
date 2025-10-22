@@ -10,10 +10,8 @@ from datetime import datetime
 
 try:
     from kubernetes import client, config, utils
-    import jinja2
-    import yaml
 except ImportError:
-    print("Error: required modules not found.")
+    print("Error: kubernetes module not found.")
     sys.exit(1)
 
 logger = logging.getLogger(__name__)
@@ -106,6 +104,14 @@ def create_kubernetes_job(
 ) -> Optional[int]:
     """Create a Kubernetes job from a Jinja2 template."""
     try:
+        # Import these modules only when needed
+        try:
+            import jinja2
+            import yaml
+        except ImportError as e:
+            logger.error(f"Missing required modules for job template creation: {e}")
+            return None
+
         if not os.path.exists(template_path):
             logger.error(f"Template file not found at {template_path}")
             return None
