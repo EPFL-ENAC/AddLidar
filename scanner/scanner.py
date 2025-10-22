@@ -49,6 +49,14 @@ logging.basicConfig(
 logger = logging.getLogger("scanner.py")
 
 
+def get_argocd_app_name(namespace: str) -> str:
+    """Determine the ArgoCD app name based on the namespace."""
+    if namespace == "epfl-eso-addlidar-prod":
+        return "addlidar-prod"
+    else:
+        return "addlidar-dev"
+
+
 def queue_potree_conversion_jobs(
     metacloud_files: List[List[str]],
     api_client: APIClient,
@@ -70,6 +78,9 @@ def queue_potree_conversion_jobs(
     tolerations, node_selector = get_node_scheduling_config()
     resource_config = get_resource_config_from_env()
 
+    # Get ArgoCD app name for annotations
+    argocd_app_name = get_argocd_app_name(current_namespace)
+
     parallelism = min(len(metacloud_files), 4)
 
     context = {
@@ -79,6 +90,7 @@ def queue_potree_conversion_jobs(
         "fts_addlidar_pvc_name": config_dict["fts_addlidar_pvc"],
         "backend_url": config_dict["backend_url"],
         "job_namespace": current_namespace,
+        "argocd_app_name": argocd_app_name,
         "tolerations": tolerations,
         "node_selector": node_selector,
         **resource_config,
@@ -121,6 +133,9 @@ def queue_batch_zip_job(
     tolerations, node_selector = get_node_scheduling_config()
     resource_config = get_resource_config_from_env()
 
+    # Get ArgoCD app name for annotations
+    argocd_app_name = get_argocd_app_name(current_namespace)
+
     context = {
         "folders": folders,
         "timestamp": timestamp,
@@ -129,6 +144,7 @@ def queue_batch_zip_job(
         "zip_dir": config_dict["zip_root"],
         "fts_addlidar_pvc_name": config_dict["fts_addlidar_pvc"],
         "backend_url": config_dict["backend_url"],
+        "argocd_app_name": argocd_app_name,
         "tolerations": tolerations,
         "node_selector": node_selector,
         "job_namespace": current_namespace,

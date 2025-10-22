@@ -1,8 +1,14 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: "compression"
+  name: "compression-{{ timestamp }}"
   namespace: "{{ job_namespace }}"
+  labels:
+    app: "{{ argocd_app_name }}"
+    argocd.argoproj.io/instance: "{{ argocd_app_name }}"
+    addlidar.io/job-type: "compression"
+  annotations:
+    argocd.argoproj.io/instance: "{{ argocd_app_name }}"
 spec:
   ttlSecondsAfterFinished: 3600 # Clean up 1 hour after job completes
   activeDeadlineSeconds: 86400 # Job timeout of 24 hours
