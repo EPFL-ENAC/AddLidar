@@ -10,7 +10,7 @@ metadata:
   annotations:
     argocd.argoproj.io/instance: "{{ argocd_app_name }}"
 spec:
-  ttlSecondsAfterFinished: 3600 # 1 hour
+  ttlSecondsAfterFinished: 86400 # 24 hours - keep pods around for log inspection
   # prettier-ignore
   completions: {{ metacloud_files|length }} # Dynamic based on metacloud file count
   # prettier-ignore
