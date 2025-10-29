@@ -212,14 +212,32 @@ function onSubmit(): void {
   if (epsg.value) params.outcrs = epsg.value;
   if (density.value) params.density = density.value;
 
-  if (store.clipVolume)
+  if (store.clipVolume) {
+    // ROI format: x0,y0,z0,dx,dy,dz,rx,ry,rz
+    // where x0,y0,z0 is position, dx,dy,dz is dimensions (scale), rx,ry,rz is rotation in radians
     params.roi = [
-      ...Object.values(clipPosition),
-      ...Object.values(clipScale),
-      ...Object.values(clipRotation),
+      clipPosition.x,
+      clipPosition.y,
+      clipPosition.z,
+      clipScale.x,
+      clipScale.y,
+      clipScale.z,
+      clipRotation.x,
+      clipRotation.y,
+      clipRotation.z,
     ];
-
-  console.log("ROI", params.roi);
+    console.log("ROI parameters:", {
+      position: [clipPosition.x, clipPosition.y, clipPosition.z],
+      scale: [clipScale.x, clipScale.y, clipScale.z],
+      rotation_rad: [clipRotation.x, clipRotation.y, clipRotation.z],
+      rotation_deg: [
+        (clipRotation.x * 180) / Math.PI,
+        (clipRotation.y * 180) / Math.PI,
+        (clipRotation.z * 180) / Math.PI,
+      ],
+      roi_array: params.roi,
+    });
+  }
   // If type is metadata, add special flag
   if (type.value === "metadata") params.remove_all_attributes = true;
 
