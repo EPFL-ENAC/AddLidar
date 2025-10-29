@@ -174,9 +174,18 @@ async def start_job(payload: PointCloudRequest):
         # Generate a unique job name
         job_name = f"job-{uuid.uuid4().hex[:8]}"
 
+        # Log ROI if present for debugging
+        if payload.roi:
+            logger.info(f"ROI parameter for job {job_name}: {payload.roi}")
+            logger.info(
+                f"ROI formatted: position=({payload.roi[0]},{payload.roi[1]},{payload.roi[2]}), "
+                f"dimensions=({payload.roi[3]},{payload.roi[4]},{payload.roi[5]}), "
+                f"rotation_rad=({payload.roi[6]},{payload.roi[7]},{payload.roi[8]})"
+            )
+
         # Convert payload to CLI arguments
         cli_args = payload.to_cli_arguments()
-        logger.debug(f"CLI arguments for job {job_name}: {cli_args}")
+        logger.info(f"CLI arguments for job {job_name}: {cli_args}")
 
         # Create the actual Kubernetes job
         job_name = create_k8s_job(job_name, cli_args)

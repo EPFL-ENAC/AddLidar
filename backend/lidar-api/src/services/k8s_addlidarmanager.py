@@ -576,8 +576,8 @@ fi
                     node_selector=node_selector if node_selector else None,
                 ),
             ),
-            backoff_limit=3,  # No retries
-            ttl_seconds_after_finished=7200,  # Auto-delete job after 2 hour
+            backoff_limit=3,  # Retry up to 3 times on failure
+            ttl_seconds_after_finished=86400,  # Keep job pods for 24 hours for log inspection
         ),
     )
 
