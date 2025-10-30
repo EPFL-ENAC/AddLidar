@@ -3,6 +3,7 @@ from kubernetes.watch import Watch
 import uuid
 import logging
 import asyncio
+import os
 from pydantic import BaseModel
 from datetime import datetime
 from typing import Optional, List, Dict, Any
@@ -506,12 +507,16 @@ fi
         volume_mounts=volume_mounts,
         resources=client.V1ResourceRequirements(
             requests={
-                "cpu": "500m",  # Request 1 CPU cores
-                "memory": "128Mi",  # Request 128 MiB memory
+                "cpu": os.getenv("LIDAR_JOB_CPU_REQUEST", "500m"),
+                "memory": os.getenv(
+                    "LIDAR_JOB_MEMORY_REQUEST", "2Gi"
+                ),  # Increased default
             },
             limits={
-                "cpu": "1000m",  # limits 1 CPU cores max
-                "memory": "256Mi",  # limits 512 MiB memory
+                "cpu": os.getenv("LIDAR_JOB_CPU_LIMIT", "2"),
+                "memory": os.getenv(
+                    "LIDAR_JOB_MEMORY_LIMIT", "8Gi"
+                ),  # Increased default
             },
         ),
     )
