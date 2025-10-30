@@ -97,6 +97,10 @@ class PodLogCollector:
                 f.write(f"Pod Phase: {pod_status.get('phase', 'Unknown')}\n")
                 f.write(f"Reason: {pod_status.get('reason', 'N/A')}\n")
                 f.write(f"Message: {pod_status.get('message', 'N/A')}\n")
+                f.write(f"Exit Code: {pod_status.get('exit_code', 'N/A')}\n")
+                f.write(f"Signal: {pod_status.get('signal', 'N/A')}\n")
+                f.write(f"Started At: {pod_status.get('started_at', 'N/A')}\n")
+                f.write(f"Finished At: {pod_status.get('finished_at', 'N/A')}\n")
                 f.write("=" * 80 + "\n\n")
                 f.write(logs)
 
@@ -112,13 +116,26 @@ class PodLogCollector:
             "phase": pod.status.phase,
             "reason": None,
             "message": None,
+            "exit_code": None,
+            "signal": None,
+            "started_at": None,
+            "finished_at": None,
         }
 
         if pod.status.container_statuses:
             for container_status in pod.status.container_statuses:
                 if container_status.state.terminated:
-                    status_info["reason"] = container_status.state.terminated.reason
-                    status_info["message"] = container_status.state.terminated.message
+                    term = container_status.state.terminated
+                    status_info["reason"] = term.reason
+                    status_info["message"] = term.message
+                    status_info["exit_code"] = term.exit_code
+                    status_info["signal"] = term.signal
+                    status_info["started_at"] = (
+                        term.started_at.isoformat() if term.started_at else None
+                    )
+                    status_info["finished_at"] = (
+                        term.finished_at.isoformat() if term.finished_at else None
+                    )
                 elif container_status.state.waiting:
                     status_info["reason"] = container_status.state.waiting.reason
                     status_info["message"] = container_status.state.waiting.message
