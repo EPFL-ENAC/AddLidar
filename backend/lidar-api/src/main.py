@@ -11,8 +11,10 @@ import logging
 from src.api.routes import router as public_router
 from src.api.sqlite.index import public_router as sqlite_public_router
 from src.api.sqlite.index import internal_router as sqlite_internal_router
+from src.api.pod_logs import router as pod_logs_router
 from src.config.settings import settings
 from src.config.database import initialize_database
+from src.services.pod_log_collector import start_pod_log_collector
 
 
 @asynccontextmanager
@@ -25,6 +27,15 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logging.error(f"Failed to initialize database during startup: {e}")
         raise
+
+    # Start pod log collector to capture logs from failing jobs
+    try:
+        start_pod_log_collector(namespace=settings.NAMESPACE)
+        logging.info(f"Pod log collector started for namespace {settings.NAMESPACE}")
+    except Exception as e:
+        logging.warning(f"Failed to start pod log collector: {e}")
+        # Don't fail startup if pod log collector fails
+        logging.warning("Continuing without pod log collector")
 
     yield
 
@@ -85,6 +96,9 @@ async def public_health():
 public_app.include_router(public_router)
 internal_app.include_router(sqlite_internal_router, tags=["sqlite"])
 public_app.include_router(sqlite_public_router, tags=["sqlite"])
+internal_app.include_router(
+    pod_logs_router, tags=["pod-logs"]
+)  # Add pod logs to internal API
 
 
 # Single startup function to run both servers
