@@ -19,6 +19,11 @@ spec:
   activeDeadlineSeconds: 7200 # 2 hour maximum job runtime
   completionMode: Indexed
   template:
+    metadata:
+      labels:
+        app: "{{ argocd_app_name }}"
+        argocd.argoproj.io/instance: "{{ argocd_app_name }}"
+        addlidar.io/job-type: "potree-conversion"
     spec:
       affinity:
         podAntiAffinity:

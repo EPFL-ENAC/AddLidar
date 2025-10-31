@@ -19,6 +19,11 @@ spec:
   backoffLimit: 0 # No retries per completion
   completionMode: Indexed
   template:
+    metadata:
+      labels:
+        app: "{{ argocd_app_name }}"
+        argocd.argoproj.io/instance: "{{ argocd_app_name }}"
+        addlidar.io/job-type: "compression"
     spec:
       affinity:
         podAntiAffinity:
