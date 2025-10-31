@@ -197,8 +197,8 @@ class PodLogCollector:
                 pod = event["object"]
                 pod_name = pod.metadata.name
 
-                # Only process MODIFIED and DELETED events
-                if event_type in ["MODIFIED", "DELETED"]:
+                # Process ADDED, MODIFIED and DELETED events to catch quick failures
+                if event_type in ["ADDED", "MODIFIED", "DELETED"]:
                     if self.should_capture_logs(pod):
                         logger.warning(
                             f"Capturing logs for {event_type} pod {pod_name} in phase {pod.status.phase}"
