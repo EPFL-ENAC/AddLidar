@@ -33,6 +33,20 @@ class PodLogCollector:
         """
         self.namespace = namespace
         self.label_selector = label_selector
+
+        # Load Kubernetes configuration
+        try:
+            config.load_incluster_config()
+            logger.info("Loaded Kubernetes in-cluster config for pod log collector")
+        except config.ConfigException:
+            logger.warning("Failed to load in-cluster config, trying local kubeconfig")
+            try:
+                config.load_kube_config()
+                logger.info("Loaded local Kubernetes config for pod log collector")
+            except Exception as e:
+                logger.error(f"Failed to load any Kubernetes config: {e}")
+                raise
+
         self.core_v1 = client.CoreV1Api()
         self.watching = False
         self.watch_thread = None
