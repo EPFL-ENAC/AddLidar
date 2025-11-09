@@ -423,9 +423,19 @@ class PodLogCollector:
             logger.warning("Pod watcher already running")
             return
 
+        # Clean up dead thread reference if it exists
+        if self.watch_thread and not self.watch_thread.is_alive():
+            logger.info("Cleaning up dead pod watcher thread")
+            self.watch_thread = None
+
         self.watch_thread = threading.Thread(target=self.watch_pods, daemon=True)
         self.watch_thread.start()
         logger.info("Pod watcher thread started")
+
+        # Give the thread a moment to start and log its "Starting pod watcher" message
+        import time
+
+        time.sleep(0.1)
 
     def stop(self):
         """Stop the pod watcher."""
@@ -437,6 +447,7 @@ class PodLogCollector:
 
 # Global instance
 _collector_instance: Optional[PodLogCollector] = None
+_collector_started: bool = False
 
 
 def get_pod_log_collector(namespace: str) -> PodLogCollector:
@@ -450,7 +461,14 @@ def get_pod_log_collector(namespace: str) -> PodLogCollector:
 
 
 def start_pod_log_collector(namespace: str):
-    """Start the global pod log collector."""
+    """Start the global pod log collector (only once across all workers)."""
+    global _collector_started
+
+    if _collector_started:
+        logger.debug("Pod log collector already started in this process")
+        return
+
+    _collector_started = True
     collector = get_pod_log_collector(namespace)
     collector.start()
     logger.info(f"Pod log collector started for namespace {namespace}")
