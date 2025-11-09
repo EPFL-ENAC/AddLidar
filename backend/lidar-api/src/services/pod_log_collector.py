@@ -12,6 +12,7 @@ from datetime import datetime
 from typing import Optional, Dict
 import os
 from pathlib import Path
+import time
 
 logger = logging.getLogger(__name__)
 
@@ -35,6 +36,7 @@ class PodLogCollector:
         self.core_v1 = client.CoreV1Api()
         self.watching = False
         self.watch_thread = None
+        self._captured_pods = set()  # Track pods we've already captured logs for
 
         # Ensure log storage directory exists
         Path(LOG_STORAGE_PATH).mkdir(parents=True, exist_ok=True)
@@ -68,6 +70,15 @@ class PodLogCollector:
 
             logs = self.core_v1.read_namespaced_pod_log(**kwargs)
             return logs
+        except client.exceptions.ApiException as e:
+            # If pod is not found (404), it was likely already deleted - this is expected
+            if e.status == 404:
+                logger.debug(
+                    f"Pod {pod_name} not found when capturing logs (likely already deleted)"
+                )
+            else:
+                logger.error(f"Failed to capture logs for pod {pod_name}: {e}")
+            return None
         except Exception as e:
             logger.error(f"Failed to capture logs for pod {pod_name}: {e}")
             return None
@@ -108,6 +119,144 @@ class PodLogCollector:
             return log_filepath
         except Exception as e:
             logger.error(f"Failed to save logs to file: {e}")
+            return None
+
+    def save_deletion_metadata(
+        self, pod_name: str, pod, pod_status: dict
+    ) -> Optional[str]:
+        """
+        Save pod metadata when logs cannot be captured (e.g., pod already deleted).
+
+        Args:
+            pod_name: Name of the pod
+            pod: Pod object from Kubernetes
+            pod_status: Pod status information
+
+        Returns:
+            Path to saved metadata file
+        """
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        metadata_filename = f"{pod_name}_{timestamp}_metadata.txt"
+        metadata_filepath = os.path.join(LOG_STORAGE_PATH, metadata_filename)
+
+        try:
+            with open(metadata_filepath, "w") as f:
+                f.write(f"=== Pod Failure Metadata ===\n")
+                f.write(f"Pod Name: {pod_name}\n")
+                f.write(f"Namespace: {self.namespace}\n")
+                f.write(f"Capture Time: {datetime.now().isoformat()}\n")
+                f.write(f"Pod Phase: {pod_status.get('phase', 'Unknown')}\n")
+                f.write(
+                    f"Deletion Timestamp: {pod.metadata.deletion_timestamp or 'N/A'}\n"
+                )
+                f.write(
+                    f"Creation Timestamp: {pod.metadata.creation_timestamp or 'N/A'}\n"
+                )
+                f.write("=" * 80 + "\n\n")
+
+                # Container statuses
+                f.write("=== Container Statuses ===\n")
+                if pod.status.container_statuses:
+                    for cs in pod.status.container_statuses:
+                        f.write(f"\nContainer: {cs.name}\n")
+                        f.write(f"  Ready: {cs.ready}\n")
+                        f.write(f"  Restart Count: {cs.restart_count}\n")
+
+                        if cs.state.terminated:
+                            term = cs.state.terminated
+                            f.write(f"  State: Terminated\n")
+                            f.write(f"    Reason: {term.reason}\n")
+                            f.write(f"    Message: {term.message}\n")
+                            f.write(f"    Exit Code: {term.exit_code}\n")
+                            f.write(f"    Signal: {term.signal}\n")
+                            f.write(f"    Started At: {term.started_at}\n")
+                            f.write(f"    Finished At: {term.finished_at}\n")
+                        elif cs.state.waiting:
+                            f.write(f"  State: Waiting\n")
+                            f.write(f"    Reason: {cs.state.waiting.reason}\n")
+                            f.write(f"    Message: {cs.state.waiting.message}\n")
+                        elif cs.state.running:
+                            f.write(f"  State: Running\n")
+                            f.write(f"    Started At: {cs.state.running.started_at}\n")
+                else:
+                    f.write("  No container statuses available\n")
+
+                # Pod conditions
+                f.write("\n=== Pod Conditions ===\n")
+                if pod.status.conditions:
+                    for condition in pod.status.conditions:
+                        f.write(f"\n{condition.type}:\n")
+                        f.write(f"  Status: {condition.status}\n")
+                        f.write(f"  Reason: {condition.reason}\n")
+                        f.write(f"  Message: {condition.message}\n")
+                        f.write(
+                            f"  Last Transition: {condition.last_transition_time}\n"
+                        )
+                else:
+                    f.write("  No conditions available\n")
+
+                # Events (if we can fetch them)
+                f.write("\n=== Recent Pod Events ===\n")
+                try:
+                    events = self.core_v1.list_namespaced_event(
+                        namespace=self.namespace,
+                        field_selector=f"involvedObject.name={pod_name}",
+                    )
+                    if events.items:
+                        for event in sorted(
+                            events.items,
+                            key=lambda e: e.last_timestamp
+                            or e.event_time
+                            or datetime.min,
+                            reverse=True,
+                        )[
+                            :10
+                        ]:  # Last 10 events
+                            f.write(
+                                f"\n[{event.last_timestamp or event.event_time}] "
+                                f"{event.type}: {event.reason}\n"
+                            )
+                            f.write(f"  {event.message}\n")
+                    else:
+                        f.write("  No events found\n")
+                except Exception as e:
+                    f.write(f"  Could not fetch events: {e}\n")
+
+                # Labels and annotations
+                f.write("\n=== Labels ===\n")
+                if pod.metadata.labels:
+                    for key, value in pod.metadata.labels.items():
+                        f.write(f"  {key}: {value}\n")
+                else:
+                    f.write("  No labels\n")
+
+                f.write("\n=== Annotations ===\n")
+                if pod.metadata.annotations:
+                    for key, value in pod.metadata.annotations.items():
+                        f.write(f"  {key}: {value}\n")
+                else:
+                    f.write("  No annotations\n")
+
+                # Owner references (to find parent Job)
+                f.write("\n=== Owner References ===\n")
+                if pod.metadata.owner_references:
+                    for owner in pod.metadata.owner_references:
+                        f.write(f"  Kind: {owner.kind}\n")
+                        f.write(f"  Name: {owner.name}\n")
+                        f.write(f"  UID: {owner.uid}\n")
+                        f.write(f"  Controller: {owner.controller}\n")
+                else:
+                    f.write("  No owner references\n")
+
+                f.write("\n" + "=" * 80 + "\n")
+                f.write(
+                    "NOTE: Pod logs could not be captured (pod likely already deleted)\n"
+                )
+
+            logger.info(f"Saved metadata for pod {pod_name} to {metadata_filepath}")
+            return metadata_filepath
+        except Exception as e:
+            logger.error(f"Failed to save metadata to file: {e}")
             return None
 
     def get_pod_status_info(self, pod) -> dict:
@@ -197,27 +346,70 @@ class PodLogCollector:
                 pod = event["object"]
                 pod_name = pod.metadata.name
 
-                # Process ADDED, MODIFIED and DELETED events to catch quick failures
+                # Process all event types to maximize information capture
                 if event_type in ["ADDED", "MODIFIED", "DELETED"]:
                     if self.should_capture_logs(pod):
+                        # Check if we've already captured logs for this pod
+                        if pod_name in self._captured_pods:
+                            # For DELETED events, still save metadata even if we captured logs before
+                            if event_type == "DELETED":
+                                logger.info(
+                                    f"Pod {pod_name} deleted - saving deletion metadata"
+                                )
+                                pod_status = self.get_pod_status_info(pod)
+                                self.save_deletion_metadata(pod_name, pod, pod_status)
+                            else:
+                                logger.debug(
+                                    f"Already captured logs for {pod_name}, skipping"
+                                )
+                            continue
+
                         logger.warning(
                             f"Capturing logs for {event_type} pod {pod_name} in phase {pod.status.phase}"
                         )
 
+                        # Mark pod as captured before attempting to prevent race conditions
+                        self._captured_pods.add(pod_name)
+
                         # Get all containers in the pod
                         containers = [c.name for c in pod.spec.containers]
 
+                        captured_any = False
                         for container_name in containers:
-                            logs = self.capture_pod_logs(pod_name, container_name)
-                            if logs:
-                                pod_status = self.get_pod_status_info(pod)
-                                log_file = self.save_logs_to_file(
-                                    f"{pod_name}_{container_name}", logs, pod_status
-                                )
-                                if log_file:
-                                    logger.info(
-                                        f"Successfully captured logs for {pod_name}/{container_name}"
+                            # For DELETED events, try once (pod likely already gone)
+                            # For other events, retry multiple times
+                            max_retries = 1 if event_type == "DELETED" else 3
+
+                            for attempt in range(max_retries):
+                                logs = self.capture_pod_logs(pod_name, container_name)
+                                if logs:
+                                    pod_status = self.get_pod_status_info(pod)
+                                    log_file = self.save_logs_to_file(
+                                        f"{pod_name}_{container_name}", logs, pod_status
                                     )
+                                    if log_file:
+                                        logger.info(
+                                            f"Successfully captured logs for {pod_name}/{container_name} (event: {event_type})"
+                                        )
+                                        captured_any = True
+                                        break
+                                elif attempt < max_retries - 1:
+                                    # Brief delay before retry
+                                    time.sleep(0.5)
+
+                        # For DELETED events or if log capture failed, save whatever metadata we have
+                        if not captured_any or event_type == "DELETED":
+                            pod_status = self.get_pod_status_info(pod)
+                            self.save_deletion_metadata(pod_name, pod, pod_status)
+                            if not captured_any:
+                                logger.warning(
+                                    f"Could not capture logs for {pod_name}, but saved metadata"
+                                )
+
+                        # If we failed to capture any logs on non-DELETED events, remove from tracking
+                        # to allow retry on next event
+                        if not captured_any and event_type != "DELETED":
+                            self._captured_pods.discard(pod_name)
 
         except Exception as e:
             logger.error(f"Error in pod watcher: {e}")
