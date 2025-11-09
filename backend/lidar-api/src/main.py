@@ -29,10 +29,18 @@ async def lifespan(app: FastAPI):
         raise
 
     # Start pod log collector to capture logs from failing jobs
+    print(
+        f"[STARTUP] Attempting to start pod log collector for namespace: {settings.NAMESPACE}"
+    )
     try:
         start_pod_log_collector(namespace=settings.NAMESPACE)
+        print(f"[STARTUP] Pod log collector started successfully")
         logging.info(f"Pod log collector started for namespace {settings.NAMESPACE}")
     except Exception as e:
+        print(f"[STARTUP] Failed to start pod log collector: {e}")
+        import traceback
+
+        traceback.print_exc()
         logging.warning(f"Failed to start pod log collector: {e}")
         # Don't fail startup if pod log collector fails
         logging.warning("Continuing without pod log collector")
