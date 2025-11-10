@@ -228,11 +228,11 @@ spec:
               name: data
           resources:
             requests:
-              cpu: "{{ compression_cpu_request | default('500m') }}"
-              memory: "{{ compression_memory_request | default('1Gi') }}"
+              cpu: "{{ compression_cpu_request | default('1') }}"
+              memory: "{{ compression_memory_request | default('4Gi') }}"
             limits:
-              cpu: "{{ compression_cpu_limit | default('2') }}"
-              memory: "{{ compression_memory_limit | default('4Gi') }}"
+              cpu: "{{ compression_cpu_limit | default('4') }}"
+              memory: "{{ compression_memory_limit | default('16Gi') }}"
       volumes:
         - name: data
           emptyDir: {}
