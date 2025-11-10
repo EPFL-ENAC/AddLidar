@@ -95,6 +95,57 @@ class APIClient:
             logger.error(f"Error creating/updating folder state for {folder_key}: {e}")
             return False
 
+    def create_folder_state_empty(
+        self,
+        folder_key: str,
+        mission_key: str,
+        fp: str,
+        size: int,
+        count: int,
+        output_path: str,
+    ) -> bool:
+        """Create or update folder state for empty folders with 'empty' status"""
+        try:
+            url = f"{self.backend_url}/sqlite/folder_state/{folder_key}"
+            payload = {
+                "fingerprint": fp,
+                "processing_status": "empty",
+                "processing_time": 0,
+                "error_message": "Folder is empty (no files)",
+            }
+            response = requests.put(url, json=payload, timeout=30)
+
+            if response.status_code == 404:
+                logger.info(
+                    f"Creating new folder state record for empty folder via API: {folder_key}"
+                )
+                create_url = f"{self.backend_url}/sqlite/folder_state"
+                create_payload = {
+                    "folder_key": folder_key,
+                    "mission_key": mission_key,
+                    "fingerprint": fp,
+                    "size_kb": size,
+                    "file_count": count,
+                    "output_path": output_path,
+                    "processing_status": "empty",
+                    "processing_time": 0,
+                    "error_message": "Folder is empty (no files)",
+                }
+                create_response = requests.post(
+                    create_url, json=create_payload, timeout=30
+                )
+                create_response.raise_for_status()
+                return True
+
+            response.raise_for_status()
+            logger.info(f"Marked folder as empty: {folder_key}")
+            return True
+        except Exception as e:
+            logger.error(
+                f"Error creating/updating empty folder state for {folder_key}: {e}"
+            )
+            return False
+
     def create_potree_metacloud_state(
         self,
         mission_key: str,

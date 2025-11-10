@@ -167,6 +167,22 @@ class DirectoryScanner:
                         f"Fingerprint: {fp}, Size: {size} KB, File Count: {count}"
                     )
 
+                    # Check if folder is empty (no files)
+                    if count == 0:
+                        logger.info(
+                            f"Empty folder detected: {rel} - marking as 'empty' status"
+                        )
+                        if not dry_run:
+                            self.api_client.create_folder_state_empty(
+                                rel,
+                                level1,
+                                fp,
+                                size,
+                                count,
+                                os.path.join(self.zip_root, f"{rel}.tar.gz"),
+                            )
+                        continue
+
                     row = self.api_client.get_folder_state(rel)
 
                     needs_processing = False
