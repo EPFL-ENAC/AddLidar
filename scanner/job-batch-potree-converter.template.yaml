@@ -249,7 +249,7 @@ spec:
               memory: "{{ potree_memory_request | default('32Gi') }}"
             limits:
               cpu: "{{ potree_cpu_limit | default('8') }}"
-              # No memory limit - let it use what it needs
+              memory: "{{ potree_memory_limit | default('128Gi') }}"
       volumes:
         - name: data
           emptyDir: {}
