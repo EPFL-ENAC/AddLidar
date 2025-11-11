@@ -159,6 +159,27 @@ def stream_pod_logs(
 
         last_heartbeat_time = time.time()
 
+        # Wait for pod to be in Running state before polling logs
+        pod_ready = False
+        while log_stream_control.get(job_name, False) and not pod_ready:
+            try:
+                pod = core_v1.read_namespaced_pod(name=pod_name, namespace=namespace)
+                if pod.status.phase == "Running":
+                    pod_ready = True
+                    logger.info(f"Pod {pod_name} is now Running, starting log polling")
+                else:
+                    logger.debug(
+                        f"Waiting for pod {pod_name} to be Running (current: {pod.status.phase})"
+                    )
+                    time.sleep(2)
+            except Exception as e:
+                logger.error(f"Error checking pod status: {str(e)}")
+                time.sleep(2)
+
+        if not log_stream_control.get(job_name, False):
+            logger.info(f"Log streaming stopped before pod was ready for {job_name}")
+            return
+
         while log_stream_control.get(job_name, False):
             try:
                 # Fetch logs with tail_lines to get recent logs without streaming
@@ -267,12 +288,14 @@ def stream_pod_logs(
 def start_log_streaming(job_name: str, namespace: str) -> None:
     """
     Start streaming logs for a job in a separate thread.
+    Will retry if pod is not ready yet.
 
     Args:
         job_name: Name of the job
         namespace: Kubernetes namespace
     """
     try:
+        logger.info(f"start_log_streaming called for job {job_name}")
         # Get the pod name for this job
         core_v1 = client.CoreV1Api()
         pods = core_v1.list_namespaced_pod(
@@ -288,14 +311,10 @@ def start_log_streaming(job_name: str, namespace: str) -> None:
         pod_name = pods.items[0].metadata.name
         pod_phase = pods.items[0].status.phase
 
-        # Only start streaming if pod is running
-        if pod_phase != "Running":
-            logger.info(
-                f"Pod {pod_name} is in {pod_phase} phase, waiting for Running state"
-            )
-            return
+        logger.info(f"Pod {pod_name} for job {job_name} is in phase: {pod_phase}")
 
-        # Start log streaming in a separate thread
+        # Start log streaming thread regardless of pod phase
+        # The thread will wait for the pod to be Running
         loop = asyncio.get_event_loop()
         thread = threading.Thread(
             target=stream_pod_logs,
@@ -303,7 +322,9 @@ def start_log_streaming(job_name: str, namespace: str) -> None:
             daemon=True,
         )
         thread.start()
-        logger.info(f"Started log streaming thread for job {job_name}")
+        logger.info(
+            f"Started log streaming thread for job {job_name} (pod phase: {pod_phase})"
+        )
 
     except Exception as e:
         logger.error(f"Error starting log stream for job {job_name}: {str(e)}")
@@ -472,7 +493,9 @@ def watch_job_status_thread(
                 # simple_status = job_status_manager.interpret_job_status(status)
                 # logger.info(f"Simple status: {simple_status}")
                 if job.status.active == 1:
-                    # logger.info(f"Job {job_name} is running, updating status, {str(job.status)}")
+                    logger.info(
+                        f"Job {job_name} is active/running, status: {str(job.status)}"
+                    )
                     update_job_statuses(
                         job_name,
                         JobStatus(
@@ -485,8 +508,12 @@ def watch_job_status_thread(
 
                     # Start log streaming when job starts running (only once)
                     if not log_streaming_started:
+                        logger.info(
+                            f"Attempting to start log streaming for job {job_name}"
+                        )
                         start_log_streaming(job_name, namespace)
                         log_streaming_started = True
+                        logger.info(f"Log streaming start requested for job {job_name}")
 
                 if conditions:
                     status = conditions[0].type
