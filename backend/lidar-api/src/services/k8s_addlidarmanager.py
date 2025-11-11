@@ -765,21 +765,37 @@ def generate_k8s_addlidarmanager_job(
 set -e
 echo ""
 echo "Attempting to install coreutils for unbuffered output support..."
+# Temporarily disable exit-on-error for package installation attempts
+set +e
 # Try to install coreutils (which includes stdbuf) - works on Debian/Ubuntu
 if command -v apt-get &> /dev/null; then
-    apt-get update -qq && apt-get install -y -qq coreutils 2>&1 | grep -v "debconf: delaying package configuration"
-    echo "Installed coreutils via apt-get"
+    apt-get update -qq 2>&1 && apt-get install -y -qq coreutils 2>&1
+    if [ $? -eq 0 ]; then
+        echo "Installed coreutils via apt-get"
+    else
+        echo "Failed to install coreutils via apt-get (may already be installed or no permissions)"
+    fi
 # Try Alpine Linux package manager
 elif command -v apk &> /dev/null; then
     apk add --no-cache coreutils 2>&1
-    echo "Installed coreutils via apk"
+    if [ $? -eq 0 ]; then
+        echo "Installed coreutils via apk"
+    else
+        echo "Failed to install coreutils via apk (may already be installed or no permissions)"
+    fi
 # Try Red Hat/CentOS package manager
 elif command -v yum &> /dev/null; then
     yum install -y -q coreutils 2>&1
-    echo "Installed coreutils via yum"
+    if [ $? -eq 0 ]; then
+        echo "Installed coreutils via yum"
+    else
+        echo "Failed to install coreutils via yum (may already be installed or no permissions)"
+    fi
 else
-    echo "Could not install coreutils - no supported package manager found"
+    echo "No supported package manager found for coreutils installation"
 fi
+# Re-enable exit-on-error for the main command
+set -e
 
 echo ""
 echo "Running LidarDataManager with args: {' '.join(full_cli_args)}"
@@ -801,7 +817,7 @@ elif command -v script &> /dev/null; then
     # Use script with -q (quiet) -e (return exit code) -f (flush output) -c (command)
     script -q -e -f -c "/lidarDataManager {' '.join(full_cli_args)}" /dev/null
 else
-    echo "No unbuffering tool available, running directly"
+    echo "No unbuffering tool available, running directly (output may be buffered)"
     /lidarDataManager {' '.join(full_cli_args)}
 fi
 """
