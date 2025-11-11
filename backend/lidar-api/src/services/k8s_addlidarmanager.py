@@ -285,7 +285,9 @@ def stream_pod_logs(
             del log_stream_control[job_name]
 
 
-def start_log_streaming(job_name: str, namespace: str) -> None:
+def start_log_streaming(
+    job_name: str, namespace: str, loop: asyncio.AbstractEventLoop
+) -> None:
     """
     Start streaming logs for a job in a separate thread.
     Will retry if pod is not ready yet.
@@ -293,6 +295,7 @@ def start_log_streaming(job_name: str, namespace: str) -> None:
     Args:
         job_name: Name of the job
         namespace: Kubernetes namespace
+        loop: Event loop to use for async operations
     """
     try:
         logger.info(f"start_log_streaming called for job {job_name}")
@@ -315,7 +318,6 @@ def start_log_streaming(job_name: str, namespace: str) -> None:
 
         # Start log streaming thread regardless of pod phase
         # The thread will wait for the pod to be Running
-        loop = asyncio.get_event_loop()
         thread = threading.Thread(
             target=stream_pod_logs,
             args=(job_name, pod_name, namespace, loop),
@@ -511,7 +513,7 @@ def watch_job_status_thread(
                         logger.info(
                             f"Attempting to start log streaming for job {job_name}"
                         )
-                        start_log_streaming(job_name, namespace)
+                        start_log_streaming(job_name, namespace, loop)
                         log_streaming_started = True
                         logger.info(f"Log streaming start requested for job {job_name}")
 
