@@ -1,9 +1,13 @@
 from kubernetes import client, config
 from kubernetes.watch import Watch
+from kubernetes.stream import stream
 import uuid
 import logging
 import asyncio
 import os
+import re
+import time
+import threading
 from pydantic import BaseModel
 from datetime import datetime
 from typing import Optional, List, Dict, Any
@@ -12,8 +16,6 @@ from src.utils.kubernetes_utils import get_node_scheduling_config
 
 # from src.services.job_status import job_status_manager
 
-
-import threading
 
 logger = logging.getLogger(__name__)
 
@@ -48,6 +50,7 @@ class JobStatus(BaseModel):
     cli_args: Optional[List[str]] = None
     output_path: Optional[str] = None
     logs: Optional[str] = None  # Changed from bytes to str
+    progress: Optional[Dict[str, Any]] = None  # Progress information with ETA
 
     class Config:
         json_encoders = {
@@ -58,6 +61,222 @@ class JobStatus(BaseModel):
 
 # Store job statuses in memory
 job_statuses: Dict[str, Dict[str, Any]] = {}
+
+# Track log streaming threads
+log_stream_control: Dict[str, bool] = {}
+
+
+def parse_progress_from_log(log_line: str) -> Optional[Dict[str, Any]]:
+    """
+    Parse progress information from log lines like:
+    'Processed 157692/1484192264'
+
+    Returns:
+        Dict with processed, total, percentage, or None if not a progress line
+    """
+    match = re.match(r"Processed\s+(\d+)/(\d+)", log_line)
+    if match:
+        processed = int(match.group(1))
+        total = int(match.group(2))
+        percentage = (processed / total * 100) if total > 0 else 0
+        return {
+            "processed": processed,
+            "total": total,
+            "percentage": round(percentage, 2),
+        }
+    return None
+
+
+def calculate_eta(
+    processed: int, total: int, start_time: float, current_time: float
+) -> Optional[Dict[str, Any]]:
+    """
+    Calculate estimated time of arrival based on processing speed.
+
+    Args:
+        processed: Number of items processed
+        total: Total number of items
+        start_time: Job start time (epoch)
+        current_time: Current time (epoch)
+
+    Returns:
+        Dict with eta_seconds, points_per_second, estimated_completion_time
+    """
+    if processed <= 0 or total <= 0:
+        return None
+
+    elapsed_time = current_time - start_time
+    if elapsed_time <= 0:
+        return None
+
+    points_per_second = processed / elapsed_time
+    remaining_points = total - processed
+    eta_seconds = remaining_points / points_per_second if points_per_second > 0 else 0
+    estimated_completion = current_time + eta_seconds
+
+    return {
+        "eta_seconds": round(eta_seconds, 2),
+        "points_per_second": round(points_per_second, 2),
+        "estimated_completion_time": datetime.fromtimestamp(
+            estimated_completion
+        ).isoformat(),
+        "elapsed_seconds": round(elapsed_time, 2),
+    }
+
+
+def stream_pod_logs(
+    job_name: str, pod_name: str, namespace: str, loop: asyncio.AbstractEventLoop
+) -> None:
+    """
+    Stream logs from a running pod and parse progress information.
+
+    Args:
+        job_name: Name of the job
+        pod_name: Name of the pod to stream logs from
+        namespace: Kubernetes namespace
+        loop: Event loop for async operations
+    """
+    try:
+        core_v1 = client.CoreV1Api()
+        log_stream_control[job_name] = True
+
+        logger.info(f"Starting log stream for job {job_name}, pod {pod_name}")
+
+        # Get job start time from job_statuses or use current time
+        job_status_info = job_statuses.get(job_name, {})
+        start_time = job_status_info.get("created_at")
+        if isinstance(start_time, datetime):
+            start_time = start_time.timestamp()
+        elif start_time is None:
+            start_time = time.time()
+
+        # Stream logs with follow=True to get real-time updates
+        try:
+            log_stream = core_v1.read_namespaced_pod_log(
+                name=pod_name,
+                namespace=namespace,
+                follow=True,
+                _preload_content=False,
+                timestamps=False,
+            )
+
+            last_update_time = time.time()
+            update_interval = (
+                2  # Update every 2 seconds to avoid overwhelming WebSocket
+            )
+
+            for line in log_stream.stream():
+                # Check if we should stop streaming
+                if not log_stream_control.get(job_name, False):
+                    logger.info(f"Stopping log stream for job {job_name}")
+                    break
+
+                if isinstance(line, bytes):
+                    line = line.decode("utf-8").strip()
+                else:
+                    line = line.strip()
+
+                # Parse progress information
+                progress_info = parse_progress_from_log(line)
+
+                if progress_info:
+                    current_time = time.time()
+
+                    # Calculate ETA
+                    eta_info = calculate_eta(
+                        progress_info["processed"],
+                        progress_info["total"],
+                        start_time,
+                        current_time,
+                    )
+
+                    if eta_info:
+                        progress_info.update(eta_info)
+
+                    # Only update if enough time has passed (throttle updates)
+                    if current_time - last_update_time >= update_interval:
+                        update_job_statuses(
+                            job_name,
+                            JobStatus(
+                                job_name=job_name,
+                                status="Running",
+                                message=f"Processing: {progress_info['processed']}/{progress_info['total']} ({progress_info['percentage']:.1f}%)",
+                                progress=progress_info,
+                            ),
+                            loop,
+                        )
+                        last_update_time = current_time
+
+            logger.info(f"Log stream ended for job {job_name}")
+
+        except Exception as stream_error:
+            logger.error(
+                f"Error streaming logs for job {job_name}: {str(stream_error)}"
+            )
+
+    except Exception as e:
+        logger.error(f"Error setting up log stream for job {job_name}: {str(e)}")
+    finally:
+        # Clean up
+        if job_name in log_stream_control:
+            del log_stream_control[job_name]
+
+
+def start_log_streaming(job_name: str, namespace: str) -> None:
+    """
+    Start streaming logs for a job in a separate thread.
+
+    Args:
+        job_name: Name of the job
+        namespace: Kubernetes namespace
+    """
+    try:
+        # Get the pod name for this job
+        core_v1 = client.CoreV1Api()
+        pods = core_v1.list_namespaced_pod(
+            namespace=namespace, label_selector=f"job-name={job_name}"
+        )
+
+        if not pods.items:
+            logger.warning(
+                f"No pods found for job {job_name}, will retry when pod is ready"
+            )
+            return
+
+        pod_name = pods.items[0].metadata.name
+        pod_phase = pods.items[0].status.phase
+
+        # Only start streaming if pod is running
+        if pod_phase != "Running":
+            logger.info(
+                f"Pod {pod_name} is in {pod_phase} phase, waiting for Running state"
+            )
+            return
+
+        # Start log streaming in a separate thread
+        loop = asyncio.get_event_loop()
+        thread = threading.Thread(
+            target=stream_pod_logs,
+            args=(job_name, pod_name, namespace, loop),
+            daemon=True,
+        )
+        thread.start()
+        logger.info(f"Started log streaming thread for job {job_name}")
+
+    except Exception as e:
+        logger.error(f"Error starting log stream for job {job_name}: {str(e)}")
+
+
+def stop_log_streaming(job_name: str) -> None:
+    """
+    Stop streaming logs for a job.
+
+    Args:
+        job_name: Name of the job
+    """
+    if job_name in log_stream_control:
+        log_stream_control[job_name] = False
+        logger.info(f"Stopped log streaming for job {job_name}")
 
 
 def update_job_statuses(
@@ -189,6 +408,7 @@ def watch_job_status_thread(
         batch_v1 = client.BatchV1Api()
         w = Watch()
         watch_control[job_name] = True
+        log_streaming_started = False
 
         logger.info(f"Started watching job {job_name} in namespace {namespace}")
 
@@ -196,6 +416,7 @@ def watch_job_status_thread(
             # Check if we should stop watching
             if not watch_control.get(job_name, True):
                 logger.info(f"Stopping watch for job {job_name}")
+                stop_log_streaming(job_name)
                 w.stop()
                 break
 
@@ -219,10 +440,19 @@ def watch_job_status_thread(
                         ),
                         loop,
                     )
+
+                    # Start log streaming when job starts running (only once)
+                    if not log_streaming_started:
+                        start_log_streaming(job_name, namespace)
+                        log_streaming_started = True
+
                 if conditions:
                     status = conditions[0].type
                     logs = None
                     if status in AUTHORIZED_STATUSES:
+                        # Stop log streaming before getting final logs
+                        stop_log_streaming(job_name)
+
                         try:
                             logs = get_log_job_status(job_name)
                         except Exception as log_error:
@@ -248,6 +478,7 @@ def watch_job_status_thread(
 
     except Exception as e:
         logger.error(f"Error watching job {job_name}: {str(e)}")
+        stop_log_streaming(job_name)
         update_job_statuses(
             job_name,
             JobStatus(
@@ -258,7 +489,8 @@ def watch_job_status_thread(
             loop,
         )
     finally:
-        # Clean up the watch control entry
+        # Clean up the watch control entry and log streaming
+        stop_log_streaming(job_name)
         if job_name in watch_control:
             logger.info(f"Cleaning up watch control: {job_name}")
             del watch_control[job_name]
@@ -336,7 +568,7 @@ def handle_notification_error(e: Exception, job_status: JobStatus) -> None:
 
 def stop_watching_job(job_name: str) -> None:
     """
-    Stops watching a job.
+    Stops watching a job and stops log streaming.
 
     Args:
         job_name: Name of the job to stop watching
@@ -346,6 +578,9 @@ def stop_watching_job(job_name: str) -> None:
         logger.info(f"Stopping job watcher for job {job_name}")
     else:
         logger.warning(f"No watch control found for job {job_name}")
+
+    # Also stop log streaming
+    stop_log_streaming(job_name)
 
 
 def start_watching_job(job_name: str, namespace: str = "default") -> None:
