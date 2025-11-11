@@ -89,6 +89,47 @@
           </div>
         </div>
 
+        <!-- Progress bar for running jobs with detailed info -->
+        <div v-if="jobStatus === 'Running' && progressInfo" class="q-mt-md">
+          <q-linear-progress
+            :value="jobProgress"
+            color="positive"
+            size="20px"
+            class="q-mb-sm"
+          >
+            <div class="absolute-full flex flex-center">
+              <q-badge
+                color="white"
+                text-color="primary"
+                :label="`${progressInfo.percentage.toFixed(1)}%`"
+              />
+            </div>
+          </q-linear-progress>
+
+          <!-- Progress details grid -->
+          <div class="progress-stats q-mt-sm">
+            <div class="stat-item">
+              <div class="stat-label">Points</div>
+              <div class="stat-value">{{ pointsFormatted }}</div>
+            </div>
+
+            <div class="stat-item" v-if="speedFormatted">
+              <div class="stat-label">Speed</div>
+              <div class="stat-value">{{ speedFormatted }}</div>
+            </div>
+
+            <div class="stat-item highlight" v-if="etaFormatted">
+              <div class="stat-label">ETA</div>
+              <div class="stat-value">{{ etaFormatted }}</div>
+            </div>
+
+            <div class="stat-item" v-if="completionTimeFormatted">
+              <div class="stat-label">Complete at</div>
+              <div class="stat-value">{{ completionTimeFormatted }}</div>
+            </div>
+          </div>
+        </div>
+
         <q-btn
           v-if="jobStatus === 'Complete' || jobStatus === 'SuccessCriteriaMet'"
           label="Download File"
@@ -128,26 +169,24 @@
                 <span class="text-caption">{{ log.time }}:</span>
                 {{ log.message }}
               </div>
-            </q-card-section>
-          </q-card>
+            </q-card-section> </q-card
+          >venue de Rumine 4
         </q-expansion-item>
       </div>
     </div>
   </div>
 </template>
 <script setup lang="ts">
-import { ref, onBeforeUnmount, onMounted } from "vue";
+import { ref, onBeforeUnmount, onMounted, computed } from "vue";
 import ClipVolume from "@/components/ClipVolume.vue";
 import { formatOptions, epsgOptions, type SelectOption } from "@/utils/api";
 import useDownloadService from "@/utils/useDownloadService";
 import type { JobParams } from "@/utils/useDownloadService";
 import { usePointCloudStore } from "@/stores/pointcloud";
 import { useDirectoryStore } from "@/stores/directoryStore";
-import { useRoute } from "vue-router";
 
 const store = usePointCloudStore();
 const directoryStore = useDirectoryStore();
-const route = useRoute();
 
 // Keep the entire service instance available
 const downloadService = useDownloadService();
@@ -159,6 +198,7 @@ const {
   closeConnection,
   jobStatus,
   jobProgress,
+  progressInfo,
   statusLogs,
   startJob,
   downloadResult,
@@ -167,6 +207,55 @@ const {
 } = downloadService;
 
 const { clipPosition, clipRotation, clipScale } = store;
+
+// Format ETA seconds as human-readable string
+const etaFormatted = computed(() => {
+  if (!progressInfo.value?.eta_seconds) return null;
+
+  const seconds = progressInfo.value.eta_seconds;
+  const hours = Math.floor(seconds / 3600);
+  const minutes = Math.floor((seconds % 3600) / 60);
+  const secs = Math.floor(seconds % 60);
+
+  if (hours > 0) {
+    return `${hours}h ${minutes}m`;
+  } else if (minutes > 0) {
+    return `${minutes}m ${secs}s`;
+  } else {
+    return `${secs}s`;
+  }
+});
+
+// Format processing speed
+const speedFormatted = computed(() => {
+  if (!progressInfo.value?.points_per_second) return null;
+
+  const speed = progressInfo.value.points_per_second;
+
+  if (speed > 1000000) {
+    return `${(speed / 1000000).toFixed(2)}M pts/s`;
+  } else if (speed > 1000) {
+    return `${(speed / 1000).toFixed(2)}K pts/s`;
+  } else {
+    return `${speed.toFixed(0)} pts/s`;
+  }
+});
+
+// Format completion time
+const completionTimeFormatted = computed(() => {
+  if (!progressInfo.value?.estimated_completion_time) return null;
+
+  const date = new Date(progressInfo.value.estimated_completion_time);
+  return date.toLocaleTimeString();
+});
+
+// Format processed/total points
+const pointsFormatted = computed(() => {
+  if (!progressInfo.value) return null;
+
+  const { processed, total } = progressInfo.value;
+  return `${processed.toLocaleString()} / ${total.toLocaleString()}`;
+});
 
 // Form values
 const type = ref("traj");
@@ -269,5 +358,43 @@ onBeforeUnmount(closeConnection);
 
 .full-width {
   width: 100%;
+}
+
+/* Progress stats styling */
+.progress-stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 0.75rem;
+  padding: 0.5rem;
+  background: white;
+  border-radius: 4px;
+}
+
+.stat-item {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.5rem;
+  border-radius: 4px;
+  background: #f9f9f9;
+}
+
+.stat-item.highlight {
+  background: #fff3e0;
+  border: 1px solid #ffb74d;
+}
+
+.stat-label {
+  font-size: 0.7rem;
+  color: #666;
+  text-transform: uppercase;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.stat-value {
+  font-size: 0.95rem;
+  color: #333;
+  font-weight: 600;
 }
 </style>

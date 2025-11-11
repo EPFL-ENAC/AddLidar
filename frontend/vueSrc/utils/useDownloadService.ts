@@ -12,9 +12,20 @@ interface JobData {
   [key: string]: any;
 }
 
+interface ProgressInfo {
+  processed: number;
+  total: number;
+  percentage: number;
+  eta_seconds?: number;
+  points_per_second?: number;
+  estimated_completion_time?: string;
+  elapsed_seconds?: number;
+}
+
 interface JobStatusResponse {
   status: string;
-  progress?: number;
+  progress?: number | ProgressInfo; // Can be either legacy number or new progress object
+  message?: string;
   [key: string]: any;
 }
 
@@ -57,6 +68,7 @@ export default function useDownloadService(
   const currentJob: Ref<JobData | null> = ref(null);
   const jobStatus: Ref<string> = ref("");
   const jobProgress: Ref<number> = ref(0);
+  const progressInfo: Ref<ProgressInfo | null> = ref(null);
   const statusLogs: Ref<JobLog[]> = ref([]);
   const checkingStatus: Ref<boolean> = ref(false);
   let wsConnection: WebSocket | null = null;
@@ -145,7 +157,16 @@ export default function useDownloadService(
         }
 
         if (data.progress !== undefined) {
-          jobProgress.value = data.progress;
+          // Check if progress is the new detailed object or legacy number
+          if (typeof data.progress === "object" && data.progress !== null) {
+            // New progress format with ETA
+            progressInfo.value = data.progress;
+            jobProgress.value = data.progress.percentage / 100; // Convert to 0-1 range
+          } else {
+            // Legacy format (simple number)
+            jobProgress.value = data.progress;
+            progressInfo.value = null;
+          }
         }
 
         // On completion, show notification
@@ -206,7 +227,15 @@ export default function useDownloadService(
 
       // Update status and progress
       if (data.status) jobStatus.value = data.status;
-      if (data.progress !== undefined) jobProgress.value = data.progress;
+      if (data.progress !== undefined) {
+        if (typeof data.progress === "object" && data.progress !== null) {
+          progressInfo.value = data.progress;
+          jobProgress.value = data.progress.percentage / 100;
+        } else {
+          jobProgress.value = data.progress;
+          progressInfo.value = null;
+        }
+      }
 
       notify(`Status updated: ${data.status}`, "info");
     } catch (error) {
@@ -271,6 +300,7 @@ export default function useDownloadService(
     currentJob.value = null;
     jobStatus.value = "";
     jobProgress.value = 0;
+    progressInfo.value = null;
     statusLogs.value = [];
 
     // Close WebSocket if open
@@ -290,6 +320,7 @@ export default function useDownloadService(
     currentJob,
     jobStatus,
     jobProgress,
+    progressInfo,
     statusLogs,
     checkingStatus,
 
