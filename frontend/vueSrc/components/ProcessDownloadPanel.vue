@@ -169,8 +169,8 @@
                 <span class="text-caption">{{ log.time }}:</span>
                 {{ log.message }}
               </div>
-            </q-card-section> </q-card
-          >venue de Rumine 4
+            </q-card-section>
+          </q-card>
         </q-expansion-item>
       </div>
     </div>

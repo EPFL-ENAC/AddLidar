@@ -731,7 +731,8 @@ if [[ "$INPUT_FILE" == *.metacloud ]]; then
     cd "$METACLOUD_DIR" || echo "Cannot cd to metacloud directory"
     echo "New working directory: $(pwd)"
 fi
-/lidarDataManager {' '.join(full_cli_args)}
+# Use stdbuf to force line-buffered output for real-time log streaming
+stdbuf -oL -eL /lidarDataManager {' '.join(full_cli_args)}
 """
 
     container = client.V1Container(
@@ -740,6 +741,12 @@ fi
         command=["/bin/bash", "-c"],
         args=[debug_script],
         volume_mounts=volume_mounts,
+        env=[
+            # Force unbuffered output for real-time log streaming
+            client.V1EnvVar(name="PYTHONUNBUFFERED", value="1"),
+            client.V1EnvVar(name="GLOG_logtostderr", value="1"),
+            client.V1EnvVar(name="GLOG_v", value="1"),
+        ],
         resources=client.V1ResourceRequirements(
             requests={
                 "cpu": os.getenv("LIDAR_JOB_CPU_REQUEST", "500m"),
