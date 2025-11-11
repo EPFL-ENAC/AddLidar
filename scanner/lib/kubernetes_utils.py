@@ -122,6 +122,18 @@ def create_kubernetes_job(
             return 1
 
         job_dict = yaml.safe_load(job_yaml)
+
+        # Add ArgoCD annotation to prevent auto-pruning of dynamically created jobs
+        if "metadata" not in job_dict:
+            job_dict["metadata"] = {}
+        if "annotations" not in job_dict["metadata"]:
+            job_dict["metadata"]["annotations"] = {}
+
+        job_dict["metadata"]["annotations"][
+            "argocd.argoproj.io/sync-options"
+        ] = "Prune=false"
+        logger.debug(f"Added ArgoCD prune prevention annotation to job")
+
         result = utils.create_from_dict(client.ApiClient(), job_dict, True)
         job_name = job_dict["metadata"]["name"]
         logger.info(f"Created job '{job_name}'")
