@@ -129,6 +129,7 @@ def stream_pod_logs(
 ) -> None:
     """
     Stream logs from a running pod and parse progress information.
+    Uses polling with timeout to avoid blocking when Kubernetes buffers logs.
 
     Args:
         job_name: Name of the job
@@ -150,111 +151,97 @@ def stream_pod_logs(
         elif start_time is None:
             start_time = time.time()
 
-        # Stream logs with follow=True to get real-time updates
-        try:
-            log_stream = core_v1.read_namespaced_pod_log(
-                name=pod_name,
-                namespace=namespace,
-                follow=True,
-                _preload_content=False,
-                timestamps=False,
-            )
+        # Track the last line we've seen to avoid re-parsing
+        last_log_position = 0
+        last_progress_info = None
+        poll_interval = 2  # Poll logs every 2 seconds
+        heartbeat_interval = 5  # Send heartbeat every 5 seconds even without new logs
 
-            last_update_time = time.time()
-            update_interval = (
-                0.5  # Update every 0.5 seconds for more responsive progress tracking
-            )
+        last_heartbeat_time = time.time()
 
-            # Buffer to accumulate partial lines
-            line_buffer = ""
+        while log_stream_control.get(job_name, False):
+            try:
+                # Fetch logs with tail_lines to get recent logs without streaming
+                # This is non-blocking and returns immediately
+                logs = core_v1.read_namespaced_pod_log(
+                    name=pod_name,
+                    namespace=namespace,
+                    timestamps=False,
+                )
 
-            for chunk in log_stream.stream():
-                # Check if we should stop streaming
-                if not log_stream_control.get(job_name, False):
-                    logger.info(f"Stopping log stream for job {job_name}")
-                    break
+                if logs:
+                    # Split logs into lines
+                    all_lines = re.split(r"[\r\n]+", logs)
 
-                if isinstance(chunk, bytes):
-                    chunk = chunk.decode("utf-8")
+                    # Process only new lines since last position
+                    if len(all_lines) > last_log_position:
+                        new_lines = all_lines[last_log_position:]
+                        last_log_position = len(all_lines)
 
-                # Add chunk to buffer
-                line_buffer += chunk
+                        # Parse progress from new lines
+                        for line in new_lines:
+                            line = line.strip()
+                            if not line:
+                                continue
 
-                # Split on both newlines and carriage returns to handle progress updates
-                # that overwrite the same line
-                lines = re.split(r"[\r\n]+", line_buffer)
+                            progress_info = parse_progress_from_log(line)
+                            if progress_info:
+                                last_progress_info = progress_info
 
-                # Keep the last incomplete line in buffer
-                line_buffer = lines[-1]
-
-                # Process all complete lines
-                for line in lines[:-1]:
-                    line = line.strip()
-                    if not line:
-                        continue
-
-                    # Parse progress information
-                    progress_info = parse_progress_from_log(line)
-
-                if progress_info:
-                    current_time = time.time()
-
+                # Send update if we have progress info
+                current_time = time.time()
+                if last_progress_info:
                     # Calculate ETA
                     eta_info = calculate_eta(
-                        progress_info["processed"],
-                        progress_info["total"],
+                        last_progress_info["processed"],
+                        last_progress_info["total"],
                         start_time,
                         current_time,
                     )
 
                     if eta_info:
-                        progress_info.update(eta_info)
+                        last_progress_info.update(eta_info)
 
-                    # Only update if enough time has passed (throttle updates)
-                    if current_time - last_update_time >= update_interval:
-                        update_job_statuses(
-                            job_name,
-                            JobStatus(
-                                job_name=job_name,
-                                status="Running",
-                                message=f"Processing: {progress_info['processed']}/{progress_info['total']} ({progress_info['percentage']:.1f}%)",
-                                progress=progress_info,
-                            ),
-                            loop,
-                        )
-                        last_update_time = current_time
-
-            # Process any remaining content in buffer
-            if line_buffer.strip():
-                progress_info = parse_progress_from_log(line_buffer.strip())
-                if progress_info:
-                    current_time = time.time()
-                    eta_info = calculate_eta(
-                        progress_info["processed"],
-                        progress_info["total"],
-                        start_time,
-                        current_time,
-                    )
-                    if eta_info:
-                        progress_info.update(eta_info)
-
+                    # Send progress update
                     update_job_statuses(
                         job_name,
                         JobStatus(
                             job_name=job_name,
                             status="Running",
-                            message=f"Processing: {progress_info['processed']}/{progress_info['total']} ({progress_info['percentage']:.1f}%)",
-                            progress=progress_info,
+                            message=f"Processing: {last_progress_info['processed']}/{last_progress_info['total']} ({last_progress_info['percentage']:.1f}%)",
+                            progress=last_progress_info,
                         ),
                         loop,
                     )
+                    last_heartbeat_time = current_time
+                elif current_time - last_heartbeat_time >= heartbeat_interval:
+                    # Send heartbeat even without progress to keep connection alive
+                    update_job_statuses(
+                        job_name,
+                        JobStatus(
+                            job_name=job_name,
+                            status="Running",
+                            message="Job is running (waiting for log updates)",
+                        ),
+                        loop,
+                    )
+                    last_heartbeat_time = current_time
 
-            logger.info(f"Log stream ended for job {job_name}")
+                # Sleep before next poll
+                time.sleep(poll_interval)
 
-        except Exception as stream_error:
-            logger.error(
-                f"Error streaming logs for job {job_name}: {str(stream_error)}"
-            )
+            except client.exceptions.ApiException as api_error:
+                if api_error.status == 404:
+                    logger.info(f"Pod {pod_name} not found, stopping log stream")
+                    break
+                else:
+                    logger.error(f"API error fetching logs: {str(api_error)}")
+                    time.sleep(poll_interval)
+            except Exception as poll_error:
+                logger.error(f"Error polling logs: {str(poll_error)}")
+                time.sleep(poll_interval)
+
+        logger.info(f"Log stream ended for job {job_name}")
 
     except Exception as e:
         logger.error(f"Error setting up log stream for job {job_name}: {str(e)}")
