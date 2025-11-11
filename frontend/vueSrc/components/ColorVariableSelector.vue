@@ -39,14 +39,16 @@ const attributeOptions = computed(() => {
   ) {
     return defaultAttributes;
   }
-  return directoryStore.pointcloudMetadata.attributes.map(
-    (attribute: { name: string }) => {
-      console.log("Attribute", attribute.name);
-      return {
-        label: attribute.name,
-        value: attribute.name,
-      };
-    },
+  return [{ label: "Color (rgba default)", value: "rgba" }].concat(
+    directoryStore.pointcloudMetadata.attributes.map(
+      (attribute: { name: string }) => {
+        console.log("Attribute", attribute.name);
+        return {
+          label: attribute.name,
+          value: attribute.name,
+        };
+      },
+    ),
   );
 });
 
