@@ -173,10 +173,16 @@ def stream_pod_logs(
                     # Split logs into lines
                     all_lines = re.split(r"[\r\n]+", logs)
 
+                    logger.debug(
+                        f"Polled logs for {job_name}: {len(all_lines)} total lines, last position: {last_log_position}"
+                    )
+
                     # Process only new lines since last position
                     if len(all_lines) > last_log_position:
                         new_lines = all_lines[last_log_position:]
                         last_log_position = len(all_lines)
+
+                        logger.debug(f"Found {len(new_lines)} new lines for {job_name}")
 
                         # Parse progress from new lines
                         for line in new_lines:
@@ -187,6 +193,9 @@ def stream_pod_logs(
                             progress_info = parse_progress_from_log(line)
                             if progress_info:
                                 last_progress_info = progress_info
+                                logger.debug(
+                                    f"Parsed progress for {job_name}: {progress_info['processed']}/{progress_info['total']}"
+                                )
 
                 # Send update if we have progress info
                 current_time = time.time()
@@ -203,6 +212,9 @@ def stream_pod_logs(
                         last_progress_info.update(eta_info)
 
                     # Send progress update
+                    logger.debug(
+                        f"Sending progress update for {job_name}: {last_progress_info['percentage']:.1f}%"
+                    )
                     update_job_statuses(
                         job_name,
                         JobStatus(
@@ -216,6 +228,7 @@ def stream_pod_logs(
                     last_heartbeat_time = current_time
                 elif current_time - last_heartbeat_time >= heartbeat_interval:
                     # Send heartbeat even without progress to keep connection alive
+                    logger.debug(f"Sending heartbeat for {job_name}")
                     update_job_statuses(
                         job_name,
                         JobStatus(
