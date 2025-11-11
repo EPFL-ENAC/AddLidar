@@ -531,6 +531,8 @@ fi
         app_name = "addlidar-dev"
 
     annotations["argocd.argoproj.io/instance"] = app_name
+    # Prevent ArgoCD from pruning dynamically created jobs
+    annotations["argocd.argoproj.io/sync-options"] = "Prune=false"
 
     # Get node scheduling configuration using utility function
     tolerations_config, node_selector_config = get_node_scheduling_config()
