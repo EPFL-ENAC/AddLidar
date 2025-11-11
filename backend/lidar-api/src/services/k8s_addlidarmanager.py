@@ -162,22 +162,39 @@ def stream_pod_logs(
 
             last_update_time = time.time()
             update_interval = (
-                2  # Update every 2 seconds to avoid overwhelming WebSocket
+                0.5  # Update every 0.5 seconds for more responsive progress tracking
             )
 
-            for line in log_stream.stream():
+            # Buffer to accumulate partial lines
+            line_buffer = ""
+
+            for chunk in log_stream.stream():
                 # Check if we should stop streaming
                 if not log_stream_control.get(job_name, False):
                     logger.info(f"Stopping log stream for job {job_name}")
                     break
 
-                if isinstance(line, bytes):
-                    line = line.decode("utf-8").strip()
-                else:
-                    line = line.strip()
+                if isinstance(chunk, bytes):
+                    chunk = chunk.decode("utf-8")
 
-                # Parse progress information
-                progress_info = parse_progress_from_log(line)
+                # Add chunk to buffer
+                line_buffer += chunk
+
+                # Split on both newlines and carriage returns to handle progress updates
+                # that overwrite the same line
+                lines = re.split(r"[\r\n]+", line_buffer)
+
+                # Keep the last incomplete line in buffer
+                line_buffer = lines[-1]
+
+                # Process all complete lines
+                for line in lines[:-1]:
+                    line = line.strip()
+                    if not line:
+                        continue
+
+                    # Parse progress information
+                    progress_info = parse_progress_from_log(line)
 
                 if progress_info:
                     current_time = time.time()
@@ -206,6 +223,31 @@ def stream_pod_logs(
                             loop,
                         )
                         last_update_time = current_time
+
+            # Process any remaining content in buffer
+            if line_buffer.strip():
+                progress_info = parse_progress_from_log(line_buffer.strip())
+                if progress_info:
+                    current_time = time.time()
+                    eta_info = calculate_eta(
+                        progress_info["processed"],
+                        progress_info["total"],
+                        start_time,
+                        current_time,
+                    )
+                    if eta_info:
+                        progress_info.update(eta_info)
+
+                    update_job_statuses(
+                        job_name,
+                        JobStatus(
+                            job_name=job_name,
+                            status="Running",
+                            message=f"Processing: {progress_info['processed']}/{progress_info['total']} ({progress_info['percentage']:.1f}%)",
+                            progress=progress_info,
+                        ),
+                        loop,
+                    )
 
             logger.info(f"Log stream ended for job {job_name}")
 
@@ -722,6 +764,24 @@ def generate_k8s_addlidarmanager_job(
     debug_script = f"""
 set -e
 echo ""
+echo "Attempting to install coreutils for unbuffered output support..."
+# Try to install coreutils (which includes stdbuf) - works on Debian/Ubuntu
+if command -v apt-get &> /dev/null; then
+    apt-get update -qq && apt-get install -y -qq coreutils 2>&1 | grep -v "debconf: delaying package configuration"
+    echo "Installed coreutils via apt-get"
+# Try Alpine Linux package manager
+elif command -v apk &> /dev/null; then
+    apk add --no-cache coreutils 2>&1
+    echo "Installed coreutils via apk"
+# Try Red Hat/CentOS package manager
+elif command -v yum &> /dev/null; then
+    yum install -y -q coreutils 2>&1
+    echo "Installed coreutils via yum"
+else
+    echo "Could not install coreutils - no supported package manager found"
+fi
+
+echo ""
 echo "Running LidarDataManager with args: {' '.join(full_cli_args)}"
 # Change to the directory containing the metacloud file before running LidarDataManager
 # This ensures relative paths in the metacloud file work correctly
@@ -731,8 +791,19 @@ if [[ "$INPUT_FILE" == *.metacloud ]]; then
     cd "$METACLOUD_DIR" || echo "Cannot cd to metacloud directory"
     echo "New working directory: $(pwd)"
 fi
-# Use stdbuf to force line-buffered output for real-time log streaming
-stdbuf -oL -eL /lidarDataManager {' '.join(full_cli_args)}
+
+# Try different methods for unbuffered output in order of preference
+if command -v stdbuf &> /dev/null; then
+    echo "Using stdbuf for unbuffered output"
+    stdbuf -o0 -e0 /lidarDataManager {' '.join(full_cli_args)}
+elif command -v script &> /dev/null; then
+    echo "Using script command for unbuffered output"
+    # Use script with -q (quiet) -e (return exit code) -f (flush output) -c (command)
+    script -q -e -f -c "/lidarDataManager {' '.join(full_cli_args)}" /dev/null
+else
+    echo "No unbuffering tool available, running directly"
+    /lidarDataManager {' '.join(full_cli_args)}
+fi
 """
 
     container = client.V1Container(
@@ -746,7 +817,12 @@ stdbuf -oL -eL /lidarDataManager {' '.join(full_cli_args)}
             client.V1EnvVar(name="PYTHONUNBUFFERED", value="1"),
             client.V1EnvVar(name="GLOG_logtostderr", value="1"),
             client.V1EnvVar(name="GLOG_v", value="1"),
+            # Disable output buffering
+            client.V1EnvVar(name="UNBUFFERED", value="1"),
         ],
+        # Enable TTY to help with unbuffered output
+        tty=False,  # Keep False to avoid binary/control character issues in logs
+        stdin=False,
         resources=client.V1ResourceRequirements(
             requests={
                 "cpu": os.getenv("LIDAR_JOB_CPU_REQUEST", "500m"),
