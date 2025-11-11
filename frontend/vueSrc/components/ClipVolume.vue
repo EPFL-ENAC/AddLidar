@@ -1,70 +1,52 @@
 <template>
-  <q-expansion-item label="Clip Volume" bordered default-opened>
-    <q-card>
-      <q-card-section>
-        <q-btn
-          v-if="!item"
-          label="Insert volume"
-          color="secondary"
-          outline
-          class="q-mt-md full-width"
-          @click="startInsertion"
-        />
-        <q-btn
-          v-else
-          label="Remove volume"
-          color="negative"
-          outline
-          class="q-mt-md full-width"
-          @click="removeClipVolume"
-        />
-      </q-card-section>
-      <q-card-section v-if="item">
-        <div class="text-subtitle2 q-mb-sm">Position X,Y,Z</div>
-        <div class="row q-mb-sm">
-          <div class="col">
-            <q-badge color="blue" flat>{{ position.x.toFixed() }}</q-badge>
-          </div>
-          <div class="col">
-            <q-badge color="green" flat>{{ position.y.toFixed() }}</q-badge>
-          </div>
-          <div class="col">
-            <q-badge color="red" flat>{{ position.z.toFixed() }}</q-badge>
-          </div>
+  <div class="q-mb-md">
+    <div class="q-mb-sm">Clip Volume</div>
+    <q-btn
+      v-if="!item"
+      outline
+      label="Insert Volume"
+      color="primary"
+      icon="add_box"
+      class="full-width q-mb-md"
+      @click="startInsertion"
+    />
+    <q-btn
+      v-else
+      outline
+      label="Remove Volume"
+      color="negative"
+      icon="delete"
+      class="full-width q-mb-md"
+      @click="removeClipVolume"
+    />
+
+    <div v-if="item" class="q-gutter-y-sm">
+      <div>
+        <div class="text-grey-6 q-mb-xs">Position</div>
+        <div>
+          X: {{ position.x.toFixed(2) }} • Y: {{ position.y.toFixed(2) }} • Z:
+          {{ position.z.toFixed(2) }}
         </div>
-        <div class="text-subtitle2 q-mb-sm">Scale X,Y,Z</div>
-        <div class="row">
-          <div class="col">
-            <q-badge color="blue" flat>{{ scale.x.toFixed(2) }}</q-badge>
-          </div>
-          <div class="col">
-            <q-badge color="green" flat>{{ scale.y.toFixed(2) }}</q-badge>
-          </div>
-          <div class="col">
-            <q-badge color="red" flat>{{ scale.z.toFixed(2) }}</q-badge>
-          </div>
+      </div>
+
+      <div>
+        <div class="text-grey-6 q-mb-xs">Scale</div>
+        <div>
+          X: {{ scale.x.toFixed(2) }} • Y: {{ scale.y.toFixed(2) }} • Z:
+          {{ scale.z.toFixed(2) }}
         </div>
-        <div class="text-subtitle2 q-mb-sm">Rotation X,Y,Z (deg)</div>
-        <div class="row q-mb-sm">
-          <div class="col">
-            <q-badge color="blue" flat
-              >{{ ((rotation.x * 180) / Math.PI).toFixed(1) }}°</q-badge
-            >
-          </div>
-          <div class="col">
-            <q-badge color="green" flat
-              >{{ ((rotation.y * 180) / Math.PI).toFixed(1) }}°</q-badge
-            >
-          </div>
-          <div class="col">
-            <q-badge color="red" flat
-              >{{ ((rotation.z * 180) / Math.PI).toFixed(1) }}°</q-badge
-            >
-          </div>
+      </div>
+
+      <div>
+        <div class="text-grey-6 q-mb-xs">Rotation</div>
+        <div>
+          X: {{ ((rotation.x * 180) / Math.PI).toFixed(1) }}° • Y:
+          {{ ((rotation.y * 180) / Math.PI).toFixed(1) }}° • Z:
+          {{ ((rotation.z * 180) / Math.PI).toFixed(1) }}°
         </div>
-      </q-card-section>
-    </q-card>
-  </q-expansion-item>
+      </div>
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -133,24 +115,3 @@ function onVolumeAdded({ volume }: { volume: any }) {
   setTimeout(() => onClipChanged({ object: volume }), 5000);
 }
 </script>
-
-<style scoped>
-.row {
-  display: flex;
-  flex-wrap: wrap;
-  margin-left: -12px;
-  margin-right: -12px;
-}
-
-.col {
-  flex-basis: 0;
-  flex-grow: 1;
-  max-width: 100%;
-  text-align: center;
-  padding: 0 8px;
-}
-
-.q-badge {
-  width: 100%;
-}
-</style>

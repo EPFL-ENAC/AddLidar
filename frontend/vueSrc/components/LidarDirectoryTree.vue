@@ -1,94 +1,95 @@
 <template>
-  <div class="directory-tree-container">
-    <!-- Search filter -->
-    <q-input
-      v-model="searchTerm"
-      outlined
-      dense
-      label="Search files"
-      class="q-mb-md"
-      clearable
-    >
-      <template v-slot:append>
-        <q-icon name="search" />
-      </template>
-    </q-input>
+  <q-expansion-item icon="folder" label="Files" default-opened>
+    <q-card flat>
+      <q-card-section>
+        <q-input
+          v-model="searchTerm"
+          outlined
+          label="Search files"
+          class="q-mb-md"
+          clearable
+        >
+          <template v-slot:prepend>
+            <q-icon name="search" />
+          </template>
+        </q-input>
 
-    <div v-if="isLoading" class="text-center q-pa-md">
-      <q-spinner color="primary" size="24px" />
-      <div class="q-mt-sm text-grey">Loading mission data...</div>
-    </div>
+        <div v-if="isLoading" class="text-center q-pa-md">
+          <q-spinner color="primary" size="40px" />
+          <div class="q-mt-md text-grey-6">Loading...</div>
+        </div>
 
-    <div v-else-if="error" class="text-center q-pa-md text-negative">
-      <q-icon name="error" size="24px" />
-      <div class="q-mt-sm">{{ error }}</div>
-    </div>
+        <div v-else-if="error" class="text-center q-pa-md">
+          <q-icon name="error" color="negative" size="40px" />
+          <div class="q-mt-md text-negative">{{ error }}</div>
+        </div>
 
-    <div v-else-if="!activeMission" class="text-center q-pa-md">
-      <q-icon name="folder_off" size="24px" />
-      <div class="q-mt-sm text-grey">No mission selected</div>
-    </div>
+        <div v-else-if="!activeMission" class="text-center q-pa-md">
+          <q-icon name="folder_off" color="grey" size="40px" />
+          <div class="q-mt-md text-grey-6">No mission</div>
+        </div>
 
-    <!-- Files in active mission -->
-    <q-list v-else bordered separator class="rounded-borders list-files">
-      <q-item class="bg-primary text-white">
-        <q-item-section>
-          <q-item-label>
-            <q-icon name="folder" class="q-mr-sm" />
-            {{ activeMission }}
-          </q-item-label>
-        </q-item-section>
-      </q-item>
+        <q-list v-else separator class="list-files">
+          <q-item>
+            <q-item-section>
+              <q-item-label>
+                <q-icon name="folder" class="q-mr-sm" />
+                {{ activeMission }}
+              </q-item-label>
+            </q-item-section>
+          </q-item>
 
-      <q-item
-        v-for="item in filteredFiles"
-        :key="item.folder_key"
-        clickable
-        :class="{ 'has-files': item.file_count > 0 }"
-      >
-        <q-item-section>
-          <q-item-label>{{ getFolderName(item.folder_key) }}</q-item-label>
-          <q-item-label caption>
-            {{ formatSize(item.size_kb) }} ·
-            {{ formatDate(item.last_processed) }}
-            <q-badge
-              v-if="item.file_count > 0"
-              color="green"
-              text-color="white"
-              class="q-ml-xs"
-            >
-              {{ item.file_count }}
-              {{ item.file_count === 1 ? "file" : "files" }}
-            </q-badge>
-            <q-badge v-else color="grey" text-color="white" class="q-ml-xs"
-              >Empty</q-badge
-            >
-          </q-item-label>
-        </q-item-section>
-
-        <q-item-section side v-if="item.file_count > 0">
-          <q-btn
-            flat
-            round
-            dense
-            icon="download"
-            color="primary"
-            @click="downloadArchive(item.output_path)"
+          <q-item
+            v-for="item in filteredFiles"
+            :key="item.folder_key"
+            clickable
+            v-ripple
           >
-            <q-tooltip>Download archive</q-tooltip>
-          </q-btn>
-        </q-item-section>
-      </q-item>
+            <q-item-section>
+              <q-item-label>
+                {{ getFolderName(item.folder_key) }}
+              </q-item-label>
+              <q-item-label caption>
+                {{ formatSize(item.size_kb) }} ·
+                {{ formatDate(item.last_processed) }}
+                <q-badge
+                  v-if="item.file_count > 0"
+                  color="green"
+                  text-color="white"
+                  class="q-ml-xs"
+                >
+                  {{ item.file_count }}
+                  {{ item.file_count === 1 ? "file" : "files" }}
+                </q-badge>
+                <q-badge v-else color="grey" text-color="white" class="q-ml-xs"
+                  >Empty</q-badge
+                >
+              </q-item-label>
+            </q-item-section>
 
-      <q-item v-if="!filteredFiles.length">
-        <q-item-section class="text-center text-grey">
-          No folders found
-        </q-item-section>
-      </q-item>
-    </q-list>
-  </div>
+            <q-item-section side v-if="item.file_count > 0">
+              <q-btn
+                flat
+                round
+                icon="download"
+                color="primary"
+                @click="downloadArchive(item.output_path)"
+              >
+                <q-tooltip>Download</q-tooltip>
+              </q-btn>
+            </q-item-section>
+          </q-item>
+
+          <q-item v-if="!filteredFiles.length">
+            <q-item-section class="text-center text-grey-6">
+              No folders found
+            </q-item-section>
+          </q-item>
+        </q-list>
+      </q-card-section>
+    </q-card>
+  </q-expansion-item>
 </template>
-
 <script setup lang="ts">
 import { ref, computed, watch } from "vue";
 import { useDirectoryStore } from "@/stores/directoryStore";
@@ -193,16 +194,8 @@ watch(
 </script>
 
 <style scoped>
-.directory-tree-container {
-  width: 100%;
-}
-
 .list-files {
   max-height: 400px;
   overflow-y: auto;
-}
-
-.has-files {
-  background-color: rgba(0, 0, 0, 0.03);
 }
 </style>

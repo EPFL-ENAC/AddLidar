@@ -1,180 +1,162 @@
 <template>
-  <div>
-    <q-form class="q-gutter-md" @submit.prevent="onSubmit">
-      <q-select
-        outlined
-        label="Format"
-        v-model="format"
-        :options="formatOptions"
-        hint="Select output file format"
-      />
-      <q-select
-        outlined
-        label="EPSG Code"
-        :options="epsgOptions"
-        v-model="epsg"
-        placeholder="EPSG Code (optional)"
-        hint="Coordinate reference system"
-      />
-      <clip-volume />
+  <q-expansion-item icon="settings" label="Process & Download">
+    <q-card flat>
+      <q-card-section>
+        <q-form @submit.prevent="onSubmit">
+          <q-select
+            outlined
+            label="Output Format"
+            v-model="format"
+            :options="formatOptions"
+            color="primary"
+            class="q-mb-md"
+          >
+            <template v-slot:prepend>
+              <q-icon name="description" />
+            </template>
+          </q-select>
 
-      <q-input
-        outlined
-        type="number"
-        label="Number of points"
-        v-model="number"
-        placeholder="Number of points (optional)"
-        hint="Limit the total number of points"
-      />
+          <q-select
+            outlined
+            label="EPSG"
+            :options="epsgOptions"
+            v-model="epsg"
+            clearable
+            color="primary"
+            class="q-mb-md"
+          >
+            <template v-slot:prepend>
+              <q-icon name="map" />
+            </template>
+          </q-select>
 
-      <q-btn
-        label="Generate processing request"
-        class="full-width"
-        size="md"
-        outline
-        type="submit"
-        color="primary"
-        :loading="processing"
-      >
-        <template v-slot:loading>
-          <q-spinner-gears class="on-left" />
-          Starting job...
-        </template>
-      </q-btn>
-    </q-form>
-
-    <!-- Status and progress section -->
-    <div v-if="currentJob" class="q-mt-md">
-      <q-separator class="q-my-md" />
-
-      <div class="text-h6">Job Status</div>
-      <div class="q-mt-sm q-pa-sm bg-grey-1 rounded-borders">
-        <div class="row items-center">
-          <div class="col">
-            <div><strong>Job ID:</strong> {{ currentJob.job_name }}</div>
-            <div><strong>Status:</strong> {{ jobStatus }}</div>
-            <div v-if="jobProgress > 0">
-              <strong>Progress:</strong>
-              {{ Math.floor(jobProgress * 100) }}%
-            </div>
+          <div class="q-mb-md">
+            <clip-volume />
           </div>
-          <div class="col-auto">
-            <!-- Show checkmark when job is complete -->
-            <q-icon
+
+          <q-input
+            outlined
+            type="number"
+            label="Max Points"
+            v-model.number="number"
+            color="primary"
+            class="q-mb-md"
+          >
+            <template v-slot:prepend>
+              <q-icon name="format_list_numbered" />
+            </template>
+          </q-input>
+
+          <q-btn
+            outline
+            label="Generate Request"
+            type="submit"
+            color="primary"
+            class="full-width"
+            icon="play_arrow"
+            :loading="processing"
+            :disable="processing"
+          />
+        </q-form>
+
+        <div v-if="currentJob" class="q-mt-md">
+          <q-separator class="q-my-md" />
+
+          <div class="q-mb-sm">Job Status</div>
+          <div class="q-mb-md">
+            <div class="row items-center q-gutter-sm q-mb-sm">
+              <q-chip
+                :color="
+                  jobStatus === 'Complete' || jobStatus === 'SuccessCriteriaMet'
+                    ? 'positive'
+                    : jobStatus === 'Error'
+                      ? 'negative'
+                      : 'primary'
+                "
+                text-color="white"
+                :icon="
+                  jobStatus === 'Complete' || jobStatus === 'SuccessCriteriaMet'
+                    ? 'check_circle'
+                    : jobStatus === 'Error'
+                      ? 'error'
+                      : 'pending'
+                "
+                size="sm"
+              >
+                {{ jobStatus }}
+              </q-chip>
+              <div class="text-grey-6">{{ currentJob.job_name }}</div>
+            </div>
+
+            <div v-if="jobStatus === 'Running' && progressInfo">
+              <q-linear-progress
+                :value="jobProgress"
+                color="positive"
+                size="20px"
+                class="q-mb-sm"
+              />
+              <div class="text-grey-6 q-mb-sm">
+                {{ progressInfo.percentage.toFixed(1) }}% -
+                {{ pointsFormatted }}
+                <span v-if="speedFormatted"> • {{ speedFormatted }}</span>
+                <span v-if="etaFormatted"> • ETA: {{ etaFormatted }}</span>
+              </div>
+            </div>
+
+            <div v-else-if="jobProgress > 0" class="q-mb-sm">
+              <q-linear-progress
+                :value="jobProgress"
+                color="primary"
+                size="12px"
+              />
+              <div class="text-grey-6 q-mt-sm">
+                {{ Math.floor(jobProgress * 100) }}%
+              </div>
+            </div>
+
+            <q-btn
               v-if="
                 jobStatus === 'Complete' || jobStatus === 'SuccessCriteriaMet'
               "
-              name="check_circle"
+              outline
+              label="Download"
               color="positive"
-              size="md"
-              class="q-ml-md"
+              class="full-width"
+              icon="download"
+              @click="downloadResult"
             />
-            <!-- Show error icon when there's an error -->
-            <q-icon
-              v-else-if="jobStatus === 'Error'"
-              name="error"
-              color="negative"
-              size="md"
-              class="q-ml-md"
-            />
-            <!-- Show progress spinner otherwise -->
-            <q-circular-progress
-              v-else
-              size="md"
-              indeterminate
-              color="secondary"
-              track-color="grey-3"
-              class="q-ml-md"
+
+            <q-btn
+              v-else-if="jobStatus !== 'Error'"
+              outline
+              label="Refresh"
+              color="primary"
+              class="full-width"
+              icon="refresh"
+              :loading="checkingStatus"
+              @click="checkJobStatus"
             />
           </div>
-        </div>
 
-        <!-- Progress bar for running jobs with detailed info -->
-        <div v-if="jobStatus === 'Running' && progressInfo" class="q-mt-md">
-          <q-linear-progress
-            :value="jobProgress"
-            color="positive"
-            size="20px"
-            class="q-mb-sm"
+          <q-expansion-item
+            v-if="statusLogs.length"
+            icon="article"
+            label="Status Log"
+            class="q-mt-sm"
           >
-            <div class="absolute-full flex flex-center">
-              <q-badge
-                color="white"
-                text-color="primary"
-                :label="`${progressInfo.percentage.toFixed(1)}%`"
-              />
-            </div>
-          </q-linear-progress>
-
-          <!-- Progress details grid -->
-          <div class="progress-stats q-mt-sm">
-            <div class="stat-item">
-              <div class="stat-label">Points</div>
-              <div class="stat-value">{{ pointsFormatted }}</div>
-            </div>
-
-            <div class="stat-item" v-if="speedFormatted">
-              <div class="stat-label">Speed</div>
-              <div class="stat-value">{{ speedFormatted }}</div>
-            </div>
-
-            <div class="stat-item highlight" v-if="etaFormatted">
-              <div class="stat-label">ETA</div>
-              <div class="stat-value">{{ etaFormatted }}</div>
-            </div>
-
-            <div class="stat-item" v-if="completionTimeFormatted">
-              <div class="stat-label">Complete at</div>
-              <div class="stat-value">{{ completionTimeFormatted }}</div>
-            </div>
-          </div>
+            <q-list separator class="status-log">
+              <q-item v-for="(log, index) in statusLogs" :key="index">
+                <q-item-section>
+                  <q-item-label caption>{{ log.time }}</q-item-label>
+                  <q-item-label>{{ log.message }}</q-item-label>
+                </q-item-section>
+              </q-item>
+            </q-list>
+          </q-expansion-item>
         </div>
-
-        <q-btn
-          v-if="jobStatus === 'Complete' || jobStatus === 'SuccessCriteriaMet'"
-          label="Download File"
-          outline
-          color="positive"
-          class="q-mt-md full-width"
-          @click="downloadResult"
-          icon="download"
-        />
-
-        <q-btn
-          v-else-if="jobStatus !== 'Error'"
-          label="Check Status"
-          color="secondary"
-          outline
-          class="q-mt-md full-width"
-          @click="checkJobStatus"
-          :loading="checkingStatus"
-          icon="refresh"
-        />
-      </div>
-
-      <!-- Status log (can be expanded/collapsed) -->
-      <div v-if="statusLogs.length" class="q-mt-md">
-        <q-expansion-item
-          label="Status Log"
-          header-class="text-primary"
-          icon="list"
-        >
-          <q-card>
-            <q-card-section class="status-log q-pa-sm">
-              <div
-                v-for="(log, index) in statusLogs"
-                :key="index"
-                class="log-item"
-              >
-                <span class="text-caption">{{ log.time }}:</span>
-                {{ log.message }}
-              </div>
-            </q-card-section>
-          </q-card>
-        </q-expansion-item>
-      </div>
-    </div>
-  </div>
+      </q-card-section>
+    </q-card>
+  </q-expansion-item>
 </template>
 <script setup lang="ts">
 import { ref, onBeforeUnmount, onMounted, computed } from "vue";
@@ -239,14 +221,6 @@ const speedFormatted = computed(() => {
   } else {
     return `${speed.toFixed(0)} pts/s`;
   }
-});
-
-// Format completion time
-const completionTimeFormatted = computed(() => {
-  if (!progressInfo.value?.estimated_completion_time) return null;
-
-  const date = new Date(progressInfo.value.estimated_completion_time);
-  return date.toLocaleTimeString();
 });
 
 // Format processed/total points
@@ -342,59 +316,5 @@ onBeforeUnmount(closeConnection);
 .status-log {
   max-height: 200px;
   overflow-y: auto;
-  background-color: #f5f5f5;
-  font-family: monospace;
-  font-size: 0.8rem;
-}
-
-.log-item {
-  padding: 2px 0;
-  border-bottom: 1px solid #eee;
-}
-
-.log-item:last-child {
-  border-bottom: none;
-}
-
-.full-width {
-  width: 100%;
-}
-
-/* Progress stats styling */
-.progress-stats {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
-  gap: 0.75rem;
-  padding: 0.5rem;
-  background: white;
-  border-radius: 4px;
-}
-
-.stat-item {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-  padding: 0.5rem;
-  border-radius: 4px;
-  background: #f9f9f9;
-}
-
-.stat-item.highlight {
-  background: #fff3e0;
-  border: 1px solid #ffb74d;
-}
-
-.stat-label {
-  font-size: 0.7rem;
-  color: #666;
-  text-transform: uppercase;
-  font-weight: 600;
-  letter-spacing: 0.5px;
-}
-
-.stat-value {
-  font-size: 0.95rem;
-  color: #333;
-  font-weight: 600;
 }
 </style>

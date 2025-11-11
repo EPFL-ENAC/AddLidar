@@ -1,13 +1,16 @@
 <template>
-  <div>
-    <q-expansion-item label="Color Variable" header-class="h2">
-      <q-option-group
-        v-model="selectedAttribute"
-        :options="attributeOptions"
-        type="radio"
-      />
-    </q-expansion-item>
-  </div>
+  <q-expansion-item icon="palette" label="Appearance">
+    <q-card flat>
+      <q-card-section>
+        <q-option-group
+          v-model="selectedAttribute"
+          :options="attributeOptions"
+          type="radio"
+          color="primary"
+        />
+      </q-card-section>
+    </q-card>
+  </q-expansion-item>
 </template>
 
 <script setup lang="ts">
@@ -60,5 +63,3 @@ const selectedAttribute = computed({
   },
 });
 </script>
-
-<style scoped></style>

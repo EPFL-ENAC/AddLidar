@@ -1,29 +1,86 @@
 <template>
-  <div class="mission-footprint-map">
-    <div ref="mapContainer" class="map-container"></div>
-    <div v-if="isLoading" class="loading-overlay">
-      <div class="loading-spinner"></div>
-      <div class="loading-text">Loading mission footprints...</div>
+  <div style="position: relative; height: 100%; width: 100%">
+    <div ref="mapContainer" style="height: 100%; width: 100%"></div>
+    <div
+      v-if="isLoading"
+      style="
+        position: absolute;
+        inset: 0;
+        background: rgba(255, 255, 255, 0.8);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        z-index: 1000;
+      "
+    >
+      <q-spinner color="primary" size="40px" />
+      <div class="text-grey-6 q-mt-sm">Loading mission footprints...</div>
     </div>
-    <div class="map-legend">
-      <h4>Mission Status</h4>
-      <div class="legend-item">
-        <div class="legend-color completed"></div>
-        <span>Completed/Processed</span>
+    <q-card
+      flat
+      bordered
+      style="
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        z-index: 1000;
+        min-width: 160px;
+      "
+      class="q-pa-sm"
+    >
+      <div class="text-subtitle2 q-mb-xs">Mission Status</div>
+      <div class="column q-gutter-xs">
+        <div class="row items-center no-wrap">
+          <div
+            style="
+              width: 12px;
+              height: 12px;
+              background: #4caf50;
+              border-radius: 2px;
+            "
+            class="q-mr-xs"
+          ></div>
+          <span class="text-caption">Completed/Processed</span>
+        </div>
+        <div class="row items-center no-wrap">
+          <div
+            style="
+              width: 12px;
+              height: 12px;
+              background: #ff9800;
+              border-radius: 2px;
+            "
+            class="q-mr-xs"
+          ></div>
+          <span class="text-caption">Pending</span>
+        </div>
+        <div class="row items-center no-wrap">
+          <div
+            style="
+              width: 12px;
+              height: 12px;
+              background: #f44336;
+              border-radius: 2px;
+            "
+            class="q-mr-xs"
+          ></div>
+          <span class="text-caption">Error</span>
+        </div>
+        <div class="row items-center no-wrap">
+          <div
+            style="
+              width: 12px;
+              height: 12px;
+              background: #9e9e9e;
+              border-radius: 2px;
+            "
+            class="q-mr-xs"
+          ></div>
+          <span class="text-caption">Unknown</span>
+        </div>
       </div>
-      <div class="legend-item">
-        <div class="legend-color pending"></div>
-        <span>Pending</span>
-      </div>
-      <div class="legend-item">
-        <div class="legend-color error"></div>
-        <span>Error</span>
-      </div>
-      <div class="legend-item">
-        <div class="legend-color unknown"></div>
-        <span>Unknown</span>
-      </div>
-    </div>
+    </q-card>
   </div>
 </template>
 
@@ -415,56 +472,6 @@ function updateSelectedMission() {
 </script>
 
 <style scoped>
-.mission-footprint-map {
-  position: relative;
-  height: 100%;
-  width: 100%;
-}
-
-.map-container {
-  height: 100%;
-  width: 100%;
-}
-
-.loading-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(255, 255, 255, 0.8);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  z-index: 1000;
-}
-
-.loading-spinner {
-  width: 40px;
-  height: 40px;
-  border: 4px solid #f3f3f3;
-  border-top: 4px solid #007bff;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
-.loading-text {
-  margin-top: 10px;
-  color: #666;
-  font-size: 14px;
-}
-
-@keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
-}
-
-/* Popup styles */
 :global(.maplibregl-popup-content) {
   padding: 0;
   border-radius: 6px;
@@ -473,7 +480,6 @@ function updateSelectedMission() {
 
 :global(.mission-popup) {
   padding: 12px;
-  font-family: Arial, sans-serif;
   max-width: 250px;
 }
 
@@ -481,68 +487,16 @@ function updateSelectedMission() {
   margin: 0 0 8px 0;
   font-size: 14px;
   font-weight: bold;
-  color: #333;
 }
 
 :global(.mission-popup p) {
   margin: 4px 0;
   font-size: 12px;
-  color: #666;
 }
 
 :global(.mission-popup .popup-hint) {
   font-style: italic;
   color: #999;
   margin-top: 8px;
-}
-
-/* Legend styles */
-.map-legend {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  background: white;
-  padding: 10px;
-  border-radius: 6px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
-  font-size: 12px;
-  z-index: 1000;
-}
-
-.map-legend h4 {
-  margin: 0 0 8px 0;
-  font-size: 13px;
-  font-weight: bold;
-  color: #333;
-}
-
-.legend-item {
-  display: flex;
-  align-items: center;
-  margin: 4px 0;
-}
-
-.legend-color {
-  width: 12px;
-  height: 12px;
-  margin-right: 6px;
-  border-radius: 2px;
-  border: 1px solid rgba(0, 0, 0, 0.2);
-}
-
-.legend-color.completed {
-  background-color: #4caf50;
-}
-
-.legend-color.pending {
-  background-color: #ff9800;
-}
-
-.legend-color.error {
-  background-color: #f44336;
-}
-
-.legend-color.unknown {
-  background-color: #9e9e9e;
 }
 </style>

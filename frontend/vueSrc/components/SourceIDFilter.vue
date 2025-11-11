@@ -1,49 +1,39 @@
 <template>
-  <div>
-    <q-expansion-item label="Source ID Filter" header-class="h2">
-      <q-card>
-        <q-card-section>
-          <div class="row items-center q-mb-sm">
-            <div class="col">
-              <div class="text-subtitle2">Filter by point source ID</div>
-            </div>
-            <div class="col-auto">
-              <q-btn
-                dense
-                flat
-                icon="select_all"
-                label="All"
-                @click="selectAll"
-              />
-              <q-btn
-                dense
-                flat
-                icon="deselect"
-                label="None"
-                @click="selectNone"
-              />
-            </div>
-          </div>
-
-          <div v-if="!sourceIDs.length" class="text-center q-pa-md">
-            <q-spinner color="primary" size="24px" />
-            <div class="q-mt-sm text-grey">Loading source IDs...</div>
-          </div>
-
-          <div v-else class="source-id-list q-mt-md">
-            <q-checkbox
-              v-for="id in sourceIDs"
-              :key="id"
+  <q-expansion-item icon="filter_list" label="Filters">
+    <q-card flat>
+      <q-card-section>
+        <div class="row items-center justify-between q-mb-md">
+          <div>Point Source ID</div>
+          <div>
+            <q-btn flat dense color="primary" label="All" @click="selectAll" />
+            <q-btn
+              flat
               dense
-              v-model="selectedIDs[id]"
-              :label="`ID ${id}`"
-              @update:model-value="updateSelectedIDs"
+              color="primary"
+              label="None"
+              @click="selectNone"
             />
           </div>
-        </q-card-section>
-      </q-card>
-    </q-expansion-item>
-  </div>
+        </div>
+
+        <div v-if="!sourceIDs.length" class="text-center q-pa-md">
+          <q-spinner color="primary" size="32px" />
+          <div class="q-mt-sm text-grey-6">Loading...</div>
+        </div>
+
+        <div v-else class="source-id-list">
+          <q-checkbox
+            v-for="id in sourceIDs"
+            :key="id"
+            v-model="selectedIDs[id]"
+            :label="`${id}`"
+            color="primary"
+            @update:model-value="updateSelectedIDs"
+          />
+        </div>
+      </q-card-section>
+    </q-card>
+  </q-expansion-item>
 </template>
 
 <script setup lang="ts">
@@ -108,8 +98,8 @@ function initializeSourceIDs(attribute: any) {
   store.setAvailableSourceIDs(ids);
 
   // Initialize selection (all selected by default)
-  const selection = {};
-  ids.forEach((id) => {
+  const selection: Record<number, boolean> = {};
+  ids.forEach((id: number) => {
     selection[id] = true;
   });
   selectedIDs.value = selection;
@@ -139,7 +129,7 @@ function updateSelectedIDs() {
 
 // Select all source IDs
 function selectAll() {
-  const selection = { ...selectedIDs.value };
+  const selection: Record<number, boolean> = { ...selectedIDs.value };
   sourceIDs.value.forEach((id) => {
     selection[id] = true;
   });
@@ -149,7 +139,7 @@ function selectAll() {
 
 // Deselect all source IDs
 function selectNone() {
-  const selection = { ...selectedIDs.value };
+  const selection: Record<number, boolean> = { ...selectedIDs.value };
   sourceIDs.value.forEach((id) => {
     selection[id] = false;
   });
@@ -163,7 +153,7 @@ function selectNone() {
   max-height: 250px;
   overflow-y: auto;
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
   gap: 8px;
 }
 </style>

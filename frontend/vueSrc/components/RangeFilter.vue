@@ -1,18 +1,23 @@
 <template>
-  <div class="q-pa-md">
-    <q-badge color="primary">
-      {{ label }}: {{ range.min }} to {{ range.max }}
-    </q-badge>
-
-    <q-range
-      v-model="range"
-      :min="min"
-      :max="max"
-      :step="step"
-      color="primary"
-      label
-    />
-  </div>
+  <q-card flat>
+    <q-card-section>
+      <div class="text-subtitle2 text-weight-medium q-mb-sm">{{ label }}</div>
+      <div class="q-mb-md">
+        <q-chip color="primary" text-color="white" size="sm">
+          {{ range.min }} to {{ range.max }}
+        </q-chip>
+      </div>
+      <q-range
+        v-model="range"
+        :min="min"
+        :max="max"
+        :step="step"
+        color="primary"
+        label
+        label-always
+      />
+    </q-card-section>
+  </q-card>
 </template>
 
 <script setup lang="ts">

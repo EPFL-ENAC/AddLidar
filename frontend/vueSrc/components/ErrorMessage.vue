@@ -1,31 +1,45 @@
 <template>
-  <div v-if="message" class="error-message" v-html="message"></div>
+  <q-dialog v-model="showDialog" persistent>
+    <q-card style="min-width: 350px; max-width: 500px">
+      <q-card-section class="row items-center q-pb-none">
+        <q-icon name="error" color="negative" size="md" class="q-mr-sm" />
+        <div class="text-h6 text-weight-medium">Error</div>
+        <q-space />
+        <q-btn icon="close" flat round dense @click="showDialog = false" />
+      </q-card-section>
+
+      <q-card-section>
+        <div v-html="message" class="error-content"></div>
+      </q-card-section>
+
+      <q-card-actions align="right">
+        <q-btn flat label="Close" color="primary" @click="showDialog = false" />
+      </q-card-actions>
+    </q-card>
+  </q-dialog>
 </template>
 
-<script setup>
-const props = defineProps({
-  message: {
-    type: String,
-    default: "",
+<script setup lang="ts">
+import { ref, watch } from "vue";
+
+const props = defineProps<{
+  message: string;
+}>();
+
+const showDialog = ref(false);
+
+watch(
+  () => props.message,
+  (newMessage) => {
+    showDialog.value = !!newMessage;
   },
-});
+  { immediate: true },
+);
 </script>
 
 <style scoped>
-.error-message {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  background-color: rgb(255, 255, 255);
-  padding: 1em;
-  border: 2px solid rgb(185, 54, 54);
-  border-radius: 1rem;
-  max-width: 400px;
-  z-index: 10;
-}
-
-.error-message:deep(a) {
-  color: rgb(185, 54, 54) !important;
+.error-content :deep(a) {
+  color: #c10015;
+  text-decoration: underline;
 }
 </style>

@@ -1,18 +1,29 @@
 <template>
-  <div class="mission-list-container">
-    <div v-if="isLoading" class="loading">
-      <div class="loading-spinner"></div>
-      <div class="q-mt-sm">Loading missions...</div>
+  <div
+    class="q-pa-md"
+    style="height: 100vh; display: flex; flex-direction: column"
+  >
+    <div v-if="isLoading" class="flex flex-center column" style="flex: 1">
+      <q-spinner color="primary" size="40px" />
+      <div class="q-mt-sm text-grey-6">Loading missions...</div>
     </div>
 
-    <div v-else-if="error" class="error">
-      <div class="error-icon">⚠️</div>
-      <div class="q-mt-sm">{{ error }}</div>
+    <div v-else-if="error" class="flex flex-center column" style="flex: 1">
+      <q-icon name="warning" color="negative" size="48px" />
+      <div class="q-mt-sm text-negative">{{ error }}</div>
     </div>
 
-    <div v-else class="missions-layout">
+    <div v-else class="row" style="flex: 1; gap: 20px; min-height: 0">
       <!-- Map on the left -->
-      <div class="map-section">
+      <div
+        class="col"
+        style="
+          min-width: 400px;
+          border: 1px solid #ddd;
+          border-radius: 8px;
+          overflow: hidden;
+        "
+      >
         <mission-footprint-map
           :missions="enrichedMissions"
           :selected-mission="selectedMission"
@@ -23,27 +34,31 @@
       </div>
 
       <!-- Mission list on the right -->
-      <div class="missions-section">
-        <div class="missions-header">
-          <div class="header-content">
-            <h2>AddLidar - Missions</h2>
-            <div class="mission-count">
-              <span class="count-badge">{{ enrichedMissions.length }}</span>
-              <span class="count-text"
-                >{{
-                  enrichedMissions.length === 1 ? "mission" : "missions"
-                }}
-                available</span
-              >
+      <div class="col-4 column">
+        <div class="q-mb-md q-pb-md" style="border-bottom: 2px solid #f0f0f0">
+          <div class="row items-center justify-between q-mb-xs">
+            <h2 class="text-h5 q-ma-none text-weight-medium">
+              AddLidar - Missions
+            </h2>
+            <div class="row items-center q-gutter-xs">
+              <q-badge
+                color="primary"
+                :label="enrichedMissions.length"
+                rounded
+              />
+              <span class="text-caption text-grey-6">
+                {{ enrichedMissions.length === 1 ? "mission" : "missions" }}
+                available
+              </span>
             </div>
           </div>
-          <p class="header-subtitle">
+          <p class="q-ma-none text-caption text-grey-6 text-italic">
             Click on the map or select a mission card below to explore LiDAR
             data
           </p>
         </div>
 
-        <div class="missions-list">
+        <q-scroll-area class="mission-scroll-area q-pa-md">
           <mission-card
             v-for="mission in enrichedMissions"
             :key="mission.mission_key"
@@ -55,14 +70,22 @@
             @view="viewMission"
           />
 
-          <div v-if="enrichedMissions.length === 0" class="no-missions">
-            <div class="no-missions-icon">📂</div>
-            <div class="no-missions-text">No missions available</div>
-            <div class="no-missions-subtitle">
+          <div v-if="enrichedMissions.length === 0" class="text-center q-pa-xl">
+            <q-icon
+              name="folder_open"
+              color="grey-5"
+              size="64px"
+              class="q-mb-md"
+              style="opacity: 0.7"
+            />
+            <div class="text-body1 text-weight-medium text-grey-7 q-mb-xs">
+              No missions available
+            </div>
+            <div class="text-caption text-grey-5 text-italic">
               Check back later or contact your administrator
             </div>
           </div>
-        </div>
+        </q-scroll-area>
       </div>
     </div>
   </div>
@@ -194,228 +217,30 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.mission-list-container {
-  padding: 20px;
-  height: 100vh;
-  display: flex;
-  flex-direction: column;
-}
-
-.header {
-  text-align: center;
-  margin-bottom: 20px;
-  flex-shrink: 0;
-}
-
-.header h1 {
-  margin: 0 0 10px 0;
-  color: #333;
-}
-
-.header p {
-  margin: 0;
-  color: #666;
-}
-
-.loading,
-.error {
-  text-align: center;
-  padding: 40px;
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-}
-
-.loading-spinner {
-  width: 40px;
-  height: 40px;
-  border: 4px solid #f3f3f3;
-  border-top: 4px solid #007bff;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
-  100% {
-    transform: rotate(360deg);
-  }
-}
-
-.missions-layout {
-  flex: 1;
-  display: flex;
-  gap: 20px;
-  min-height: 0; /* Important for flex children */
-}
-
-.map-section {
-  flex: 2;
-  min-width: 400px;
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  overflow: hidden;
-}
-
-.missions-section {
-  flex: 1;
-  min-width: 350px;
-  display: flex;
-  flex-direction: column;
-}
-
-.missions-header {
-  margin-bottom: 20px;
-  padding-bottom: 18px;
-  border-bottom: 2px solid #f0f0f0;
-}
-
-.header-content {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  margin-bottom: 8px;
-}
-
-.missions-header h2 {
-  margin: 0;
-  color: #2c3e50;
-  font-size: 22px;
-  font-weight: 600;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.mission-count {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-}
-
-.count-badge {
-  background: #007bff;
-  color: white;
-  padding: 4px 10px;
-  border-radius: 12px;
-  font-size: 13px;
-  font-weight: 600;
-  min-width: 20px;
-  text-align: center;
-}
-
-.count-text {
-  color: #6c757d;
-  font-size: 13px;
-  font-weight: 500;
-}
-
-.header-subtitle {
-  margin: 0;
-  color: #6c757d;
-  font-size: 14px;
-  font-style: italic;
-  line-height: 1.4;
-}
-
-.missions-list {
-  flex: 1;
-  overflow-y: auto;
-  padding-right: 10px;
-}
-
-.missions-list::-webkit-scrollbar {
-  width: 6px;
-}
-
-.missions-list::-webkit-scrollbar-track {
-  background: #f1f1f1;
-  border-radius: 3px;
-}
-
-.missions-list::-webkit-scrollbar-thumb {
-  background: #c1c1c1;
-  border-radius: 3px;
-}
-
-.missions-list::-webkit-scrollbar-thumb:hover {
-  background: #a8a8a8;
-}
-
-.no-missions {
-  text-align: center;
-  padding: 60px 20px;
-  color: #6c757d;
-}
-
-.no-missions-icon {
-  font-size: 64px;
-  margin-bottom: 20px;
-  opacity: 0.7;
-}
-
-.no-missions-text {
-  font-size: 18px;
-  font-weight: 500;
-  margin-bottom: 8px;
-  color: #495057;
-}
-
-.no-missions-subtitle {
-  font-size: 14px;
-  color: #adb5bd;
-  font-style: italic;
-}
-
 /* Responsive design */
 @media (max-width: 1024px) {
-  .missions-layout {
-    flex-direction: column;
+  .row {
+    flex-direction: column !important;
   }
 
-  .map-section {
+  .col {
     height: 400px;
-    min-width: auto;
+    min-width: auto !important;
   }
 
-  .missions-section {
-    min-width: auto;
+  .col-4 {
+    min-width: auto !important;
   }
 }
 
 @media (max-width: 768px) {
-  .mission-list-container {
-    padding: 10px;
-  }
-
-  .missions-layout {
-    gap: 15px;
-  }
-
-  .map-section {
+  .col {
     height: 300px;
   }
+}
 
-  .header-content {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 10px;
-  }
-
-  .missions-header h2 {
-    font-size: 20px;
-  }
-
-  .mission-count {
-    align-self: flex-end;
-  }
-
-  .header-subtitle {
-    font-size: 13px;
-  }
+.mission-scroll-area {
+  border-radius: 0.3rem;
+  flex: 1;
 }
 </style>

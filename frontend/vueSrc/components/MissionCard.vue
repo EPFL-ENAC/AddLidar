@@ -1,90 +1,115 @@
 <template>
-  <div
-    class="mission-card"
+  <q-card
+    bordered
+    flat
+    class="cursor-pointer transition q-mb-md"
     :class="{
-      'mission-pending': mission.processing_status === 'pending',
-      'mission-selected': isSelected,
-      'mission-hovered': isHovered,
+      'bg-grey-3': isSelected,
     }"
-    @click="$emit('click', mission.mission_key)"
-    @mouseenter="$emit('hover', mission.mission_key)"
-    @mouseleave="$emit('hover', null)"
+    @click="emit('click', mission.mission_key)"
+    @mouseenter="emit('hover', mission.mission_key)"
+    @mouseleave="emit('hover', null)"
   >
-    <div class="mission-status">
-      <span
-        class="status-badge"
-        :class="`status-${mission.processing_status || 'unknown'}`"
-      >
-        {{ formatStatus(mission.processing_status) }}
-      </span>
-    </div>
-
-    <div class="mission-info">
-      <h3>{{ mission.mission_key }}</h3>
-      <p class="mission-details">
-        <strong>Output:</strong> {{ mission.output_path }}<br />
-        <strong>Last Checked:</strong>
-        {{ formatDate(mission.last_checked_time) }}<br />
-        <span v-if="mission.last_processed_time">
-          <strong>Processed:</strong>
-          {{ formatDate(mission.last_processed_time) }}
-        </span>
-        <span v-else> <strong>Status:</strong> Not yet processed </span>
-      </p>
-
-      <div v-if="mission.metadata" class="metadata-info">
-        <p>
-          <strong>Points:</strong> {{ formatNumber(mission.metadata.points)
-          }}<br />
-          <strong>Bounds:</strong>
-          {{ formatBounds(mission.metadata.boundingBox) }}
-        </p>
-      </div>
-
-      <div class="mission-actions">
-        <button
-          class="view-btn"
-          @click.stop="$emit('view', mission.mission_key)"
-        >
-          View Mission
-        </button>
-      </div>
-    </div>
-
-    <div v-if="mission.error_message" class="error-message">
-      <div class="error-header" @click="toggleErrorDetails">
-        <span><strong>Error:</strong> {{ mission.error_message }}</span>
-        <span class="error-toggle">
-          <i :class="showErrorDetails ? 'arrow-up' : 'arrow-down'"></i>
-          {{ showErrorDetails ? "Hide Details" : "Show Details" }}
-        </span>
-      </div>
-      <div
-        v-if="showErrorDetails && mission.detailed_error_message"
-        class="error-details"
-      >
-        <div class="error-details-header">
-          <strong>Detailed Logs:</strong>
-          <button
-            class="copy-btn"
-            @click.stop="copyErrorDetails"
-            :disabled="!mission.detailed_error_message"
-          >
-            {{ copyButtonText }}
-          </button>
+    <q-card-section>
+      <div class="row items-start q-mb-sm">
+        <div class="col">
+          <div class="text-h6">{{ mission.mission_key }}</div>
         </div>
-        <pre class="error-logs">{{
-          formatDetailedError(mission.detailed_error_message)
-        }}</pre>
+        <div class="col-auto">
+          <q-badge
+            :color="getStatusColor(mission.processing_status)"
+            :label="formatStatus(mission.processing_status)"
+          />
+        </div>
       </div>
-      <div
-        v-else-if="showErrorDetails && !mission.detailed_error_message"
-        class="error-details"
+
+      <q-list class="q-mb-sm">
+        <q-item>
+          <q-item-section avatar>
+            <q-icon name="schedule" color="grey-6" />
+          </q-item-section>
+          <q-item-section>
+            <q-item-label class="text-grey-6">Last Checked</q-item-label>
+            <q-item-label>{{
+              formatDate(mission.last_checked_time)
+            }}</q-item-label>
+          </q-item-section>
+        </q-item>
+
+        <q-item v-if="mission.last_processed_time">
+          <q-item-section avatar>
+            <q-icon name="check_circle" color="primary" />
+          </q-item-section>
+          <q-item-section>
+            <q-item-label class="text-grey-6">Processed</q-item-label>
+            <q-item-label>{{
+              formatDate(mission.last_processed_time)
+            }}</q-item-label>
+          </q-item-section>
+        </q-item>
+      </q-list>
+
+      <div v-if="mission.metadata" class="q-mb-sm">
+        <div class="row q-col-gutter-sm">
+          <div class="col-6">
+            <div class="text-grey-6">Points</div>
+            <div>{{ formatNumber(mission.metadata.points) }}</div>
+          </div>
+          <div class="col-6">
+            <div class="text-grey-6">Bounds</div>
+            <div>{{ formatBounds(mission.metadata.boundingBox) }}</div>
+          </div>
+        </div>
+      </div>
+
+      <q-btn
+        outline
+        color="primary"
+        label="View"
+        icon="visibility"
+        class="full-width q-mt-sm"
+        @click.stop="emit('view', mission.mission_key)"
+      />
+    </q-card-section>
+
+    <q-separator v-if="mission.error_message" />
+
+    <q-card-section v-if="mission.error_message">
+      <q-expansion-item
+        v-model="showErrorDetails"
+        icon="error"
+        header-class="text-negative"
       >
-        <p class="no-details">No detailed error logs available.</p>
-      </div>
-    </div>
-  </div>
+        <template v-slot:header>
+          <q-item-section>
+            <q-item-label class="text-negative">
+              {{ mission.error_message }}
+            </q-item-label>
+          </q-item-section>
+        </template>
+
+        <div class="q-mt-sm">
+          <div class="row items-center justify-between q-mb-sm">
+            <div>Error Log</div>
+            <q-btn
+              flat
+              color="negative"
+              icon="content_copy"
+              :label="copyButtonText"
+              @click.stop="copyErrorDetails"
+              :disable="!mission.detailed_error_message"
+            />
+          </div>
+          <pre v-if="mission.detailed_error_message" class="error-logs">{{
+            formatDetailedError(mission.detailed_error_message)
+          }}</pre>
+          <div v-else class="text-caption text-grey-7">
+            No detailed logs available.
+          </div>
+        </div>
+      </q-expansion-item>
+    </q-card-section>
+  </q-card>
 </template>
 
 <script setup lang="ts">
@@ -107,26 +132,36 @@ interface Mission {
   };
 }
 
-defineEmits<{
+const emit = defineEmits<{
   click: [missionKey: string];
   hover: [missionKey: string | null];
   view: [missionKey: string];
 }>();
 
-// Reactive state for error details expansion
-const showErrorDetails = ref(false);
-const copyButtonText = ref("Copy");
-
-// Get props reference for access in functions
 const props = defineProps<{
   mission: Mission;
   isSelected?: boolean;
   isHovered?: boolean;
 }>();
 
-function toggleErrorDetails() {
-  showErrorDetails.value = !showErrorDetails.value;
+function getStatusColor(status: string | undefined): string {
+  if (!status) return "grey";
+  switch (status.toLowerCase()) {
+    case "completed":
+    case "processed":
+      return "positive";
+    case "pending":
+      return "warning";
+    case "error":
+      return "negative";
+    default:
+      return "grey";
+  }
 }
+
+// Reactive state for error details expansion
+const showErrorDetails = ref(false);
+const copyButtonText = ref("Copy");
 
 async function copyErrorDetails() {
   if (!props.mission.detailed_error_message) return;
@@ -185,221 +220,16 @@ function formatDetailedError(detailedError: string | undefined): string {
 </script>
 
 <style scoped>
-.mission-card {
-  border: 1px solid #ddd;
-  border-radius: 8px;
-  overflow: hidden;
-  cursor: pointer;
-  transition:
-    transform 0.2s,
-    box-shadow 0.2s,
-    border-color 0.2s;
-  background: white;
-  position: relative;
-  margin-bottom: 15px;
-}
-
-.mission-card:hover:not(.mission-pending) {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-
-.mission-card.mission-selected {
-  border-color: #007bff;
-  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
-}
-
-.mission-card.mission-hovered {
-  border-color: #6c757d;
-}
-
-.mission-pending {
-  opacity: 0.7;
-}
-
-.mission-status {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  z-index: 1;
-}
-
-.status-badge {
-  padding: 4px 8px;
-  border-radius: 4px;
-  font-size: 12px;
-  font-weight: bold;
-  text-transform: uppercase;
-}
-
-.status-pending {
-  background: #ff9800;
-  color: white;
-}
-
-.status-completed,
-.status-processed {
-  background: #4caf50;
-  color: white;
-}
-
-.status-error {
-  background: #f44336;
-  color: white;
-}
-
-.status-unknown {
-  background: #9e9e9e;
-  color: white;
-}
-
-.mission-info {
-  padding: 15px;
-  padding-top: 35px; /* Account for status badge */
-}
-
-.mission-info h3 {
-  margin: 0 0 10px 0;
-  color: #333;
-  font-size: 16px;
-}
-
-.mission-details {
-  margin: 0 0 15px 0;
-  color: #666;
-  font-size: 13px;
-  line-height: 1.4;
-}
-
-.metadata-info {
-  background: #f8f9fa;
-  padding: 10px;
-  border-radius: 4px;
-  margin-bottom: 15px;
-}
-
-.metadata-info p {
-  margin: 0;
-  font-size: 12px;
-  color: #555;
-}
-
-.mission-actions {
-  text-align: right;
-}
-
-.view-btn {
-  background: #007bff;
-  color: white;
-  border: none;
-  padding: 6px 12px;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: background 0.2s;
-  font-size: 12px;
-}
-
-.view-btn:hover:not(:disabled) {
-  background: #0056b3;
-}
-
-.view-btn:disabled {
-  background: #ccc;
-}
-
-.error-message {
-  background: #ffebee;
-  color: #c62828;
-  border-top: 1px solid #ffcdd2;
-  font-size: 12px;
-}
-
-.error-header {
-  padding: 10px;
-  cursor: pointer;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  transition: background-color 0.2s;
-}
-
-.error-header:hover {
-  background: #ffcdd2;
-}
-
-.error-toggle {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 11px;
-  color: #ad1457;
-  font-weight: normal;
-}
-
-.arrow-down::before {
-  content: "▼";
-  font-size: 10px;
-}
-
-.arrow-up::before {
-  content: "▲";
-  font-size: 10px;
-}
-
-.error-details {
-  border-top: 1px solid #ffcdd2;
-  background: #fce4ec;
-}
-
-.error-details-header {
-  padding: 10px;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  border-bottom: 1px solid #f8bbd9;
-}
-
-.copy-btn {
-  background: #e91e63;
-  color: white;
-  border: none;
-  padding: 4px 8px;
-  border-radius: 3px;
-  cursor: pointer;
-  font-size: 10px;
-  transition: background-color 0.2s;
-}
-
-.copy-btn:hover:not(:disabled) {
-  background: #c2185b;
-}
-
-.copy-btn:disabled {
-  background: #f8bbd9;
-  cursor: not-allowed;
-}
-
 .error-logs {
-  padding: 10px;
-  margin: 0;
-  background: #fff;
-  border: 1px solid #f8bbd9;
-  border-radius: 4px;
-  margin: 10px;
-  max-height: 300px;
-  overflow-y: auto;
-  font-family: "Courier New", monospace;
+  font-family: monospace;
   font-size: 11px;
-  line-height: 1.4;
-  color: #333;
+  margin: 0;
+  padding: 8px;
+  background: #f5f5f5;
+  border-radius: 4px;
+  max-height: 200px;
+  overflow-y: auto;
   white-space: pre-wrap;
   word-break: break-word;
-}
-
-.no-details {
-  padding: 10px;
-  margin: 0;
-  font-style: italic;
-  color: #999;
 }
 </style>
