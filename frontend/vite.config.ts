@@ -33,14 +33,14 @@ export default defineConfig({
   server: {
     proxy: {
       "/api": {
-        target: "http://0.0.0.0:8000/",
+        target: process.env.VITE_API_PROXY || "http://0.0.0.0:8000/",
         changeOrigin: true,
         secure: false,
         ws: true,
         rewriteWsOrigin: true,
       },
       "/static": {
-        target: "https://addlidar.epfl.ch",
+        target: process.env.VITE_STATIC_PROXY || "https://addlidar.epfl.ch",
         changeOrigin: true,
         secure: false,
         ws: true,
