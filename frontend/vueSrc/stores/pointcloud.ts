@@ -3,7 +3,7 @@ import { ref, markRaw } from "vue";
 
 export const usePointCloudStore = defineStore("pointCloud", () => {
   // State as refs
-  const activeAttribute = ref("intensity");
+  const activeAttribute = ref("rgba");
   const pointcloudLoaded = ref(false);
   const errorMessage = ref("");
 

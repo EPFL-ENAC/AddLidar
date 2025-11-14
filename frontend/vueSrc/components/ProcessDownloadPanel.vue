@@ -103,6 +103,18 @@
               </div>
             </div>
 
+            <div
+              v-else-if="
+                jobStatus === 'Running' ||
+                jobStatus === 'Started' ||
+                (jobStatus && jobProgress === 0)
+              "
+              class="q-mb-sm text-center q-py-md"
+            >
+              <q-spinner color="primary" size="40px" />
+              <div class="text-grey-6 q-mt-sm">Creating job...</div>
+            </div>
+
             <div v-else-if="jobProgress > 0" class="q-mb-sm">
               <q-linear-progress
                 :value="jobProgress"
@@ -145,21 +157,65 @@
             class="q-mt-sm"
           >
             <q-list separator class="status-log">
-              <q-item v-for="(log, index) in statusLogs" :key="index">
+              <q-item
+                v-for="(log, index) in statusLogs"
+                :key="index"
+                clickable
+                @click="showLogDetails(log)"
+              >
                 <q-item-section>
                   <q-item-label caption>{{ log.time }}</q-item-label>
-                  <q-item-label>{{ log.message }}</q-item-label>
+                  <q-item-label class="log-message">{{
+                    getLogDisplayText(log)
+                  }}</q-item-label>
+                </q-item-section>
+                <q-item-section side v-if="isJsonLog(log)">
+                  <q-icon name="info" color="grey-6" size="xs" />
                 </q-item-section>
               </q-item>
             </q-list>
           </q-expansion-item>
+
+          <!-- JSON Details Dialog -->
+          <q-dialog v-model="showDetailsDialog">
+            <q-card
+              style="min-width: 500px; max-width: 800px; max-height: 80vh"
+            >
+              <q-card-section class="row items-center q-pb-none">
+                <div class="text-h6">Log Details</div>
+                <q-space />
+                <q-btn icon="close" flat round dense v-close-popup />
+              </q-card-section>
+
+              <q-card-section
+                class="q-pt-none"
+                style="max-height: calc(80vh - 120px); overflow-y: auto"
+              >
+                <div class="text-caption text-grey-6 q-mb-sm">
+                  {{ selectedLog?.time }}
+                </div>
+                <pre class="json-display">{{ formatJson(selectedLog) }}</pre>
+              </q-card-section>
+
+              <q-card-actions align="right">
+                <q-btn
+                  flat
+                  label="Copy"
+                  color="primary"
+                  icon="content_copy"
+                  @click="copyToClipboard"
+                />
+                <q-btn flat label="Close" color="primary" v-close-popup />
+              </q-card-actions>
+            </q-card>
+          </q-dialog>
         </div>
       </q-card-section>
     </q-card>
   </q-expansion-item>
 </template>
 <script setup lang="ts">
-import { ref, onBeforeUnmount, onMounted, computed } from "vue";
+import { ref, onBeforeUnmount, computed } from "vue";
 import ClipVolume from "@/components/ClipVolume.vue";
 import { formatOptions, epsgOptions, type SelectOption } from "@/utils/api";
 import useDownloadService from "@/utils/useDownloadService";
@@ -239,9 +295,7 @@ const density = ref("");
 const number = ref(1000);
 
 // Store the file path, defaulting to the standard path
-const filePath = ref("");
-
-onMounted(() => {
+const filePath = computed(() => {
   if (
     directoryStore.activeMission &&
     directoryStore.missionData &&
@@ -250,16 +304,17 @@ onMounted(() => {
     // Construct the full path using the active mission from directory store
     const missionKey = directoryStore.activeMission;
     const metacloudFilename = directoryStore.missionData.metacloud_filename;
-    filePath.value = `/LiDAR/${missionKey}/${metacloudFilename}`;
+    return `/LiDAR/${missionKey}/${metacloudFilename}`;
   } else {
     // Use the default path
     console.error(
       "No metacloud_filename found in mission data.",
       directoryStore.missionData,
+      directoryStore.activeMission,
+      directoryStore.missionData?.metacloud_filename,
     );
+    return "";
   }
-
-  console.log("Using file path:", filePath.value);
 });
 
 // Function to handle form submission
@@ -308,6 +363,91 @@ function onSubmit(): void {
   startJob(params);
 }
 
+// Log details dialog state
+const showDetailsDialog = ref(false);
+const selectedLog = ref<any>(null);
+
+// Helper function to check if a log message is JSON
+function isJsonLog(log: any): boolean {
+  if (typeof log.message !== "string") return false;
+  const trimmed = log.message.trim();
+  return trimmed.startsWith("{") || trimmed.startsWith("[");
+}
+
+// Helper function to parse and extract message from log
+function getLogDisplayText(log: any): string {
+  if (typeof log.message !== "string") return String(log.message);
+
+  const trimmed = log.message.trim();
+  if (trimmed.startsWith("{") || trimmed.startsWith("[")) {
+    try {
+      const parsed = JSON.parse(trimmed);
+      // Try to extract a meaningful message
+      if (parsed.message) return parsed.message;
+      if (parsed.status) {
+        // Show error status prominently
+        if (
+          parsed.status === "Error" ||
+          parsed.status === "FailureTarget" ||
+          parsed.status === "Failed"
+        ) {
+          return `❌ ${parsed.status}${parsed.logs ? " - Click for details" : ""}`;
+        }
+        return `Status: ${parsed.status}`;
+      }
+      if (parsed.type) return `Type: ${parsed.type}`;
+      return "Click to view details";
+    } catch {
+      return log.message;
+    }
+  }
+  return log.message;
+}
+
+// Show log details in dialog
+function showLogDetails(log: any): void {
+  selectedLog.value = log;
+  showDetailsDialog.value = true;
+}
+
+// Format log as pretty JSON
+function formatJson(log: any): string {
+  if (!log) return "";
+
+  try {
+    const trimmed = log.message.trim();
+    if (trimmed.startsWith("{") || trimmed.startsWith("[")) {
+      const parsed = JSON.parse(trimmed);
+
+      // If there are logs, format them separately for better readability
+      if (parsed.logs) {
+        const { logs, ...rest } = parsed;
+        let output = JSON.stringify(rest, null, 2);
+        output += "\n\n=== Detailed Logs ===\n\n";
+        output += logs;
+        return output;
+      }
+
+      return JSON.stringify(parsed, null, 2);
+    }
+    return log.message;
+  } catch {
+    return log.message;
+  }
+}
+
+// Copy JSON to clipboard
+async function copyToClipboard(): Promise<void> {
+  if (!selectedLog.value) return;
+
+  try {
+    const text = formatJson(selectedLog.value);
+    await navigator.clipboard.writeText(text);
+  } catch (error) {
+    console.error("Failed to copy to clipboard:", error);
+  }
+}
+
 // Clean up WebSocket connection when component is destroyed
 onBeforeUnmount(closeConnection);
 </script>
@@ -316,5 +456,26 @@ onBeforeUnmount(closeConnection);
 .status-log {
   max-height: 200px;
   overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.log-message {
+  word-break: break-word;
+  overflow-wrap: break-word;
+  white-space: pre-wrap;
+  max-width: 100%;
+}
+
+.json-display {
+  background-color: #f5f5f5;
+  padding: 12px;
+  border-radius: 4px;
+  overflow-x: auto;
+  font-family: "Courier New", Courier, monospace;
+  font-size: 12px;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-word;
+  margin: 0;
 }
 </style>
