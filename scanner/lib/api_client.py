@@ -152,6 +152,9 @@ class APIClient:
         fp: str,
         output_path: str,
         metacloud_filename: str = None,
+        name: str = None,
+        date: str = None,
+        extra_attributes: str = None,
     ) -> bool:
         """Create or update potree metacloud state via API"""
         try:
@@ -174,6 +177,12 @@ class APIClient:
                 }
                 if metacloud_filename:
                     create_payload["metacloud_filename"] = metacloud_filename
+                if name:
+                    create_payload["name"] = name
+                if date:
+                    create_payload["date"] = date
+                if extra_attributes:
+                    create_payload["extra_attributes"] = extra_attributes
                 create_response = requests.post(
                     create_url, json=create_payload, timeout=30
                 )

@@ -22,7 +22,10 @@ CREATE TABLE IF NOT EXISTS potree_metacloud_state (
     processing_time   INTEGER,               -- time taken for conversion in seconds (formerly conversion_time)
     processing_status TEXT,                  -- 'success', 'failed', 'pending', NULL if never attempted (formerly conversion_status)
     error_message     TEXT,                  -- error message if conversion failed
-    detailed_error_message TEXT, -- detailed error message if processing failed
+    detailed_error_message TEXT,             -- detailed error message if processing failed
     metacloud_filename TEXT,                 -- filename of the .metacloud file
+    name              TEXT,                  -- parsed 'name' attribute from METACLOUD_ATTRIBUTES
+    date              TEXT,                  -- parsed 'date' attribute from METACLOUD_ATTRIBUTES (ISO format YYYY-MM-DD)
+    extra_attributes  TEXT,                  -- JSON string of other attributes from METACLOUD_ATTRIBUTES
     FOREIGN KEY (mission_key) REFERENCES folder_state(mission_key)
 );

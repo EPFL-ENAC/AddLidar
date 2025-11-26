@@ -1,15 +1,14 @@
 """Directory scanning and change detection logic."""
 
 import os
-import time
+import json
 import logging
 from typing import List
 import shutil
 
 from .api_client import APIClient
 from .filesystem import get_directory_stats, fingerprint_file
-
-logger = logging.getLogger(__name__)
+from .metacloud_parser import parse_metacloud_file
 
 logger = logging.getLogger(__name__)
 
@@ -128,11 +127,33 @@ class DirectoryScanner:
                         output_path = os.path.join(
                             os.path.dirname(self.zip_root), "Potree", level1
                         )
+                        # Parse metacloud file for attributes
+                        parsed_attrs = parse_metacloud_file(metacloud_file)
+                        if parsed_attrs.has_errors:
+                            for error in parsed_attrs.errors:
+                                logger.warning(
+                                    f"Metacloud parse issue in {level1}: {error}"
+                                )
+
+                        # Serialize extra_attributes to JSON if present
+                        extra_attrs_json = None
+                        if parsed_attrs.extra_attributes:
+                            extra_attrs_json = json.dumps(parsed_attrs.extra_attributes)
+
+                        logger.info(
+                            f"Parsed metacloud attributes for {level1}: "
+                            f"name={parsed_attrs.name}, date={parsed_attrs.date}, "
+                            f"extra_attrs={len(parsed_attrs.extra_attributes)} keys"
+                        )
+
                         self.api_client.create_potree_metacloud_state(
                             level1,
                             metacloud_fp,
                             output_path,
                             metacloud_filename=metacloud_filename,
+                            name=parsed_attrs.name,
+                            date=parsed_attrs.date,
+                            extra_attributes=extra_attrs_json,
                         )
                 else:
                     if not dry_run:

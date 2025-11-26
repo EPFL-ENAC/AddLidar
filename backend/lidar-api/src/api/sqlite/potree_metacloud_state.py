@@ -18,6 +18,9 @@ class PotreeMetacloudStateResponse(BaseModel):
     error_message: Optional[str]
     detailed_error_message: Optional[str]
     metacloud_filename: Optional[str]
+    name: Optional[str]
+    date: Optional[str]
+    extra_attributes: Optional[str]  # JSON string
 
 
 class PotreeMetacloudStateUpdate(BaseModel):
@@ -34,6 +37,9 @@ class PotreeMetacloudStateCreate(BaseModel):
     output_path: str
     processing_status: Optional[str] = "pending"
     metacloud_filename: Optional[str] = None
+    name: Optional[str] = None
+    date: Optional[str] = None
+    extra_attributes: Optional[str] = None  # JSON string
 
 
 # Create routers
@@ -64,6 +70,9 @@ async def get_potree_metacloud_state(
       error_message,
       detailed_error_message,
       metacloud_filename,
+      name,
+      date,
+      extra_attributes,
       datetime(last_checked,'unixepoch') AS last_checked_time,
       datetime(last_processed,'unixepoch') AS last_processed_time
     FROM potree_metacloud_state
@@ -200,6 +209,9 @@ async def get_potree_metacloud_state_by_mission(mission_key: str):
       error_message,
       detailed_error_message,
       metacloud_filename,
+      name,
+      date,
+      extra_attributes,
       datetime(last_checked,'unixepoch') AS last_checked_time,
       datetime(last_processed,'unixepoch') AS last_processed_time
     FROM potree_metacloud_state
@@ -231,15 +243,18 @@ async def create_potree_metacloud_state(create_data: PotreeMetacloudStateCreate)
     try:
         cursor.execute(
             """INSERT INTO potree_metacloud_state
-            (mission_key, fp, output_path, last_checked, last_processed, processing_status, metacloud_filename)
-            VALUES (?, ?, ?, ?, NULL, ?, ?)
+            (mission_key, fp, output_path, last_checked, last_processed, processing_status, metacloud_filename, name, date, extra_attributes)
+            VALUES (?, ?, ?, ?, NULL, ?, ?, ?, ?, ?)
             ON CONFLICT(mission_key) DO UPDATE SET
             fp = excluded.fp,
             output_path = excluded.output_path,
             last_checked = excluded.last_checked,
             last_processed = NULL,
             processing_status = excluded.processing_status,
-            metacloud_filename = excluded.metacloud_filename""",
+            metacloud_filename = excluded.metacloud_filename,
+            name = excluded.name,
+            date = excluded.date,
+            extra_attributes = excluded.extra_attributes""",
             (
                 create_data.mission_key,
                 create_data.fingerprint,
@@ -247,6 +262,9 @@ async def create_potree_metacloud_state(create_data: PotreeMetacloudStateCreate)
                 current_time,
                 create_data.processing_status,
                 create_data.metacloud_filename,
+                create_data.name,
+                create_data.date,
+                create_data.extra_attributes,
             ),
         )
         conn.commit()
@@ -254,7 +272,7 @@ async def create_potree_metacloud_state(create_data: PotreeMetacloudStateCreate)
         # Return created record
         cursor.execute(
             """SELECT mission_key, fp, output_path, processing_status, 
-               last_checked FROM potree_metacloud_state WHERE mission_key = ?""",
+               last_checked, name, date, extra_attributes FROM potree_metacloud_state WHERE mission_key = ?""",
             (create_data.mission_key,),
         )
         created_record = cursor.fetchone()

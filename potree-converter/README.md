@@ -40,9 +40,28 @@ POINTS_FILES
 ./path/to/file3.las
 
 METACLOUD_ATTRIBUTES
+name "Mission Name"
+date "2024-03-15"
 creator "Your Name"
 description "Description of your point cloud dataset"
 ```
+
+### METACLOUD_ATTRIBUTES Section
+
+The `METACLOUD_ATTRIBUTES` section supports the following attributes:
+
+| Attribute | Description          | Format                                                    |
+| --------- | -------------------- | --------------------------------------------------------- |
+| `name`    | Mission/dataset name | `name "Your Mission Name"`                                |
+| `date`    | Dataset date         | `date "YYYY-MM-DD"` (also accepts DD/MM/YYYY, DD.MM.YYYY) |
+| Other     | Any custom attribute | `key "value"`                                             |
+
+**Important notes:**
+
+- All values must be enclosed in double quotes (`"value"`)
+- The `name` and `date` attributes are stored in dedicated database columns
+- All other attributes are stored as JSON in the `extra_attributes` column
+- Parse errors (missing quotes, invalid date format) will be logged as warnings
 
 The paths in the `.metacloud` file should be relative to the directory containing the `.metacloud` file. When mounting directories to the Docker container, ensure the directory structure matches the paths in your `.metacloud` file.
 
