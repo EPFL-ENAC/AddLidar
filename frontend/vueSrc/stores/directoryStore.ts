@@ -27,6 +27,10 @@ export interface PotreeMetacloudState {
   last_checked_time: string;
   metacloud_filename: string | null;
   last_processed_time: string | null;
+  detailed_error_message: string | null;
+  name: string | null;
+  date: string | null;
+  extra_attributes: string | null;
 }
 
 export const useDirectoryStore = defineStore("directory", () => {
