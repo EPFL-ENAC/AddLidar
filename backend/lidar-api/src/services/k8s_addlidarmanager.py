@@ -993,4 +993,4 @@ def create_k8s_job(job_name: str, cli_args: Optional[List[str]]) -> None:
     except Exception as e:
         error_msg = f"Failed to create or run job {job_name}: {str(e)}"
         logger.error(error_msg)
-        return error_msg, 1
+        raise RuntimeError(error_msg) from e

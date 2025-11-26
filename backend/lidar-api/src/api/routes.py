@@ -199,23 +199,23 @@ async def start_job(payload: PointCloudRequest):
         logger.error(f"Validation error: {str(e)}")
         return JSONResponse(
             status_code=400,
-            content=ProcessPointCloudResponse(
-                status="error",
-                output=str(e),
-                error_type="validation_error",
-                error_details={"errors": jsonable_encoder(e.errors())},
-            ).model_dump(),
+            content={
+                "error": str(e),
+                "status": "Error",
+                "error_type": "validation_error",
+                "message": f"Validation error: {str(e)}",
+            },
         )
     except Exception as e:
         logger.error(f"Unexpected error: {str(e)}")
         return JSONResponse(
             status_code=500,
-            content=ProcessPointCloudResponse(
-                status="error",
-                output=str(e),
-                error_type="internal_error",
-                error_details={"message": "An unexpected error occurred"},
-            ).model_dump(),
+            content={
+                "error": str(e),
+                "status": "Error",
+                "error_type": "internal_error",
+                "message": f"Failed to create or run job: {str(e)}",
+            },
         )
 
 

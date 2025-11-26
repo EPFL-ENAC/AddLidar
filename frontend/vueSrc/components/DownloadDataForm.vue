@@ -6,6 +6,8 @@
         <q-separator class="q-mb-sm" />
         <process-download-panel class="q-mb-sm" />
         <q-separator class="q-mb-sm" />
+        <job-history class="q-mb-sm" />
+        <q-separator class="q-mb-sm" />
         <color-variable-selector class="q-mb-sm" />
         <q-separator class="q-mb-sm" />
         <source-i-d-filter />
@@ -18,6 +20,7 @@
 import ColorVariableSelector from "@/components/ColorVariableSelector.vue";
 import LidarDirectoryTree from "@/components/LidarDirectoryTree.vue";
 import ProcessDownloadPanel from "@/components/ProcessDownloadPanel.vue";
+import JobHistory from "@/components/JobHistory.vue";
 import SourceIDFilter from "@/components/SourceIDFilter.vue";
 </script>
 

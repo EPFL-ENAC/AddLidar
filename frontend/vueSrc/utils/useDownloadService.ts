@@ -1,5 +1,6 @@
 // WebSocket and API services for file download operations
 import { ref, Ref } from "vue";
+import { useJobStore } from "@/stores/jobStore";
 
 // Define types for job-related data
 interface JobLog {
@@ -54,6 +55,9 @@ export default function useDownloadService(
   }//${window.location.hostname}:${window.location.port}`;
   const PREFIX = "/api";
 
+  // Get job store instance
+  const jobStore = useJobStore();
+
   // Default notification handler if none is provided
   const notify = (message: string, type: string = "info"): void => {
     if (notifyFn) {
@@ -71,6 +75,7 @@ export default function useDownloadService(
   const progressInfo: Ref<ProgressInfo | null> = ref(null);
   const statusLogs: Ref<JobLog[]> = ref([]);
   const checkingStatus: Ref<boolean> = ref(false);
+  const isLoadingFromHistory: Ref<boolean> = ref(false);
   let wsConnection: WebSocket | null = null;
 
   // Add log message with timestamp
@@ -91,6 +96,7 @@ export default function useDownloadService(
     jobStatus.value = "";
     jobProgress.value = 0;
     statusLogs.value = [];
+    isLoadingFromHistory.value = false; // Not loading from history, creating new job
 
     try {
       processing.value = true;
@@ -104,19 +110,60 @@ export default function useDownloadService(
         body: JSON.stringify(params),
       });
 
-      if (!response.ok) {
-        throw new Error(`HTTP error! Status: ${response.status}`);
-      }
-
-      const data = (await response.json()) as JobData;
+      const data = await response.json();
       processing.value = false;
 
-      if (data.job_name) {
-        currentJob.value = data;
+      // Check if response has error (bad status code)
+      if (!response.ok) {
+        // Handle error response
+        const errorMessage = data.message || data.error || "Unknown error";
+        jobStatus.value = "Error";
+        addLog(`Error starting job: ${errorMessage}`);
+        notify(`Failed to start job: ${errorMessage}`, "error");
+
+        // Create a pseudo job entry for the error
+        const pseudoJobName = `job-error-${Date.now()}`;
+        currentJob.value = { job_name: pseudoJobName };
+        jobStore.upsertJob({
+          job_name: pseudoJobName,
+          status: "Error",
+          created_at: new Date().toISOString(),
+          file_path: params.file_path,
+          format: params.format,
+          outcrs: params.outcrs,
+          number: params.number,
+          roi: params.roi,
+          last_updated: new Date().toISOString(),
+          error_message: errorMessage,
+        });
+        jobStore.setCurrentJob(pseudoJobName);
+        return;
+      }
+
+      // Success response - check for job_name
+      const jobData = data as JobData;
+
+      if (jobData.job_name) {
+        currentJob.value = jobData;
         jobStatus.value = "Started";
-        addLog(`Job started: ${data.job_name}`);
-        notify(`Job ${data.job_name} started successfully`, "success");
-        listenForUpdates(data.job_name);
+        addLog(`Job started: ${jobData.job_name}`);
+        notify(`Job ${jobData.job_name} started successfully`, "success");
+
+        // Save job to store
+        jobStore.upsertJob({
+          job_name: jobData.job_name,
+          status: "Started",
+          created_at: new Date().toISOString(),
+          file_path: params.file_path,
+          format: params.format,
+          outcrs: params.outcrs,
+          number: params.number,
+          roi: params.roi,
+          last_updated: new Date().toISOString(),
+        });
+        jobStore.setCurrentJob(jobData.job_name);
+
+        listenForUpdates(jobData.job_name);
         return;
       }
 
@@ -154,6 +201,11 @@ export default function useDownloadService(
         // Update status and progress based on received data
         if (data.status) {
           jobStatus.value = data.status;
+
+          // Update job in store
+          jobStore.updateJobStatus(jobName, data.status, {
+            error_message: data.logs || data.message,
+          });
         }
 
         if (data.progress !== undefined) {
@@ -178,7 +230,11 @@ export default function useDownloadService(
         }
 
         // On error, show notification
-        if (data.status === "Error") {
+        if (
+          data.status === "Error" ||
+          data.status === "Failed" ||
+          data.status === "FailureTarget"
+        ) {
           notify(
             "Job failed. Please check the status log for details.",
             "error",
@@ -226,7 +282,15 @@ export default function useDownloadService(
       addLog(`Status check: ${JSON.stringify(data)}`);
 
       // Update status and progress
-      if (data.status) jobStatus.value = data.status;
+      if (data.status) {
+        jobStatus.value = data.status;
+
+        // Update job in store
+        jobStore.updateJobStatus(currentJob.value!.job_name, data.status, {
+          error_message: data.logs || data.message,
+        });
+      }
+
       if (data.progress !== undefined) {
         if (typeof data.progress === "object" && data.progress !== null) {
           progressInfo.value = data.progress;
@@ -235,6 +299,12 @@ export default function useDownloadService(
           jobProgress.value = data.progress;
           progressInfo.value = null;
         }
+      } else if (
+        data.status === "Complete" ||
+        data.status === "SuccessCriteriaMet"
+      ) {
+        // If no progress info but job is complete, set to 100%
+        jobProgress.value = 1;
       }
 
       notify(`Status updated: ${data.status}`, "info");
@@ -303,8 +373,66 @@ export default function useDownloadService(
     progressInfo.value = null;
     statusLogs.value = [];
 
+    // Clear current job in store
+    jobStore.setCurrentJob(null);
+
     // Close WebSocket if open
     closeConnection();
+  }
+
+  // Load a job from the store and reconnect to it
+  async function loadJob(jobName: string): Promise<void> {
+    const job = jobStore.getJob(jobName);
+    if (!job) {
+      notify("Job not found in history", "error");
+      return;
+    }
+
+    // Mark that we're loading from history
+    isLoadingFromHistory.value = true;
+
+    // Set as current job
+    currentJob.value = {
+      ...job, // Include all job data
+      job_name: job.job_name,
+    };
+    jobStatus.value = job.status;
+
+    // Set progress to 100% if job is completed
+    if (job.status === "Complete" || job.status === "SuccessCriteriaMet") {
+      jobProgress.value = 1; // 100%
+    } else {
+      jobProgress.value = 0;
+    }
+
+    progressInfo.value = null;
+    statusLogs.value = [];
+
+    jobStore.setCurrentJob(job.job_name);
+
+    addLog(`Loading job: ${job.job_name}`);
+
+    // Check current status from server
+    await checkJobStatus();
+
+    // If still running, reconnect WebSocket
+    if (jobStatus.value === "Running" || jobStatus.value === "Started") {
+      listenForUpdates(job.job_name);
+    }
+  }
+
+  // Get the loaded job parameters
+  function getLoadedJobParams(): JobParams | null {
+    if (!currentJob.value) return null;
+
+    const job = currentJob.value as any;
+    return {
+      file_path: job.file_path || "",
+      format: job.format,
+      outcrs: job.outcrs,
+      number: job.number,
+      roi: job.roi,
+    };
   }
 
   // Clean up WebSocket connection
@@ -323,10 +451,13 @@ export default function useDownloadService(
     progressInfo,
     statusLogs,
     checkingStatus,
+    isLoadingFromHistory,
 
     // Methods
     startJob,
     resetJob,
+    loadJob,
+    getLoadedJobParams,
     checkJobStatus,
     downloadResult,
     closeConnection,

@@ -2,6 +2,18 @@
   <q-expansion-item icon="settings" label="Process & Download">
     <q-card flat>
       <q-card-section>
+        <q-banner
+          v-if="parametersRestored"
+          class="bg-blue-1 text-blue-9 q-mb-md"
+          dense
+          rounded
+        >
+          <template v-slot:avatar>
+            <q-icon name="info" color="blue" />
+          </template>
+          Parameters restored from job {{ currentJob?.job_name }}
+        </q-banner>
+
         <q-form @submit.prevent="onSubmit">
           <q-select
             outlined
@@ -69,7 +81,9 @@
                 :color="
                   jobStatus === 'Complete' || jobStatus === 'SuccessCriteriaMet'
                     ? 'positive'
-                    : jobStatus === 'Error'
+                    : jobStatus === 'Error' ||
+                        jobStatus === 'Failed' ||
+                        jobStatus === 'FailureTarget'
                       ? 'negative'
                       : 'primary'
                 "
@@ -77,7 +91,9 @@
                 :icon="
                   jobStatus === 'Complete' || jobStatus === 'SuccessCriteriaMet'
                     ? 'check_circle'
-                    : jobStatus === 'Error'
+                    : jobStatus === 'Error' ||
+                        jobStatus === 'Failed' ||
+                        jobStatus === 'FailureTarget'
                       ? 'error'
                       : 'pending'
                 "
@@ -105,9 +121,8 @@
 
             <div
               v-else-if="
-                jobStatus === 'Running' ||
-                jobStatus === 'Started' ||
-                (jobStatus && jobProgress === 0)
+                (jobStatus === 'Running' || jobStatus === 'Started') &&
+                jobProgress === 0
               "
               class="q-mb-sm text-center q-py-md"
             >
@@ -139,7 +154,11 @@
             />
 
             <q-btn
-              v-else-if="jobStatus !== 'Error'"
+              v-else-if="
+                jobStatus !== 'Error' &&
+                jobStatus !== 'Failed' &&
+                jobStatus !== 'FailureTarget'
+              "
               outline
               label="Refresh"
               color="primary"
@@ -215,16 +234,18 @@
   </q-expansion-item>
 </template>
 <script setup lang="ts">
-import { ref, onBeforeUnmount, computed } from "vue";
+import { ref, onBeforeUnmount, onMounted, computed, watch } from "vue";
 import ClipVolume from "@/components/ClipVolume.vue";
 import { formatOptions, epsgOptions, type SelectOption } from "@/utils/api";
 import useDownloadService from "@/utils/useDownloadService";
 import type { JobParams } from "@/utils/useDownloadService";
 import { usePointCloudStore } from "@/stores/pointcloud";
 import { useDirectoryStore } from "@/stores/directoryStore";
+import { useJobStore } from "@/stores/jobStore";
 
 const store = usePointCloudStore();
 const directoryStore = useDirectoryStore();
+const jobStore = useJobStore();
 
 // Keep the entire service instance available
 const downloadService = useDownloadService();
@@ -242,6 +263,9 @@ const {
   downloadResult,
   checkJobStatus,
   checkingStatus,
+  loadJob,
+  getLoadedJobParams,
+  isLoadingFromHistory,
 } = downloadService;
 
 const { clipPosition, clipRotation, clipScale } = store;
@@ -293,6 +317,7 @@ const format = ref<SelectOption | undefined>(undefined);
 const epsg = ref<string | undefined>(undefined);
 const density = ref("");
 const number = ref(1000);
+const parametersRestored = ref(false);
 
 // Store the file path, defaulting to the standard path
 const filePath = computed(() => {
@@ -319,6 +344,9 @@ const filePath = computed(() => {
 
 // Function to handle form submission
 function onSubmit(): void {
+  // Reset the parameters restored flag when submitting a new job
+  parametersRestored.value = false;
+
   // Create params object from form values
   const params: JobParams = {
     file_path: filePath.value, // Use the stored file path
@@ -436,6 +464,65 @@ function formatJson(log: any): string {
   }
 }
 
+// Function to restore job parameters to the form
+function restoreJobParameters() {
+  const params = getLoadedJobParams();
+  if (!params) return;
+
+  parametersRestored.value = true;
+
+  // Restore format
+  if (params.format) {
+    format.value = formatOptions.find((opt) => opt.value === params.format);
+  }
+
+  // Restore EPSG
+  if (params.outcrs) {
+    epsg.value = params.outcrs;
+  }
+
+  // Restore number
+  if (params.number) {
+    number.value = params.number;
+  }
+
+  // Restore ROI/clip volume if present
+  if (params.roi && params.roi.length === 9) {
+    const [x, y, z, sx, sy, sz, rx, ry, rz] = params.roi;
+
+    // Set clip volume in store
+    store.setClipPosition({ x, y, z });
+    store.setClipScale({ x: sx, y: sy, z: sz });
+    store.setClipRotation({ x: rx, y: ry, z: rz });
+
+    console.log("Restored clip volume:", {
+      position: { x, y, z },
+      scale: { x: sx, y: sy, z: sz },
+      rotation: { x: rx, y: ry, z: rz },
+    });
+  }
+}
+
+// Watch for isLoadingFromHistory flag to restore parameters only when loading from history
+watch(isLoadingFromHistory, (isLoading) => {
+  if (isLoading && currentJob.value) {
+    restoreJobParameters();
+    // Reset flag after restoration
+    isLoadingFromHistory.value = false;
+  }
+});
+
+// Watch for changes in jobStore.currentJobName (when selecting from history)
+watch(
+  () => jobStore.currentJobName,
+  (newJobName) => {
+    if (newJobName && newJobName !== currentJob.value?.job_name) {
+      console.log("Loading job from store:", newJobName);
+      loadJob(newJobName);
+    }
+  },
+);
+
 // Copy JSON to clipboard
 async function copyToClipboard(): Promise<void> {
   if (!selectedLog.value) return;
@@ -447,6 +534,13 @@ async function copyToClipboard(): Promise<void> {
     console.error("Failed to copy to clipboard:", error);
   }
 }
+
+// Restore the last active job on mount
+onMounted(() => {
+  if (jobStore.currentJobName) {
+    loadJob(jobStore.currentJobName);
+  }
+});
 
 // Clean up WebSocket connection when component is destroyed
 onBeforeUnmount(closeConnection);
