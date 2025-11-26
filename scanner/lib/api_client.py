@@ -162,6 +162,12 @@ class APIClient:
             payload = {"fingerprint": fp, "processing_status": "pending"}
             if metacloud_filename:
                 payload["metacloud_filename"] = metacloud_filename
+            if name is not None:
+                payload["name"] = name
+            if date is not None:
+                payload["date"] = date
+            if extra_attributes is not None:
+                payload["extra_attributes"] = extra_attributes
             response = requests.put(url, json=payload, timeout=30)
 
             if response.status_code == 404:

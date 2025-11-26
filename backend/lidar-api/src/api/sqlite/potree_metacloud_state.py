@@ -29,6 +29,10 @@ class PotreeMetacloudStateUpdate(BaseModel):
     processing_time: Optional[int] = None
     error_message: Optional[str] = None
     detailed_error_message: Optional[str] = None
+    metacloud_filename: Optional[str] = None
+    name: Optional[str] = None
+    date: Optional[str] = None
+    extra_attributes: Optional[str] = None  # JSON string
 
 
 class PotreeMetacloudStateCreate(BaseModel):
@@ -156,6 +160,21 @@ async def update_potree_metacloud_state(
     ):
         update_fields.append("metacloud_filename = ?")
         update_values.append(update_data.metacloud_filename)
+
+    # Add name if provided
+    if update_data.name is not None:
+        update_fields.append("name = ?")
+        update_values.append(update_data.name)
+
+    # Add date if provided
+    if update_data.date is not None:
+        update_fields.append("date = ?")
+        update_values.append(update_data.date)
+
+    # Add extra_attributes if provided
+    if update_data.extra_attributes is not None:
+        update_fields.append("extra_attributes = ?")
+        update_values.append(update_data.extra_attributes)
 
     # Add mission_key for WHERE clause
     update_values.append(mission_key)
