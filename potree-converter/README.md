@@ -50,11 +50,11 @@ description "Description of your point cloud dataset"
 
 The `METACLOUD_ATTRIBUTES` section supports the following attributes:
 
-| Attribute | Description          | Format                                                    |
-| --------- | -------------------- | --------------------------------------------------------- |
-| `name`    | Mission/dataset name | `name "Your Mission Name"`                                |
-| `date`    | Dataset date         | `date "YYYY-MM-DD"` (also accepts DD/MM/YYYY, DD.MM.YYYY) |
-| Other     | Any custom attribute | `key "value"`                                             |
+| Attribute | Description          | Format                                                                      |
+| --------- | -------------------- | --------------------------------------------------------------------------- |
+| `name`    | Mission/dataset name | `name "Your Mission Name"`                                                  |
+| `date`    | Dataset date         | `date "YYYY-MM-DD"` (also accepts YYYY_MM_DD, DD/MM/YYYY, DD.MM.YYYY, etc.) |
+| Other     | Any custom attribute | `key "value"`                                                               |
 
 **Important notes:**
 

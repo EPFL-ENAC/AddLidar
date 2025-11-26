@@ -11,10 +11,12 @@ logger = logging.getLogger(__name__)
 # Supported date formats (most specific to least specific)
 DATE_FORMATS = [
     "%Y-%m-%d",
+    "%Y_%m_%d",
     "%d/%m/%Y",
     "%d.%m.%Y",
     "%Y/%m/%d",
     "%d-%m-%Y",
+    "%d_%m_%Y",
 ]
 
 
