@@ -1,5 +1,5 @@
 <template>
-  <q-expansion-item icon="palette" label="Appearance">
+  <q-expansion-item icon="palette" label="Point Cloud Appearance">
     <q-card flat>
       <q-card-section>
         <q-option-group

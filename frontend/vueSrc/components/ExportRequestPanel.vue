@@ -1,5 +1,5 @@
 <template>
-  <q-expansion-item icon="settings" label="Process & Download">
+  <q-expansion-item icon="settings" label="Export Request">
     <q-card flat>
       <q-card-section>
         <q-banner

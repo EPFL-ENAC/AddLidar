@@ -1,5 +1,5 @@
 <template>
-  <q-expansion-item icon="filter_list" label="Filters">
+  <q-expansion-item icon="filter_list" label="Visual Filters">
     <q-card flat>
       <q-card-section>
         <div class="row items-center justify-between q-mb-md">

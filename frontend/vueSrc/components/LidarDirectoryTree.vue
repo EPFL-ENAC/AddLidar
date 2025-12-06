@@ -1,5 +1,5 @@
 <template>
-  <q-expansion-item icon="folder" label="Files" default-opened>
+  <q-expansion-item icon="folder" label="Static Files" default-opened>
     <q-card flat>
       <q-card-section>
         <q-input

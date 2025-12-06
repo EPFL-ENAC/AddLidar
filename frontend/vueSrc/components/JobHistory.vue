@@ -129,12 +129,12 @@ function formatDate(dateString: string): string {
 
 function selectJob(jobName: string) {
   // Just set it as the current job in the store
-  // ProcessDownloadPanel will pick it up via watch
+  // ExportRequestPanel will pick it up via watch
   jobStore.setCurrentJob(jobName);
 }
 
 async function downloadJob(jobName: string) {
-  // Set as current job and let ProcessDownloadPanel handle it
+  // Set as current job and let ExportRequestPanel handle it
   jobStore.setCurrentJob(jobName);
 
   // Navigate to or expand the download panel

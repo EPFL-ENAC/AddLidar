@@ -4,7 +4,7 @@
       <div>
         <lidar-directory-tree class="q-mb-sm" />
         <q-separator class="q-mb-sm" />
-        <process-download-panel class="q-mb-sm" />
+        <export-request-panel class="q-mb-sm" />
         <q-separator class="q-mb-sm" />
         <job-history class="q-mb-sm" />
         <q-separator class="q-mb-sm" />
@@ -19,7 +19,7 @@
 <script setup lang="ts">
 import ColorVariableSelector from "@/components/ColorVariableSelector.vue";
 import LidarDirectoryTree from "@/components/LidarDirectoryTree.vue";
-import ProcessDownloadPanel from "@/components/ProcessDownloadPanel.vue";
+import ExportRequestPanel from "@/components/ExportRequestPanel.vue";
 import JobHistory from "@/components/JobHistory.vue";
 import SourceIDFilter from "@/components/SourceIDFilter.vue";
 </script>
