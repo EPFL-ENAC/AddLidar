@@ -22,7 +22,7 @@
 
 <script setup lang="ts">
 import { computed } from "vue";
-import { usePointCloudStore } from "@/stores/pointcloud";
+import { usePointcloudStore } from "@/stores/pointcloudStore";
 
 const { label, min, max, step } = defineProps({
   label: {
@@ -43,18 +43,16 @@ const { label, min, max, step } = defineProps({
   },
 });
 
-const store = usePointCloudStore();
+const pointcloudStore = usePointcloudStore();
 
 // Create a computed property that gets/sets values in the store
 const range = computed({
-  get: () => {
-    return {
-      min: store.filterMin,
-      max: store.filterMax,
-    };
-  },
+  get: () => ({
+    min: pointcloudStore.visualFilterMin,
+    max: pointcloudStore.visualFilterMax,
+  }),
   set: (value) => {
-    store.setFilterRange(value.min, value.max);
+    pointcloudStore.setVisualFilterRange(value.min, value.max);
   },
 });
 </script>

@@ -50,20 +50,20 @@
 </template>
 
 <script setup lang="ts">
-import { usePointCloudStore } from "@/stores/pointcloud";
+import { useExportJobStore } from "@/stores/exportJobStore";
 import { nextTick, ref } from "vue";
 
-const store = usePointCloudStore();
+const exportJobStore = useExportJobStore();
 const {
   clipPosition: position,
   clipRotation: rotation,
   clipScale: scale,
-} = store;
+} = exportJobStore;
 
 const item = ref<any>(null);
 
 function startInsertion() {
-  const volumeTool = store.volumeTool;
+  const volumeTool = exportJobStore.volumeTool;
   if (!volumeTool || !volumeTool.startInsertion) return;
 
   // Start insertion and get the created item
@@ -97,18 +97,18 @@ function removeClipVolume() {
   item.value.removeEventListener("deselect", onClipChanged);
   item.value = null;
   (window as any).viewer.scene.removeAllClipVolumes();
-  store.resetClipVolume();
+  exportJobStore.resetClipVolume();
 }
 
 function onClipChanged({ object }: { object: any }) {
-  store.setClipPosition(object.position);
-  store.setClipRotation(object.rotation.toVector3());
-  store.setClipScale(object.scale);
+  exportJobStore.setClipPosition(object.position);
+  exportJobStore.setClipRotation(object.rotation.toVector3());
+  exportJobStore.setClipScale(object.scale);
 }
 
 function onVolumeAdded({ volume }: { volume: any }) {
   console.log("Volume added", volume);
-  store.setClipVolume(volume);
+  exportJobStore.setClipVolume(volume);
   volume.addEventListener("scale_changed", onClipChanged);
   volume.addEventListener("orientation_changed", onClipChanged);
   volume.addEventListener("position_changed", onClipChanged);

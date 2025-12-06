@@ -15,7 +15,8 @@
 
 <script setup>
 // Import Three.js and Potree
-import { usePointCloudStore } from "@/stores/pointcloud";
+import { useExportJobStore } from "@/stores/exportJobStore";
+import { usePointcloudStore } from "@/stores/pointcloudStore";
 import { useDirectoryStore } from "@/stores/directoryStore";
 import { ref, onMounted, watch, computed } from "vue";
 import ErrorMessage from "./ErrorMessage.vue";
@@ -26,7 +27,8 @@ const pointcloudId = computed(() => directoryStore.activeMission);
 const errorMessage = ref("");
 const pointcloudLoaded = ref(false);
 
-const pointcloudStore = usePointCloudStore();
+const exportJobStore = useExportJobStore();
+const pointcloudStore = usePointcloudStore();
 
 const volume = ref(null);
 
@@ -53,7 +55,7 @@ watch(
 );
 
 watch(
-  () => [pointcloudStore.filterMin, pointcloudStore.filterMax],
+  () => [pointcloudStore.visualFilterMin, pointcloudStore.visualFilterMax],
   ([newMin, newMax]) => {
     console.log("Filtering source ID", newMin, newMax);
     window.viewer.setFilterPointSourceIDRange(newMin, newMax);
@@ -70,8 +72,6 @@ watch(
 
     try {
       if (selectedIDs.length > 0) {
-        const viewer = window.viewer;
-        debugger;
         // If all IDs are selected, clear the filter
         if (selectedIDs.length === pointcloudStore.availableSourceIDs.length) {
           window.viewer.clearFilterPointSourceIDSubset();
@@ -80,8 +80,7 @@ watch(
           window.viewer.setFilterPointSourceIDSubset(selectedIDs);
         }
       } else {
-        // If none are selected, we could either hide all points or show all points
-        // Here we choose to hide all by setting an empty array
+        // If none are selected, hide all by setting an empty array
         window.viewer.setFilterPointSourceIDSubset([]);
       }
     } catch (error) {
@@ -111,7 +110,6 @@ function loadPointCloud(id) {
         console.log("point cloud loaded", e);
         const pointcloud = e.pointcloud;
         const material = pointcloud.material;
-        // console.log("Point cloud material", pointcloudStore.activeAttribute);
         material.activeAttributeName = pointcloudStore.activeAttribute;
         material.minSize = 1;
         material.pointSizeType = Potree.PointSizeType.ADAPTIVE;
@@ -169,6 +167,7 @@ onMounted(() => {
   viewer.setDescription("");
   console.log(viewer);
   pointcloudStore.setVolumeTool(viewer.volumeTool);
+  exportJobStore.setVolumeTool(viewer.volumeTool);
 
   viewer.loadGUI(() => {
     viewer.setLanguage("en");

@@ -37,29 +37,16 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch, computed } from "vue";
-import { usePointCloudStore } from "@/stores/pointcloud";
-import { useDirectoryStore } from "@/stores/directoryStore";
+import { ref, onMounted, watch } from "vue";
+import { usePointcloudStore } from "@/stores/pointcloudStore";
 
-const store = usePointCloudStore();
-const directoryStore = useDirectoryStore();
+const pointcloudStore = usePointcloudStore();
 const sourceIDs = ref<number[]>([]); // Available source IDs
 const selectedIDs = ref<Record<number, boolean>>({}); // Selection state
 
-// Use a computed property to get the point source ID attribute from metadata
-const pointSourceIdAttribute = computed(() => {
-  if (!directoryStore.pointcloudMetadata?.attributes) return null;
-
-  return directoryStore.pointcloudMetadata.attributes.find(
-    (attr: any) =>
-      attr.name.toLowerCase().includes("point source") ||
-      attr.name.toLowerCase().includes("pointsource"),
-  );
-});
-
-// Watch for changes in metadata to initialize source IDs
+// Watch for changes in point source ID attribute from metadata
 watch(
-  () => pointSourceIdAttribute.value,
+  () => pointcloudStore.pointSourceIdAttribute,
   (attribute) => {
     if (attribute) {
       initializeSourceIDs(attribute);
@@ -69,24 +56,24 @@ watch(
 );
 
 // Initialize source IDs from metadata
-function initializeSourceIDs(attribute: any) {
-  if (!attribute || !attribute.min || !attribute.max) return;
+function initializeSourceIDs(attribute: {
+  minValue: number | null;
+  maxValue: number | null;
+}) {
+  if (attribute.minValue === null || attribute.maxValue === null) return;
 
-  const minID = attribute.min[0];
-  const maxID = attribute.max[0];
+  const minID = attribute.minValue;
+  const maxID = attribute.maxValue;
 
   console.log(`Point Source ID range: ${minID} to ${maxID}`);
 
   // Generate source IDs based on the range
-  const ids = [];
-  // If the range is small (less than 30), include all IDs
-  // Otherwise, sample some IDs to avoid UI clutter
+  const ids: number[] = [];
   if (maxID - minID < 30) {
     for (let id = minID; id <= maxID; id++) {
       ids.push(id);
     }
   } else {
-    // Sample some IDs for larger ranges
     for (let id = minID; id <= maxID; id++) {
       if (id === minID || id === maxID || (id - minID) % 5 === 0) {
         ids.push(id);
@@ -95,7 +82,7 @@ function initializeSourceIDs(attribute: any) {
   }
 
   sourceIDs.value = ids;
-  store.setAvailableSourceIDs(ids);
+  pointcloudStore.setAvailableSourceIDs(ids);
 
   // Initialize selection (all selected by default)
   const selection: Record<number, boolean> = {};
@@ -104,30 +91,23 @@ function initializeSourceIDs(attribute: any) {
   });
   selectedIDs.value = selection;
 
-  // Initialize by updating the store
   updateSelectedIDs();
 }
 
-// Apply the filter when the viewer is loaded
 onMounted(() => {
-  // Check if we already have the metadata, if so initialize
-  if (pointSourceIdAttribute.value) {
-    initializeSourceIDs(pointSourceIdAttribute.value);
+  if (pointcloudStore.pointSourceIdAttribute) {
+    initializeSourceIDs(pointcloudStore.pointSourceIdAttribute);
   }
 });
 
-// Update the store when selections change
 function updateSelectedIDs() {
-  // Get array of selected IDs
   const selectedIDsArray = Object.entries(selectedIDs.value)
     .filter(([_, isSelected]) => isSelected)
     .map(([id]) => parseInt(id));
 
-  // Update store
-  store.setSelectedSourceIDs(selectedIDsArray);
+  pointcloudStore.setSelectedSourceIDs(selectedIDsArray);
 }
 
-// Select all source IDs
 function selectAll() {
   const selection: Record<number, boolean> = { ...selectedIDs.value };
   sourceIDs.value.forEach((id) => {
@@ -137,7 +117,6 @@ function selectAll() {
   updateSelectedIDs();
 }
 
-// Deselect all source IDs
 function selectNone() {
   const selection: Record<number, boolean> = { ...selectedIDs.value };
   sourceIDs.value.forEach((id) => {

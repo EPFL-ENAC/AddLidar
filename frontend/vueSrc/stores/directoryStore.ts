@@ -1,5 +1,6 @@
 import { defineStore } from "pinia";
 import { computed, ref, watch } from "vue";
+import type { PointcloudMetadata } from "@/types/pointcloud";
 
 export interface DirectoryNode {
   folder_key: string;
@@ -37,7 +38,7 @@ export const useDirectoryStore = defineStore("directory", () => {
   const directoryData = ref<DirectoryNode[]>([]);
   const isLoading = ref(false);
   const error = ref<string | null>(null);
-  const pointcloudMetadata = ref<any>(null);
+  const pointcloudMetadata = ref<PointcloudMetadata | null>(null);
   const allMissions = ref<PotreeMetacloudState[]>([]);
 
   // For same-domain deployment, we can use relative URLs

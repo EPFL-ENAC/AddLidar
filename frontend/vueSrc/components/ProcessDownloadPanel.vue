@@ -239,11 +239,11 @@ import ClipVolume from "@/components/ClipVolume.vue";
 import { formatOptions, epsgOptions, type SelectOption } from "@/utils/api";
 import useDownloadService from "@/utils/useDownloadService";
 import type { JobParams } from "@/utils/useDownloadService";
-import { usePointCloudStore } from "@/stores/pointcloud";
+import { useExportJobStore } from "@/stores/exportJobStore";
 import { useDirectoryStore } from "@/stores/directoryStore";
 import { useJobStore } from "@/stores/jobStore";
 
-const store = usePointCloudStore();
+const exportJobStore = useExportJobStore();
 const directoryStore = useDirectoryStore();
 const jobStore = useJobStore();
 
@@ -268,7 +268,7 @@ const {
   isLoadingFromHistory,
 } = downloadService;
 
-const { clipPosition, clipRotation, clipScale } = store;
+const { clipPosition, clipRotation, clipScale } = exportJobStore;
 
 // Format ETA seconds as human-readable string
 const etaFormatted = computed(() => {
@@ -358,7 +358,7 @@ function onSubmit(): void {
   if (epsg.value) params.outcrs = epsg.value;
   if (density.value) params.density = density.value;
 
-  if (store.clipVolume) {
+  if (exportJobStore.clipVolume) {
     // ROI format: x0,y0,z0,dx,dy,dz,rx,ry,rz
     // where x0,y0,z0 is position, dx,dy,dz is dimensions (scale), rx,ry,rz is rotation in radians
     params.roi = [
@@ -491,9 +491,9 @@ function restoreJobParameters() {
     const [x, y, z, sx, sy, sz, rx, ry, rz] = params.roi;
 
     // Set clip volume in store
-    store.setClipPosition({ x, y, z });
-    store.setClipScale({ x: sx, y: sy, z: sz });
-    store.setClipRotation({ x: rx, y: ry, z: rz });
+    exportJobStore.setClipPosition({ x, y, z });
+    exportJobStore.setClipScale({ x: sx, y: sy, z: sz });
+    exportJobStore.setClipRotation({ x: rx, y: ry, z: rz });
 
     console.log("Restored clip volume:", {
       position: { x, y, z },
