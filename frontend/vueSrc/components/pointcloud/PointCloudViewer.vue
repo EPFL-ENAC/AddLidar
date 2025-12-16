@@ -19,7 +19,7 @@ import { useExportJobStore } from "@/stores/exportJobStore";
 import { usePointcloudStore } from "@/stores/pointcloudStore";
 import { useDirectoryStore } from "@/stores/directoryStore";
 import { ref, onMounted, watch, computed } from "vue";
-import ErrorMessage from "./ErrorMessage.vue";
+import ErrorMessage from "@/components/pointcloud/ErrorMessage.vue";
 
 // Use directory store to get active mission
 const directoryStore = useDirectoryStore();

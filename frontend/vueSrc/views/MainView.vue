@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import DownloadDataForm from "@/components/DownloadDataForm.vue";
-import PointCloudViewer from "@/components/PointCloudViewer.vue";
+import DownloadDataForm from "@/components/pointcloud/DownloadDataForm.vue";
+import PointCloudViewer from "@/components/pointcloud/PointCloudViewer.vue";
 import { useDirectoryStore } from "@/stores/directoryStore";
 import { watch } from "vue";
 

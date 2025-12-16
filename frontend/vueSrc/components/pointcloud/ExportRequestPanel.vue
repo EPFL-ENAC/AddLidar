@@ -235,7 +235,7 @@
 </template>
 <script setup lang="ts">
 import { ref, onBeforeUnmount, onMounted, computed, watch } from "vue";
-import ClipVolume from "@/components/ClipVolume.vue";
+import ClipVolume from "@/components/pointcloud/ClipVolume.vue";
 import { formatOptions, epsgOptions, type SelectOption } from "@/utils/api";
 import useDownloadService from "@/utils/useDownloadService";
 import type { JobParams } from "@/utils/useDownloadService";

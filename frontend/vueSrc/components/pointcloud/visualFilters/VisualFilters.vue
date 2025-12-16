@@ -17,6 +17,6 @@
 </template>
 
 <script setup lang="ts">
-import PointSourceIDFilter from "./PointSourceIDFilter.vue";
-import ClassificationFilter from "./ClassificationFilter.vue";
+import PointSourceIDFilter from "@/components/pointcloud/visualFilters/PointSourceIDFilter.vue";
+import ClassificationFilter from "@/components/pointcloud/visualFilters/ClassificationFilter.vue";
 </script>

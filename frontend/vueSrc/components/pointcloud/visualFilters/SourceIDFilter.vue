@@ -44,7 +44,7 @@
 <script setup lang="ts">
 import { ref, onMounted, watch } from "vue";
 import { usePointcloudStore } from "@/stores/pointcloudStore";
-import ClassificationFilter from "./ClassificationFilter.vue";
+import ClassificationFilter from "./pointcloud/ClassificationFilter.vue";
 
 const pointcloudStore = usePointcloudStore();
 const sourceIDs = ref<number[]>([]); // Available source IDs

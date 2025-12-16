@@ -17,11 +17,11 @@
 </template>
 
 <script setup lang="ts">
-import ColorVariableSelector from "@/components/ColorVariableSelector.vue";
-import LidarDirectoryTree from "@/components/LidarDirectoryTree.vue";
-import ExportRequestPanel from "@/components/ExportRequestPanel.vue";
-import JobHistory from "@/components/JobHistory.vue";
-import VisualFilters from "@/components/VisualFilters.vue";
+import ColorVariableSelector from "@/components/pointcloud/ColorVariableSelector.vue";
+import LidarDirectoryTree from "@/components/pointcloud/LidarDirectoryTree.vue";
+import ExportRequestPanel from "@/components/pointcloud/ExportRequestPanel.vue";
+import JobHistory from "@/components/pointcloud/JobHistory.vue";
+import VisualFilters from "@/components/pointcloud/visualFilters/VisualFilters.vue";
 </script>
 
 <style scoped>
