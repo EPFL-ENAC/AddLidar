@@ -24,22 +24,30 @@
             v-model="selectedClasses[classValue]"
             color="primary"
             @update:model-value="updateSelectedClasses"
+          />
+          <div
+            class="classification-color cursor-pointer"
+            :style="{ backgroundColor: getClassColor(classValue) }"
+            @click.stop
           >
-            <template v-slot:default>
-              <div class="row items-center q-gutter-xs">
-                <div
-                  class="classification-color"
-                  :style="{ backgroundColor: getClassColor(classValue) }"
-                ></div>
-                <div class="text-body2">
-                  {{ getClassLabel(classValue) }}
-                  <span v-if="classCount(classValue)" class="text-grey-6">
-                    ({{ formatCount(classCount(classValue)) }})
-                  </span>
-                </div>
-              </div>
-            </template>
-          </q-checkbox>
+            <q-popup-proxy
+              cover
+              transition-show="scale"
+              transition-hide="scale"
+            >
+              <q-color
+                :model-value="getClassColor(classValue)"
+                @update:model-value="(val) => updateClassColor(classValue, val)"
+              />
+            </q-popup-proxy>
+            <q-tooltip>Click to change color</q-tooltip>
+          </div>
+          <div class="text-body2 classification-label">
+            {{ getClassLabel(classValue) }}
+            <span v-if="classCount(classValue)" class="text-grey-6">
+              ({{ formatCount(classCount(classValue)) }})
+            </span>
+          </div>
           <q-tooltip>
             {{ getClassDescription(classValue) }}
           </q-tooltip>
@@ -79,10 +87,14 @@ watch(
   { immediate: true },
 );
 
+function capitalizeFirstLetter(str: string): string {
+  return str.charAt(0).toUpperCase() + str.slice(1);
+}
+
 function getClassLabel(value: number): string {
   const potreeClass = pointcloudStore.potreeClassifications[value];
   if (potreeClass) {
-    return `${value} - ${potreeClass.name}`;
+    return `${capitalizeFirstLetter(potreeClass.name)}`;
   }
   const info = getClassificationInfo(value);
   return info ? `${value} - ${info.label}` : `${value}`;
@@ -108,6 +120,20 @@ function getClassColor(value: number): string {
   }
   const info = getClassificationInfo(value);
   return info?.color ?? "#808080";
+}
+
+function updateClassColor(classValue: number, newColor: string | null) {
+  if (!newColor) return;
+
+  const potreeClass = pointcloudStore.potreeClassifications[classValue];
+  if (potreeClass) {
+    // Convert hex to Potree color format [r, g, b, a] (0-1)
+    const hex = newColor.replace("#", "");
+    const r = parseInt(hex.substring(0, 2), 16) / 255;
+    const g = parseInt(hex.substring(2, 4), 16) / 255;
+    const b = parseInt(hex.substring(4, 6), 16) / 255;
+    potreeClass.color = [r, g, b, 1];
+  }
 }
 
 function classCount(value: number): number {
@@ -163,6 +189,7 @@ function selectNone() {
 .classification-item {
   display: flex;
   align-items: center;
+  gap: 8px;
 }
 
 .classification-color {
@@ -170,5 +197,9 @@ function selectNone() {
   height: 16px;
   border-radius: 2px;
   border: 1px solid rgba(0, 0, 0, 0.2);
+}
+
+.classification-label {
+  flex: 1;
 }
 </style>
