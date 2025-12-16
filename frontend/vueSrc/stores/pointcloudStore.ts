@@ -47,6 +47,11 @@ export const usePointcloudStore = defineStore("pointcloud", () => {
   const activeAttribute = ref("rgba");
   const selectedSourceIDs = ref<number[]>([]);
   const availableSourceIDs = ref<number[]>([]);
+  const selectedClassifications = ref<number[]>([]);
+  const availableClassifications = ref<number[]>([]);
+  const potreeClassifications = ref<
+    Record<string, { visible: boolean; name: string; color: number[] }>
+  >({});
   const visualFilterMin = ref(0);
   const visualFilterMax = ref(100);
 
@@ -122,6 +127,7 @@ export const usePointcloudStore = defineStore("pointcloud", () => {
     if (data?.attributes) {
       attributes.value = data.attributes.map(parseAttribute);
       initializeSourceIDs();
+      initializeClassifications();
     } else {
       attributes.value = [];
     }
@@ -155,6 +161,43 @@ export const usePointcloudStore = defineStore("pointcloud", () => {
 
     availableSourceIDs.value = ids;
     selectedSourceIDs.value = [...ids]; // All selected by default
+  }
+
+  /** Initialize classifications from classification attribute histogram */
+  function initializeClassifications() {
+    const attr = classificationAttribute.value;
+    if (!attr) {
+      availableClassifications.value = [];
+      selectedClassifications.value = [];
+      return;
+    }
+
+    if (!attr.histogram) {
+      // Fallback to min/max range if no histogram
+      if (attr.minValue !== null && attr.maxValue !== null) {
+        const classes: number[] = [];
+        for (let i = attr.minValue; i <= attr.maxValue; i++) {
+          classes.push(i);
+        }
+        availableClassifications.value = classes;
+        selectedClassifications.value = [...classes];
+      } else {
+        availableClassifications.value = [];
+        selectedClassifications.value = [];
+      }
+      return;
+    }
+
+    // Extract classes that have points from histogram
+    const classes: number[] = [];
+    attr.histogram.forEach((count, classValue) => {
+      if (count > 0) {
+        classes.push(classValue);
+      }
+    });
+
+    availableClassifications.value = classes.sort((a, b) => a - b);
+    selectedClassifications.value = [...classes]; // All selected by default
   }
 
   /** Set active attribute for point cloud coloring */
@@ -213,6 +256,32 @@ export const usePointcloudStore = defineStore("pointcloud", () => {
     selectedSourceIDs.value = [...availableSourceIDs.value];
   }
 
+  // Classification filtering methods
+  function setSelectedClassifications(classes: number[]) {
+    selectedClassifications.value = classes;
+  }
+
+  function setAvailableClassifications(classes: number[]) {
+    availableClassifications.value = classes;
+  }
+
+  function clearClassificationFilter() {
+    selectedClassifications.value = [];
+  }
+
+  function selectAllClassifications() {
+    selectedClassifications.value = [...availableClassifications.value];
+  }
+
+  function setPotreeClassifications(
+    classifications: Record<
+      string,
+      { visible: boolean; name: string; color: number[] }
+    >,
+  ) {
+    potreeClassifications.value = classifications;
+  }
+
   // ========== Watch for metadata changes from directoryStore ==========
   watch(
     () => directoryStore.pointcloudMetadata,
@@ -242,6 +311,9 @@ export const usePointcloudStore = defineStore("pointcloud", () => {
     activeAttribute,
     selectedSourceIDs,
     availableSourceIDs,
+    selectedClassifications,
+    availableClassifications,
+    potreeClassifications,
     visualFilterMin,
     visualFilterMax,
     volumeTool,
@@ -256,6 +328,12 @@ export const usePointcloudStore = defineStore("pointcloud", () => {
     setAvailableSourceIDs,
     clearSourceIDFilter,
     selectAllSourceIDs,
+    setSelectedClassifications,
+    setAvailableClassifications,
+    clearClassificationFilter,
+    selectAllClassifications,
     initializeSourceIDs,
+    initializeClassifications,
+    setPotreeClassifications,
   };
 });

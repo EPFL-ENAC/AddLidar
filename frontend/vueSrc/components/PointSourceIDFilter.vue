@@ -1,50 +1,36 @@
 <template>
-  <q-expansion-item icon="filter_list" label="Visual Filters">
-    <q-card flat>
-      <q-card-section>
-        <div class="row items-center justify-between q-mb-md">
-          <div>Point Source ID</div>
-          <div>
-            <q-btn flat dense color="primary" label="All" @click="selectAll" />
-            <q-btn
-              flat
-              dense
-              color="primary"
-              label="None"
-              @click="selectNone"
-            />
-          </div>
+  <q-card flat class="q-mt-md">
+    <q-card-section>
+      <div class="row items-center justify-between q-mb-md">
+        <div class="text-subtitle2">Point Source ID</div>
+        <div>
+          <q-btn flat dense color="primary" label="All" @click="selectAll" />
+          <q-btn flat dense color="primary" label="None" @click="selectNone" />
         </div>
+      </div>
 
-        <div v-if="!sourceIDs.length" class="text-center q-pa-md">
-          <q-spinner color="primary" size="32px" />
-          <div class="q-mt-sm text-grey-6">Loading...</div>
-        </div>
+      <div v-if="!sourceIDs.length" class="text-center q-pa-md">
+        <q-spinner color="primary" size="32px" />
+        <div class="q-mt-sm text-grey-6">Loading...</div>
+      </div>
 
-        <div v-else class="source-id-list">
-          <q-checkbox
-            v-for="id in sourceIDs"
-            :key="id"
-            v-model="selectedIDs[id]"
-            :label="`${id}`"
-            color="primary"
-            @update:model-value="updateSelectedIDs"
-          />
-        </div>
-      </q-card-section>
-
-      <!-- Classification Filter -->
-      <q-card-section>
-        <classification-filter />
-      </q-card-section>
-    </q-card>
-  </q-expansion-item>
+      <div v-else class="source-id-list">
+        <q-checkbox
+          v-for="id in sourceIDs"
+          :key="id"
+          v-model="selectedIDs[id]"
+          :label="`${id}`"
+          color="primary"
+          @update:model-value="updateSelectedIDs"
+        />
+      </div>
+    </q-card-section>
+  </q-card>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, watch } from "vue";
 import { usePointcloudStore } from "@/stores/pointcloudStore";
-import ClassificationFilter from "./ClassificationFilter.vue";
 
 const pointcloudStore = usePointcloudStore();
 const sourceIDs = ref<number[]>([]); // Available source IDs

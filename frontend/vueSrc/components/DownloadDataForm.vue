@@ -10,7 +10,7 @@
         <q-separator class="q-mb-sm" />
         <color-variable-selector class="q-mb-sm" />
         <q-separator class="q-mb-sm" />
-        <source-i-d-filter />
+        <visual-filters />
       </div>
     </q-scroll-area>
   </div>
@@ -21,7 +21,7 @@ import ColorVariableSelector from "@/components/ColorVariableSelector.vue";
 import LidarDirectoryTree from "@/components/LidarDirectoryTree.vue";
 import ExportRequestPanel from "@/components/ExportRequestPanel.vue";
 import JobHistory from "@/components/JobHistory.vue";
-import SourceIDFilter from "@/components/SourceIDFilter.vue";
+import VisualFilters from "@/components/VisualFilters.vue";
 </script>
 
 <style scoped>

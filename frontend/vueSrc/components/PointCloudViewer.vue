@@ -89,6 +89,50 @@ watch(
   },
 );
 
+// Watch for changes in selected classifications
+watch(
+  () => pointcloudStore.selectedClassifications,
+  (selectedClasses) => {
+    if (!window.viewer || !window.viewer.scene.pointclouds.length) return;
+
+    console.log("Classification filter changed:", selectedClasses);
+
+    try {
+      // Get all available classifications from the pointcloud store
+      const availableClasses = pointcloudStore.availableClassifications;
+
+      // First, ensure all classifications from metadata exist in viewer.classifications
+      // Add missing ones with default colors
+      for (const classValue of availableClasses) {
+        if (!window.viewer.classifications[classValue]) {
+          // Create missing classification with a default color
+          window.viewer.classifications[classValue] = {
+            visible: true,
+            name: `Class ${classValue}`,
+            color: [0.5, 0.5, 0.5, 1], // Gray default
+          };
+        }
+      }
+
+      // Get all classification keys from viewer (including ones not in our metadata)
+      const allViewerClasses = Object.keys(window.viewer.classifications)
+        .filter((key) => key !== "DEFAULT")
+        .map((key) => parseInt(key));
+
+      // Set visibility for ALL classifications
+      for (const classValue of allViewerClasses) {
+        const isVisible = selectedClasses.includes(classValue);
+        window.viewer.setClassificationVisibility(classValue, isVisible);
+      }
+
+      // Sync classifications to store for UI display
+      pointcloudStore.setPotreeClassifications(window.viewer.classifications);
+    } catch (error) {
+      console.error("Error applying classification filter:", error);
+    }
+  },
+);
+
 // Watch for changes in the active mission
 watch(
   () => pointcloudId.value,
