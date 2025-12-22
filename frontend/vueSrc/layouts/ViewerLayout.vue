@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { ref, computed } from "vue";
+import { ref } from "vue";
 import { useRouter } from "vue-router";
+import AppToolbar from "@/components/AppToolbar.vue";
 
 defineProps<{
   missionName?: string;
@@ -8,54 +9,18 @@ defineProps<{
 
 const router = useRouter();
 const sidebarOpen = ref(true);
-const currentRoute = computed(() => router.currentRoute.value.path);
-
-const navItems = [
-  { label: "Missions", to: "/", icon: "explore" },
-  { label: "About", to: "/about", icon: "info" },
-];
 </script>
 
 <template>
   <q-layout view="hHh lpR fFf">
-    <!-- App Header -->
-    <q-header class="app-header bg-white text-dark">
-      <q-toolbar>
-        <q-btn flat round icon="arrow_back" @click="router.push('/')" />
-
-        <q-toolbar-title class="row items-center gap-sm">
-          <q-icon name="terrain" color="primary" size="28px" />
-          <span class="text-weight-medium">AddLidar</span>
-          <q-separator vertical class="q-mx-sm" />
-          <span class="text-body2 text-grey-7">{{ missionName }}</span>
-        </q-toolbar-title>
-
-        <q-tabs
-          :model-value="currentRoute"
-          inline-label
-          class="text-grey-8"
-          active-color="primary"
-          indicator-color="primary"
-        >
-          <q-route-tab
-            v-for="item in navItems"
-            :key="item.to"
-            :to="item.to"
-            :icon="item.icon"
-            :label="item.label"
-          />
-        </q-tabs>
-
-        <q-btn
-          flat
-          round
-          :icon="sidebarOpen ? 'menu_open' : 'menu'"
-          @click="sidebarOpen = !sidebarOpen"
-        >
-          <q-tooltip>{{ sidebarOpen ? "Hide" : "Show" }} sidebar</q-tooltip>
-        </q-btn>
-      </q-toolbar>
-    </q-header>
+    <AppToolbar
+      show-back-button
+      :subtitle="missionName"
+      show-sidebar-toggle
+      :sidebar-open="sidebarOpen"
+      @back="router.push('/')"
+      @toggle-sidebar="sidebarOpen = !sidebarOpen"
+    />
 
     <!-- Main Content -->
     <q-page-container>
