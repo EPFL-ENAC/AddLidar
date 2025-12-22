@@ -1,18 +1,26 @@
 import { createRouter, createWebHistory, RouteRecordRaw } from "vue-router";
-import MainView from "@/views/MainView.vue";
-import MissionListView from "@/views/MissionListView.vue";
 
 const routes: Array<RouteRecordRaw> = [
   {
     path: "/",
-    name: "MissionList",
-    component: MissionListView,
+    name: "Home",
+    component: () => import("@/views/HomeView.vue"),
   },
   {
-    path: "/mission/:id",
-    name: "Mission",
-    component: MainView,
+    path: "/about",
+    name: "About",
+    component: () => import("@/views/AboutView.vue"),
+  },
+  {
+    path: "/viewer/:missionId",
+    name: "Viewer",
+    component: () => import("@/views/ViewerView.vue"),
     props: true,
+  },
+  // Legacy redirect
+  {
+    path: "/mission/:id",
+    redirect: (to) => ({ name: "Viewer", params: { missionId: to.params.id } }),
   },
 ];
 

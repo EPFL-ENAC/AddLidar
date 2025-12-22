@@ -93,9 +93,9 @@ import { useDirectoryStore } from "@/stores/directoryStore";
 interface Mission {
   mission_key: string;
   processing_status: string;
-  last_checked_time: string;
-  last_processed_time?: string;
-  error_message?: string;
+  last_checked_time?: string | null;
+  last_processed_time?: string | null;
+  error_message?: string | null;
 }
 
 const emit = defineEmits<{

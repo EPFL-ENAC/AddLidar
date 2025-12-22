@@ -1,7 +1,7 @@
 import { createApp } from "vue";
 
 import { Quasar, Notify, Dialog } from "quasar";
-import { createPinia } from "pinia"; // Import createPinia
+import { createPinia } from "pinia";
 
 // Import icon libraries
 import "@quasar/extras/material-icons/material-icons.css";
@@ -9,23 +9,19 @@ import "@quasar/extras/material-icons/material-icons.css";
 // Import Quasar css
 import "quasar/src/css/index.sass";
 
-// Assumes your root component is App.vue
-// and placed in same folder as main.js
+// Import app styles
+import "@/assets/styles/app.scss";
+
 import App from "@/App.vue";
 import router from "@/router";
 
-// Create Pinia instance
 const pinia = createPinia();
-
 const myApp = createApp(App);
 
-// Use Pinia
 myApp.use(pinia);
-
 myApp.use(Quasar, {
-  plugins: { Notify, Dialog }, // import Quasar plugins and add here
+  plugins: { Notify, Dialog },
 });
-
 myApp.use(router);
 
 myApp.mount("#app");

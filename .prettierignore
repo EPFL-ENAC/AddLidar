@@ -49,6 +49,9 @@ CITATION.cff
 # Ignore Python files
 *.py
 
+# Sass files (no built-in parser)
+*.sass
+
 # Ignore SQL files (if you don't want prettier-plugin-sql to format them)
 *.sql
 

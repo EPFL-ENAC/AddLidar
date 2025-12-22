@@ -1,11 +1,10 @@
 <template>
   <q-card
-    bordered
     flat
-    class="cursor-pointer transition q-mb-md mission-card"
+    class="card-flat cursor-pointer q-mb-md"
     :class="{
-      'bg-grey-3': isSelected,
-      'mission-card--hovered': isHovered,
+      'card-flat--selected': isSelected,
+      'bg-blue-1': isHovered,
     }"
     @click="emit('click', mission.mission_key)"
     @mouseenter="emit('hover', mission.mission_key)"
@@ -106,10 +105,10 @@
 
       <!-- Action button -->
       <q-btn
-        outline
+        unelevated
         color="primary"
-        label="View"
-        icon="visibility"
+        label="Explore Point Cloud"
+        icon="3d_rotation"
         size="sm"
         class="full-width"
         @click.stop="emit('view', mission.mission_key)"
@@ -164,24 +163,26 @@
 <script setup lang="ts">
 import { ref, computed } from "vue";
 
+interface MissionMetadata {
+  points?: number;
+  boundingBox?: {
+    min: [number, number];
+    max: [number, number];
+  };
+}
+
 interface Mission {
   mission_key: string;
-  output_path: string;
+  output_path?: string;
   processing_status: string;
-  last_checked_time: string;
-  last_processed_time?: string;
-  error_message?: string;
-  detailed_error_message?: string;
+  last_checked_time?: string | null;
+  last_processed_time?: string | null;
+  error_message?: string | null;
+  detailed_error_message?: string | null;
   name?: string | null;
   date?: string | null;
   extra_attributes?: string | null;
-  metadata?: {
-    points: number;
-    boundingBox: {
-      min: [number, number];
-      max: [number, number];
-    };
-  };
+  metadata?: MissionMetadata | null;
 }
 
 const emit = defineEmits<{
@@ -333,44 +334,16 @@ function formatDetailedError(detailedError: string | undefined): string {
 </script>
 
 <style scoped>
-.mission-card {
-  transition: all 0.15s ease;
-}
-
-.mission-card:hover {
-  border-color: #1976d2;
-}
-
-.mission-card--hovered {
-  border-color: #1976d2;
-  background-color: #f5f9ff;
-}
-
-.date-badge {
-  font-weight: 500;
-  flex-shrink: 0;
-}
-
-.extra-attr-chip {
-  font-size: 11px;
-}
-
 .error-logs {
   font-family: monospace;
   font-size: 10px;
   margin: 0;
   padding: 6px;
-  background: #f5f5f5;
+  background: #f8fafc;
   border-radius: 4px;
   max-height: 150px;
   overflow-y: auto;
   white-space: pre-wrap;
   word-break: break-word;
-}
-
-.ellipsis {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 </style>
