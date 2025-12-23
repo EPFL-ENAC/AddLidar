@@ -1,13 +1,11 @@
 <template>
-  <div>
-    <div
-      class="potree_container"
-      style="position: absolute; width: 100%; height: 100%; left: 0px; top: 0px"
-    >
-      <div id="potree_render_area" style="width: 100%; height: 100%">
-        <!-- Render error message if any -->
-        <ErrorMessage :message="errorMessage"> </ErrorMessage>
-      </div>
+  <div
+    class="potree_container"
+    style="position: relative; width: 100%; height: 100%"
+  >
+    <div id="potree_render_area" style="width: 100%; height: 100%">
+      <!-- Render error message if any -->
+      <ErrorMessage :message="errorMessage"> </ErrorMessage>
     </div>
     <div id="potree_sidebar_container"></div>
   </div>

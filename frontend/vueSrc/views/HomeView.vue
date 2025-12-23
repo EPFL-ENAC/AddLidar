@@ -8,6 +8,9 @@ import {
 import MainAppLayout from "@/layouts/MainAppLayout.vue";
 import MissionFootprintMap from "@/components/MissionFootprintMap.vue";
 import MissionListPanel from "@/components/MissionListPanel.vue";
+import { useAppMeta } from "@/composables/useMeta";
+
+useAppMeta({ title: "Browse Missions" });
 
 interface MissionWithMetadata extends PotreeMetacloudState {
   metadata?: {
@@ -67,9 +70,13 @@ async function loadMissions() {
   }
 }
 
-function onMissionSelect(missionKey: string) {
-  selectedMission.value = missionKey || null;
-  if (missionKey) {
+function onMissionSelect(missionKey: string | null) {
+  if (missionKey === null) {
+    // Deselect
+    selectedMission.value = null;
+    zoomToMission.value = null;
+  } else {
+    selectedMission.value = missionKey;
     zoomToMission.value = missionKey;
     setTimeout(() => (zoomToMission.value = null), 100);
   }

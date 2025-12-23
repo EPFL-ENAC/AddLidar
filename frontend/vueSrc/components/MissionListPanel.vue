@@ -11,7 +11,7 @@
 
     <q-separator />
 
-    <div class="col q-pa-md" style="overflow-x: auto; overflow-y: auto">
+    <div class="col q-pa-sm" style="overflow-x: auto; overflow-y: auto">
       <q-table
         :rows="visibleMissions"
         :columns="columns"
@@ -19,7 +19,6 @@
         :pagination="pagination"
         :selected="selectedRows"
         bordered
-        low-density
       >
         <!-- Custom body to control row classes -->
         <template #body="props">

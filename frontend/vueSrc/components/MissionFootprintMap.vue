@@ -287,16 +287,6 @@ watch(
   },
 );
 
-function getSidebarWidth(): number {
-  // Try to get the actual sidebar width from the DOM
-  const sidebar = document.querySelector(".sidebar-floating");
-  if (sidebar) {
-    return sidebar.getBoundingClientRect().width;
-  }
-  // Fallback to calculated value if sidebar not found
-  return Math.min(Math.max(window.innerWidth * 0.3, 400), 850);
-}
-
 // Load footprints for all missions
 async function loadMissionFootprints() {
   if (!map || !props.missions.length) return;
@@ -375,10 +365,8 @@ async function loadMissionFootprints() {
       );
 
       if (!bounds.isEmpty()) {
-        // Get actual sidebar width from DOM
-        const sidebarWidth = getSidebarWidth();
         map.fitBounds(bounds, {
-          padding: { top: 50, bottom: 50, left: sidebarWidth + 70, right: 50 },
+          padding: 50,
         });
       }
     }
@@ -415,10 +403,8 @@ function zoomToMission(missionKey: string) {
   );
 
   if (!bounds.isEmpty()) {
-    // Get actual sidebar width from DOM
-    const sidebarWidth = getSidebarWidth();
     map.fitBounds(bounds, {
-      padding: { top: 100, bottom: 100, left: sidebarWidth + 120, right: 100 },
+      padding: 100,
       duration: 1000,
     });
   }

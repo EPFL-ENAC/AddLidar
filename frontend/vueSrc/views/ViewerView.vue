@@ -5,10 +5,13 @@ import { useDirectoryStore } from "@/stores/directoryStore";
 import MainAppLayout from "@/layouts/MainAppLayout.vue";
 import PointCloudViewer from "@/components/pointcloud/PointCloudViewer.vue";
 import ViewerSidebar from "@/components/pointcloud/ViewerSidebar.vue";
+import { useAppMeta } from "@/composables/useMeta";
 
 const props = defineProps<{
   missionId: string;
 }>();
+
+useAppMeta({ title: props.missionId });
 
 const router = useRouter();
 const directoryStore = useDirectoryStore();

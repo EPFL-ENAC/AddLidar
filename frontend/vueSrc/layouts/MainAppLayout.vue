@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { ref } from "vue";
-import EPFLLogo from "@/assets/EPFL_Logo.svg";
+import AboutContent from "@/components/AboutContent.vue";
 
 interface Props {
   showBackButton?: boolean;
@@ -27,17 +27,9 @@ function toggleAbout() {
 </script>
 
 <template>
-  <div
-    class="relative-position overflow-hidden"
-    style="height: 100vh; width: 100vw"
-  >
-    <!-- Right Panel (Full Background) -->
-    <main class="absolute-full bg-grey-2">
-      <slot name="content" />
-    </main>
-
-    <!-- Left Sidebar (Floating) -->
-    <aside class="absolute column bg-white sidebar-floating">
+  <div class="row" style="height: 100vh; width: 100vw">
+    <!-- Left Sidebar -->
+    <aside class="column bg-white sidebar-panel">
       <!-- Header -->
       <header
         class="q-pa-md"
@@ -58,12 +50,16 @@ function toggleAbout() {
           </q-btn>
 
           <div class="col row items-center justify-center q-gutter-sm q-pa-md">
-            <img :src="EPFLLogo" alt="EPFL" style="height: 24px; width: auto" />
-            <q-separator vertical inset />
             <div class="row items-center q-gutter-xs">
-              <q-icon name="terrain" color="primary" size="20px" />
-              <span class="text-h6 text-weight-medium">AddLidar</span>
+              <q-icon name="view_in_ar" color="primary" size="24px" />
+              <span class="text-h5">AddLidar</span>
             </div>
+            <q-separator vertical inset />
+            <img
+              src="@/assets/EPFL_Logo.svg"
+              alt="AddLidar"
+              style="height: 24px; width: auto"
+            />
           </div>
 
           <q-btn
@@ -82,68 +78,7 @@ function toggleAbout() {
 
       <!-- Sidebar Content -->
       <div class="col overflow-hidden column">
-        <div v-if="showAbout" class="column q-pa-lg">
-          <div class="text-center q-mb-md">
-            <q-icon
-              name="terrain"
-              color="primary"
-              size="64px"
-              class="q-mb-md"
-            />
-            <h2 class="text-h5 text-weight-medium q-mb-sm">About AddLidar</h2>
-          </div>
-
-          <p class="text-body2 text-grey-7 q-mb-md">
-            AddLidar is a web application for exploring and visualizing LiDAR
-            point cloud data. Browse available missions, visualize point clouds
-            in 3D, and export subsets of data in various formats.
-          </p>
-
-          <div class="column q-gutter-md q-mb-lg">
-            <div class="row items-center q-gutter-sm">
-              <q-icon name="explore" size="24px" color="primary" />
-              <div class="col">
-                <div class="text-weight-medium">Browse Missions</div>
-                <div class="text-caption text-grey-6">
-                  View and select from available LiDAR missions
-                </div>
-              </div>
-            </div>
-            <div class="row items-center q-gutter-sm">
-              <q-icon name="map" size="24px" color="primary" />
-              <div class="col">
-                <div class="text-weight-medium">Interactive Map</div>
-                <div class="text-caption text-grey-6">
-                  Visualize mission footprints geographically
-                </div>
-              </div>
-            </div>
-            <div class="row items-center q-gutter-sm">
-              <q-icon name="3d_rotation" size="24px" color="primary" />
-              <div class="col">
-                <div class="text-weight-medium">3D Viewer</div>
-                <div class="text-caption text-grey-6">
-                  Explore point clouds in real-time 3D
-                </div>
-              </div>
-            </div>
-            <div class="row items-center q-gutter-sm">
-              <q-icon name="download" size="24px" color="primary" />
-              <div class="col">
-                <div class="text-weight-medium">Export Data</div>
-                <div class="text-caption text-grey-6">
-                  Download selected regions in multiple formats
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <q-separator class="q-my-md" />
-
-          <div class="text-caption text-grey-5 text-center">
-            Developed by EPFL-ENAC
-          </div>
-        </div>
+        <about-content v-if="showAbout" />
         <template v-else>
           <!-- Mission Name Title -->
           <div v-if="subtitle" class="q-px-lg q-pt-md q-pb-sm">
@@ -162,46 +97,47 @@ function toggleAbout() {
 
           <q-separator v-if="subtitle" />
 
-          <slot name="sidebar" />
+          <div class="col column overflow-hidden">
+            <slot name="sidebar" />
+          </div>
         </template>
       </div>
     </aside>
+
+    <!-- Right Content Panel -->
+    <main class="col column bg-grey-2 content-panel">
+      <slot name="content" />
+    </main>
   </div>
 </template>
 
 <style scoped>
-.sidebar-floating {
-  top: 20px;
-  left: 20px;
-  bottom: 20px;
-  width: 30%;
+.sidebar-panel {
+  width: 550px;
   min-width: 550px;
-  max-width: 600px;
-  border-radius: 12px;
-  border: 1px solid rgba(0, 0, 0, 0.2);
+  border-right: 1px solid rgba(0, 0, 0, 0.08);
   overflow: hidden;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
-  z-index: 1000;
+  background: rgb(187, 126, 46);
 }
 
-@media (max-width: 1024px) {
-  .sidebar-floating {
-    width: 40%;
-    min-width: 400px;
+.content-panel {
+  overflow: hidden;
+}
+
+@media (max-width: 1200px) {
+  .sidebar-panel {
+    width: 450px;
+    min-width: 450px;
   }
 }
 
 @media (max-width: 768px) {
-  .sidebar-floating {
-    top: auto;
-    bottom: 0;
-    left: 0;
-    right: 0;
+  .sidebar-panel {
     width: 100%;
     min-width: 0;
-    max-width: none;
-    height: 50%;
-    border-radius: 12px 12px 0 0;
+    border-right: none;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+    max-height: 50vh;
   }
 }
 </style>
