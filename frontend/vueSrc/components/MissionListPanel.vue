@@ -1,5 +1,5 @@
 <template>
-  <aside class="mission-list-panel">
+  <div class="column full-height full-width bg-white">
     <header class="q-pa-md">
       <div class="row items-center justify-between q-mb-xs">
         <h1 class="text-h6 q-ma-none">Missions</h1>
@@ -12,69 +12,75 @@
 
     <q-separator />
 
-    <q-table
-      flat
-      :rows="visibleMissions"
-      :columns="columns"
-      row-key="mission_key"
-      :pagination="pagination"
-      class="mission-table"
-      :selected="selectedRows"
-    >
-      <!-- Custom body to control row classes -->
-      <template #body="props">
-        <q-tr
-          :props="props"
-          :class="[
-            'cursor-pointer',
-            getRowClass(props.row),
-            { 'hidden-row': hiddenMissions.has(props.row.mission_key) },
-          ]"
-          @click="handleRowClick($event, props.row)"
-        >
-          <q-td v-for="col in props.cols" :key="col.name" :props="props">
-            <template v-if="col.name === 'name'">
-              <div class="column">
-                <div class="text-weight-medium">
-                  {{ props.row.name || props.row.mission_key }}
+    <div class="col" style="overflow-x: auto; overflow-y: auto">
+      <q-table
+        flat
+        dense
+        :rows="visibleMissions"
+        :columns="columns"
+        row-key="mission_key"
+        :pagination="pagination"
+        :selected="selectedRows"
+        style="min-width: 100%"
+      >
+        <!-- Custom body to control row classes -->
+        <template #body="props">
+          <q-tr
+            :props="props"
+            :class="[
+              'cursor-pointer',
+              getRowClass(props.row),
+              { 'hidden-row': hiddenMissions.has(props.row.mission_key) },
+            ]"
+            @click="handleRowClick($event, props.row)"
+          >
+            <q-td v-for="col in props.cols" :key="col.name" :props="props">
+              <template v-if="col.name === 'name'">
+                <div class="column" style="max-width: 200px">
+                  <div class="text-weight-medium ellipsis">
+                    {{ props.row.name || props.row.mission_key }}
+                  </div>
+                  <div
+                    v-if="props.row.name"
+                    class="text-caption text-grey-6 ellipsis"
+                  >
+                    {{ props.row.mission_key }}
+                  </div>
                 </div>
-                <div v-if="props.row.name" class="text-caption text-grey-6">
-                  {{ props.row.mission_key }}
-                </div>
-              </div>
-            </template>
-            <template v-else-if="col.name === 'date'">
-              {{ formatDate(props.row.date) }}
-            </template>
-            <template v-else-if="col.name === 'size'">
-              <span v-if="props.row.metadata?.points">
-                {{ formatNumber(props.row.metadata.points) }} pts
-              </span>
-              <span v-else class="text-grey-5">N/A</span>
-            </template>
-            <template v-else-if="col.name === 'hide'">
-              <q-checkbox
-                :model-value="hiddenMissions.has(props.row.mission_key)"
-                @update:model-value="toggleHidden(props.row.mission_key)"
-                dense
-                @click.stop
-              />
-            </template>
-            <template v-else-if="col.name === 'actions'">
-              <q-btn
-                flat
-                dense
-                color="primary"
-                label="Explore"
-                size="sm"
-                @click.stop="handleExplore(props.row.mission_key)"
-              />
-            </template>
-          </q-td>
-        </q-tr>
-      </template>
-    </q-table>
-  </aside>
+              </template>
+              <template v-else-if="col.name === 'date'">
+                {{ formatDate(props.row.date) }}
+              </template>
+              <template v-else-if="col.name === 'size'">
+                <span v-if="props.row.metadata?.points">
+                  {{ formatNumber(props.row.metadata.points) }} pts
+                </span>
+                <span v-else class="text-grey-5">N/A</span>
+              </template>
+              <template v-else-if="col.name === 'hide'">
+                <q-checkbox
+                  :model-value="hiddenMissions.has(props.row.mission_key)"
+                  @update:model-value="toggleHidden(props.row.mission_key)"
+                  dense
+                  @click.stop
+                />
+              </template>
+              <template v-else-if="col.name === 'actions'">
+                <q-btn
+                  flat
+                  dense
+                  color="primary"
+                  label="Explore"
+                  size="sm"
+                  @click.stop="handleExplore(props.row.mission_key)"
+                />
+              </template>
+            </q-td>
+          </q-tr>
+        </template>
+      </q-table>
+    </div>
+  </div>
 </template>
 
 <script setup lang="ts">
@@ -226,18 +232,6 @@ function formatNumber(num: number | undefined): string {
 </script>
 
 <style scoped>
-.mission-list-panel {
-  width: 100%;
-  border-left: 1px solid var(--border-color);
-  background: white;
-  display: flex;
-  flex-direction: column;
-}
-
-.mission-table {
-  flex: 1;
-}
-
 :deep(.q-table tbody tr) {
   cursor: pointer;
 }

@@ -5,7 +5,7 @@ import {
   useDirectoryStore,
   type PotreeMetacloudState,
 } from "@/stores/directoryStore";
-import DefaultLayout from "@/layouts/DefaultLayout.vue";
+import MainAppLayout from "@/layouts/MainAppLayout.vue";
 import MissionFootprintMap from "@/components/MissionFootprintMap.vue";
 import MissionListPanel from "@/components/MissionListPanel.vue";
 
@@ -92,84 +92,49 @@ onMounted(() => {
 </script>
 
 <template>
-  <default-layout>
-    <q-page class="home-page">
+  <main-app-layout>
+    <template #sidebar>
       <!-- Loading State -->
-      <div v-if="isLoading" class="flex flex-center column full-height">
+      <div v-if="isLoading" class="flex flex-center column q-pa-xl">
         <q-spinner color="primary" size="48px" />
         <p class="q-mt-md text-grey-6">Loading missions...</p>
       </div>
 
       <!-- Error State -->
-      <div v-else-if="error" class="flex flex-center column full-height">
+      <div v-else-if="error" class="flex flex-center column q-pa-xl">
         <q-icon name="error_outline" color="negative" size="64px" />
         <p class="q-mt-md text-negative">{{ error }}</p>
         <q-btn flat color="primary" label="Retry" @click="loadMissions" />
       </div>
 
-      <!-- Content -->
-      <div v-else class="home-content">
-        <!-- Map -->
-        <div class="home-map">
-          <mission-footprint-map
-            :missions="enrichedMissions"
-            :selected-mission="selectedMission"
-            :hovered-mission="hoveredMission"
-            :zoom-to-mission="zoomToMission"
-            :hidden-missions="hiddenMissions"
-            @mission-select="onMissionSelect"
-            @mission-hover="onMissionHover"
-          />
-        </div>
+      <!-- Mission List -->
+      <mission-list-panel
+        v-else
+        :missions="enrichedMissions"
+        :selected-mission="selectedMission"
+        :hovered-mission="hoveredMission"
+        @select="onMissionSelect"
+        @hover="onMissionHover"
+        @explore="viewMission"
+        @hidden-missions-change="onHiddenMissionsChange"
+      />
+    </template>
 
-        <!-- Mission List Panel -->
-        <mission-list-panel
-          class="home-sidebar"
-          :missions="enrichedMissions"
-          :selected-mission="selectedMission"
-          :hovered-mission="hoveredMission"
-          @select="onMissionSelect"
-          @hover="onMissionHover"
-          @explore="viewMission"
-          @hidden-missions-change="onHiddenMissionsChange"
-        />
-      </div>
-    </q-page>
-  </default-layout>
+    <template #content>
+      <mission-footprint-map
+        v-if="!isLoading && !error"
+        :missions="enrichedMissions"
+        :selected-mission="selectedMission"
+        :hovered-mission="hoveredMission"
+        :zoom-to-mission="zoomToMission"
+        :hidden-missions="hiddenMissions"
+        @mission-select="onMissionSelect"
+        @mission-hover="onMissionHover"
+      />
+    </template>
+  </main-app-layout>
 </template>
 
 <style scoped>
-.home-page {
-  height: calc(100vh - var(--header-height));
-}
-
-.home-content {
-  display: flex;
-  height: 100%;
-}
-
-.home-map {
-  flex: 1;
-  min-width: 0;
-}
-
-.home-sidebar {
-  width: 600px;
-}
-
-@media (max-width: 900px) {
-  .home-content {
-    flex-direction: column;
-  }
-
-  .home-map {
-    height: 300px;
-  }
-
-  .home-sidebar {
-    width: 100%;
-    border-left: none;
-    border-top: 1px solid var(--border-color);
-  }
-}
+/* Styles are now handled by MainAppLayout */
 </style>

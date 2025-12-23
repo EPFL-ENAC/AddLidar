@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { watch, computed } from "vue";
+import { useRouter } from "vue-router";
 import { useDirectoryStore } from "@/stores/directoryStore";
-import ViewerLayout from "@/layouts/ViewerLayout.vue";
+import MainAppLayout from "@/layouts/MainAppLayout.vue";
 import PointCloudViewer from "@/components/pointcloud/PointCloudViewer.vue";
 import ViewerSidebar from "@/components/pointcloud/ViewerSidebar.vue";
 
@@ -9,6 +10,7 @@ const props = defineProps<{
   missionId: string;
 }>();
 
+const router = useRouter();
 const directoryStore = useDirectoryStore();
 
 const missionName = computed(
@@ -22,15 +24,19 @@ watch(
   },
   { immediate: true },
 );
+
+function handleBack() {
+  router.push("/");
+}
 </script>
 
 <template>
-  <viewer-layout :mission-name="missionName">
-    <template #viewer>
-      <point-cloud-viewer />
-    </template>
+  <main-app-layout show-back-button :subtitle="missionName" @back="handleBack">
     <template #sidebar>
       <viewer-sidebar />
     </template>
-  </viewer-layout>
+    <template #content>
+      <point-cloud-viewer />
+    </template>
+  </main-app-layout>
 </template>
