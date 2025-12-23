@@ -17,70 +17,6 @@
       <q-spinner color="primary" size="40px" />
       <div class="text-grey-6 q-mt-sm">Loading mission footprints...</div>
     </div>
-    <q-card
-      flat
-      bordered
-      style="
-        position: absolute;
-        top: 10px;
-        right: 10px;
-        z-index: 1000;
-        min-width: 160px;
-      "
-      class="q-pa-sm"
-    >
-      <div class="text-subtitle2 q-mb-xs">Mission Status</div>
-      <div class="column q-gutter-xs">
-        <div class="row items-center no-wrap">
-          <div
-            style="
-              width: 12px;
-              height: 12px;
-              background: #4caf50;
-              border-radius: 2px;
-            "
-            class="q-mr-xs"
-          ></div>
-          <span class="text-caption">Completed/Processed</span>
-        </div>
-        <div class="row items-center no-wrap">
-          <div
-            style="
-              width: 12px;
-              height: 12px;
-              background: #ff9800;
-              border-radius: 2px;
-            "
-            class="q-mr-xs"
-          ></div>
-          <span class="text-caption">Pending</span>
-        </div>
-        <div class="row items-center no-wrap">
-          <div
-            style="
-              width: 12px;
-              height: 12px;
-              background: #f44336;
-              border-radius: 2px;
-            "
-            class="q-mr-xs"
-          ></div>
-          <span class="text-caption">Error</span>
-        </div>
-        <div class="row items-center no-wrap">
-          <div
-            style="
-              width: 12px;
-              height: 12px;
-              background: #9e9e9e;
-              border-radius: 2px;
-            "
-            class="q-mr-xs"
-          ></div>
-          <span class="text-caption">Unknown</span>
-        </div>
-      </div>
-    </q-card>
   </div>
 </template>
 
@@ -106,8 +42,27 @@ const emit = defineEmits<{
 const props = defineProps<{
   missions: Mission[];
   selectedMission?: string | null;
+  hoveredMission?: string | null;
   zoomToMission?: string | null;
 }>();
+
+// Constants
+const DEFAULT_CENTER: [number, number] = [6.566, 46.52];
+const DEFAULT_ZOOM = 8;
+const NEUTRAL_COLOR = "#9e9e9e";
+const NEUTRAL_LINE_COLOR = "#616161";
+
+const OPACITY = {
+  HOVERED: 0.7,
+  SELECTED: 0.8,
+  NORMAL: 0.4,
+} as const;
+
+const LINE_WIDTH = {
+  HOVERED: 2.5,
+  SELECTED: 3,
+  NORMAL: 2,
+} as const;
 
 const directoryStore = useDirectoryStore();
 const mapContainer = ref<HTMLDivElement>();
@@ -116,12 +71,95 @@ const isLoading = ref(true);
 let map: maplibregl.Map | null = null;
 let popup: maplibregl.Popup | null = null;
 const missionFootprints = ref<Record<string, any>>({});
+const missionColors = ref<Record<string, string>>({});
+
+function generateColorFromKey(key: string): string {
+  let hash = 0;
+  for (let i = 0; i < key.length; i++) {
+    hash = key.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const hue = Math.abs(hash % 360);
+  return `hsl(${hue}, 70%, 50%)`;
+}
+
+function createPaintExpression(fallback: string) {
+  return [
+    "case",
+    ["==", ["get", "mission_key"], props.hoveredMission || ""],
+    ["get", "color"],
+    ["==", ["get", "mission_key"], props.selectedMission || ""],
+    ["get", "color"],
+    // If there's a hovered or selected mission and this isn't it, show gray
+    [
+      "any",
+      ["!=", props.hoveredMission || "", ""],
+      ["!=", props.selectedMission || "", ""],
+    ],
+    fallback,
+    // Otherwise show the mission's color
+    ["get", "color"],
+  ] as any;
+}
+
+function createOpacityExpression() {
+  return [
+    "case",
+    ["==", ["get", "mission_key"], props.hoveredMission || ""],
+    OPACITY.HOVERED,
+    ["==", ["get", "mission_key"], props.selectedMission || ""],
+    OPACITY.SELECTED,
+    // If there's a hovered or selected mission and this isn't it, dim it
+    [
+      "any",
+      ["!=", props.hoveredMission || "", ""],
+      ["!=", props.selectedMission || "", ""],
+    ],
+    0.3,
+    // Otherwise normal opacity
+    OPACITY.NORMAL,
+  ] as any;
+}
+
+function createLineWidthExpression() {
+  return [
+    "case",
+    ["==", ["get", "mission_key"], props.hoveredMission || ""],
+    LINE_WIDTH.HOVERED,
+    ["==", ["get", "mission_key"], props.selectedMission || ""],
+    LINE_WIDTH.SELECTED,
+    // If there's a hovered or selected mission and this isn't it, thin line
+    [
+      "any",
+      ["!=", props.hoveredMission || "", ""],
+      ["!=", props.selectedMission || "", ""],
+    ],
+    1.5,
+    // Otherwise normal width
+    LINE_WIDTH.NORMAL,
+  ] as any;
+}
+
+function extendBoundsFromGeometry(
+  bounds: maplibregl.LngLatBounds,
+  geometry: any,
+) {
+  if (geometry.type === "Polygon") {
+    geometry.coordinates[0].forEach((coord: number[]) => {
+      if (coord.length >= 2) bounds.extend([coord[0], coord[1]]);
+    });
+  } else if (geometry.type === "MultiPolygon") {
+    geometry.coordinates.forEach((polygon: number[][][]) => {
+      polygon[0].forEach((coord: number[]) => {
+        if (coord.length >= 2) bounds.extend([coord[0], coord[1]]);
+      });
+    });
+  }
+}
 
 // Initialize the map
 onMounted(async () => {
   if (!mapContainer.value) return;
 
-  // Create the map
   map = new maplibregl.Map({
     container: mapContainer.value,
     style: {
@@ -142,11 +180,15 @@ onMounted(async () => {
           id: "osm",
           type: "raster",
           source: "osm",
+          paint: {
+            "raster-saturation": -0.25,
+            "raster-brightness-min": 0.25,
+          },
         },
       ],
     },
-    center: [6.566, 46.52], // Switzerland coordinates as default
-    zoom: 8,
+    center: DEFAULT_CENTER,
+    zoom: DEFAULT_ZOOM,
   });
 
   // Wait for map to load
@@ -162,57 +204,23 @@ onMounted(async () => {
       },
     });
 
-    // Add mission footprints layer (fill)
     map.addLayer({
       id: "mission-footprints-fill",
       type: "fill",
       source: "mission-footprints",
       paint: {
-        "fill-color": [
-          "case",
-          ["==", ["get", "processing_status"], "completed"],
-          "#4caf50",
-          ["==", ["get", "processing_status"], "processed"],
-          "#4caf50",
-          ["==", ["get", "processing_status"], "pending"],
-          "#ff9800",
-          ["==", ["get", "processing_status"], "error"],
-          "#f44336",
-          "#9e9e9e",
-        ],
-        "fill-opacity": [
-          "case",
-          ["==", ["get", "mission_key"], props.selectedMission || ""],
-          0.8,
-          0.4,
-        ],
+        "fill-color": createPaintExpression(NEUTRAL_COLOR),
+        "fill-opacity": createOpacityExpression(),
       },
     });
 
-    // Add mission footprints layer (outline)
     map.addLayer({
       id: "mission-footprints-line",
       type: "line",
       source: "mission-footprints",
       paint: {
-        "line-color": [
-          "case",
-          ["==", ["get", "processing_status"], "completed"],
-          "#2e7d32",
-          ["==", ["get", "processing_status"], "processed"],
-          "#2e7d32",
-          ["==", ["get", "processing_status"], "pending"],
-          "#ef6c00",
-          ["==", ["get", "processing_status"], "error"],
-          "#c62828",
-          "#616161",
-        ],
-        "line-width": [
-          "case",
-          ["==", ["get", "mission_key"], props.selectedMission || ""],
-          3,
-          2,
-        ],
+        "line-color": createPaintExpression(NEUTRAL_LINE_COLOR),
+        "line-width": createLineWidthExpression(),
       },
     });
 
@@ -226,54 +234,8 @@ onMounted(async () => {
       }
     });
 
-    // Add hover handlers
-    map.on("mouseenter", "mission-footprints-fill", (e) => {
-      if (map) {
-        map.getCanvas().style.cursor = "pointer";
-        if (e.features && e.features[0]) {
-          const feature = e.features[0];
-          const missionKey = feature.properties?.mission_key;
-          if (missionKey) {
-            emit("missionHover", missionKey);
-
-            // Create popup with mission info
-            const status = feature.properties?.processing_status || "unknown";
-            const lastChecked = feature.properties?.last_checked_time;
-            const lastProcessed = feature.properties?.last_processed_time;
-
-            const popupContent = `
-              <div class="mission-popup">
-                <h4>${missionKey}</h4>
-                <p><strong>Status:</strong> ${status.charAt(0).toUpperCase() + status.slice(1)}</p>
-                ${lastChecked ? `<p><strong>Last Checked:</strong> ${new Date(lastChecked).toLocaleString()}</p>` : ""}
-                ${lastProcessed ? `<p><strong>Last Processed:</strong> ${new Date(lastProcessed).toLocaleString()}</p>` : ""}
-                <p class="popup-hint">Click to select mission</p>
-              </div>
-            `;
-
-            popup = new maplibregl.Popup({
-              closeButton: false,
-              closeOnClick: false,
-            })
-              .setLngLat(e.lngLat)
-              .setHTML(popupContent)
-              .addTo(map);
-          }
-        }
-      }
-    });
-
-    map.on("mouseleave", "mission-footprints-fill", () => {
-      if (map) {
-        map.getCanvas().style.cursor = "";
-        emit("missionHover", null);
-
-        if (popup) {
-          popup.remove();
-          popup = null;
-        }
-      }
-    });
+    map.on("mouseenter", "mission-footprints-fill", handleMouseEnter);
+    map.on("mouseleave", "mission-footprints-fill", handleMouseLeave);
 
     // Load footprints for existing missions
     loadMissionFootprints();
@@ -297,21 +259,15 @@ watch(
   { deep: true },
 );
 
-// Watch for selected mission changes
 watch(
-  () => props.selectedMission,
-  () => {
-    updateSelectedMission();
-  },
+  [() => props.selectedMission, () => props.hoveredMission],
+  updateMapStyling,
 );
 
-// Watch for zoom to mission requests
 watch(
   () => props.zoomToMission,
   (missionKey) => {
-    if (missionKey) {
-      zoomToMission(missionKey);
-    }
+    if (missionKey) zoomToMission(missionKey);
   },
 );
 
@@ -336,14 +292,17 @@ async function loadMissionFootprints() {
             mission.mission_key,
           );
 
-          // Validate GeoJSON structure
-          if (geojson && geojson.features && Array.isArray(geojson.features)) {
+          if (!missionColors.value[mission.mission_key]) {
+            missionColors.value[mission.mission_key] = generateColorFromKey(
+              mission.mission_key,
+            );
+          }
+
+          if (geojson?.features) {
             geojson.features.forEach((feature: any) => {
-              // Only add valid features with geometry
               if (
-                feature.geometry &&
-                (feature.geometry.type === "Polygon" ||
-                  feature.geometry.type === "MultiPolygon")
+                feature.geometry?.type === "Polygon" ||
+                feature.geometry?.type === "MultiPolygon"
               ) {
                 feature.properties = {
                   ...feature.properties,
@@ -352,6 +311,7 @@ async function loadMissionFootprints() {
                   last_checked_time: mission.last_checked_time,
                   last_processed_time: mission.last_processed_time,
                   error_message: mission.error_message,
+                  color: missionColors.value[mission.mission_key],
                 };
                 features.push(feature);
               }
@@ -369,39 +329,20 @@ async function loadMissionFootprints() {
 
     await Promise.all(footprintPromises);
 
-    // Update the map source
     const source = map.getSource(
       "mission-footprints",
     ) as maplibregl.GeoJSONSource;
-    if (source) {
-      source.setData({
-        type: "FeatureCollection",
-        features,
-      });
-    }
+    source?.setData({
+      type: "FeatureCollection",
+      features,
+    });
 
-    // Fit map to footprints if we have any
     if (features.length > 0) {
       const bounds = new maplibregl.LngLatBounds();
-      features.forEach((feature) => {
-        if (feature.geometry.type === "Polygon") {
-          feature.geometry.coordinates[0].forEach((coord: number[]) => {
-            if (coord.length >= 2) {
-              bounds.extend([coord[0], coord[1]]);
-            }
-          });
-        } else if (feature.geometry.type === "MultiPolygon") {
-          feature.geometry.coordinates.forEach((polygon: number[][][]) => {
-            polygon[0].forEach((coord: number[]) => {
-              if (coord.length >= 2) {
-                bounds.extend([coord[0], coord[1]]);
-              }
-            });
-          });
-        }
-      });
+      features.forEach((feature) =>
+        extendBoundsFromGeometry(bounds, feature.geometry),
+      );
 
-      // Only fit bounds if bounds are valid
       if (!bounds.isEmpty()) {
         map.fitBounds(bounds, { padding: 50 });
       }
@@ -413,61 +354,86 @@ async function loadMissionFootprints() {
   }
 }
 
-// Zoom to a specific mission's footprint
 function zoomToMission(missionKey: string) {
-  if (!map || !missionFootprints.value[missionKey]) return;
-
   const geojson = missionFootprints.value[missionKey];
-  if (!geojson || !geojson.features || geojson.features.length === 0) return;
+  if (!map || !geojson?.features?.length) return;
 
-  // Calculate bounds for the mission's footprint
   const bounds = new maplibregl.LngLatBounds();
-  geojson.features.forEach((feature: any) => {
-    if (feature.geometry.type === "Polygon") {
-      feature.geometry.coordinates[0].forEach((coord: number[]) => {
-        if (coord.length >= 2) {
-          bounds.extend([coord[0], coord[1]]);
-        }
-      });
-    } else if (feature.geometry.type === "MultiPolygon") {
-      feature.geometry.coordinates.forEach((polygon: number[][][]) => {
-        polygon[0].forEach((coord: number[]) => {
-          if (coord.length >= 2) {
-            bounds.extend([coord[0], coord[1]]);
-          }
-        });
-      });
-    }
-  });
+  geojson.features.forEach((feature: any) =>
+    extendBoundsFromGeometry(bounds, feature.geometry),
+  );
 
-  // Fit to the mission's bounds with some padding
   if (!bounds.isEmpty()) {
-    map.fitBounds(bounds, {
-      padding: 100,
-      duration: 1000, // Smooth animation duration in milliseconds
-    });
+    map.fitBounds(bounds, { padding: 100, duration: 1000 });
   }
 }
 
-// Update the selected mission styling
-function updateSelectedMission() {
+function updateMapStyling() {
   if (!map) return;
 
-  // Update the fill opacity for selected mission
-  map.setPaintProperty("mission-footprints-fill", "fill-opacity", [
-    "case",
-    ["==", ["get", "mission_key"], props.selectedMission || ""],
-    0.8,
-    0.4,
-  ]);
+  map.setPaintProperty(
+    "mission-footprints-fill",
+    "fill-color",
+    createPaintExpression(NEUTRAL_COLOR),
+  );
+  map.setPaintProperty(
+    "mission-footprints-line",
+    "line-color",
+    createPaintExpression(NEUTRAL_LINE_COLOR),
+  );
+  map.setPaintProperty(
+    "mission-footprints-fill",
+    "fill-opacity",
+    createOpacityExpression(),
+  );
+  map.setPaintProperty(
+    "mission-footprints-line",
+    "line-width",
+    createLineWidthExpression(),
+  );
+}
 
-  // Update the line width for selected mission
-  map.setPaintProperty("mission-footprints-line", "line-width", [
-    "case",
-    ["==", ["get", "mission_key"], props.selectedMission || ""],
-    3,
-    2,
-  ]);
+function handleMouseEnter(e: maplibregl.MapLayerMouseEvent) {
+  if (!map) return;
+
+  map.getCanvas().style.cursor = "pointer";
+  const feature = e.features?.[0];
+  const missionKey = feature?.properties?.mission_key;
+
+  if (missionKey) {
+    emit("missionHover", missionKey);
+
+    const { processing_status, last_checked_time, last_processed_time } =
+      feature.properties;
+    const status = processing_status || "unknown";
+
+    const popupContent = `
+      <div class="mission-popup">
+        <h4>${missionKey}</h4>
+        <p><strong>Status:</strong> ${status.charAt(0).toUpperCase() + status.slice(1)}</p>
+        ${last_checked_time ? `<p><strong>Last Checked:</strong> ${new Date(last_checked_time).toLocaleString()}</p>` : ""}
+        ${last_processed_time ? `<p><strong>Last Processed:</strong> ${new Date(last_processed_time).toLocaleString()}</p>` : ""}
+        <p class="popup-hint">Click to select mission</p>
+      </div>
+    `;
+
+    popup = new maplibregl.Popup({
+      closeButton: false,
+      closeOnClick: false,
+    })
+      .setLngLat(e.lngLat)
+      .setHTML(popupContent)
+      .addTo(map);
+  }
+}
+
+function handleMouseLeave() {
+  if (!map) return;
+
+  map.getCanvas().style.cursor = "";
+  emit("missionHover", null);
+  popup?.remove();
+  popup = null;
 }
 </script>
 

@@ -106,6 +106,7 @@
       <!-- Action button -->
       <q-btn
         unelevated
+        outline
         color="primary"
         label="Explore Point Cloud"
         icon="3d_rotation"

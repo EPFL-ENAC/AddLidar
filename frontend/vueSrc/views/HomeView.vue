@@ -109,6 +109,7 @@ onMounted(() => {
           <mission-footprint-map
             :missions="enrichedMissions"
             :selected-mission="selectedMission"
+            :hovered-mission="hoveredMission"
             :zoom-to-mission="zoomToMission"
             @mission-select="onMissionSelect"
             @mission-hover="onMissionHover"
