@@ -77,7 +77,7 @@ function toggleAbout() {
       </header>
 
       <!-- Sidebar Content -->
-      <div class="col overflow-hidden column">
+      <div class="col overflow-auto column sidebar-scrollable">
         <about-content v-if="showAbout" />
         <template v-else>
           <!-- Mission Name Title -->
@@ -115,6 +115,7 @@ function toggleAbout() {
 .sidebar-panel {
   width: 550px;
   min-width: 550px;
+  max-height: 100vh;
   border-right: 1px solid rgba(0, 0, 0, 0.08);
   overflow: hidden;
   background: rgb(187, 126, 46);
@@ -122,6 +123,30 @@ function toggleAbout() {
 
 .content-panel {
   overflow: hidden;
+}
+
+/* Modern minimalist scrollbar */
+.sidebar-scrollable {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(0, 0, 0, 0.2) transparent;
+  min-height: 0;
+}
+
+.sidebar-scrollable::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sidebar-scrollable::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sidebar-scrollable::-webkit-scrollbar-thumb {
+  background-color: rgba(0, 0, 0, 0.2);
+  border-radius: 3px;
+}
+
+.sidebar-scrollable::-webkit-scrollbar-thumb:hover {
+  background-color: rgba(0, 0, 0, 0.3);
 }
 
 @media (max-width: 1200px) {

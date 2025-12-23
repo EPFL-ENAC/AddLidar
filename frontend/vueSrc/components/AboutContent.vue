@@ -40,9 +40,13 @@ const projections = ["EPSG:4326", "EPSG:3857", "EPSG:2056"];
       <div v-for="feature in features" :key="feature.icon" class="col-12">
         <q-card flat bordered class="full-height">
           <q-card-section class="text-center">
-            <q-icon :name="feature.icon" size="40px" color="primary" />
-            <div class="text-subtitle1 text-weight-medium q-mt-sm">
-              {{ feature.title }}
+            <div class="text-subtitle1 text-weight-medium q-mt-xs">
+              <q-icon
+                :name="feature.icon"
+                size="36px"
+                color="primary"
+                class="q-pr-md"
+              />{{ feature.title }}
             </div>
             <div class="text-caption text-grey-6 q-mt-xs">
               {{ feature.description }}
