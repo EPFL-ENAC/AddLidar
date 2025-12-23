@@ -3,7 +3,6 @@
     <header class="q-pa-md">
       <div class="row items-center justify-between q-mb-xs">
         <h1 class="text-h6 q-ma-none">Missions</h1>
-        <q-badge color="primary" :label="visibleMissions.length" />
       </div>
       <p class="text-caption text-grey-6 q-ma-none">
         Select a mission to explore LiDAR data
@@ -19,7 +18,6 @@
         row-key="mission_key"
         :pagination="pagination"
         :selected="selectedRows"
-        dense
       >
         <!-- Custom body to control row classes -->
         <template #body="props">
@@ -34,7 +32,7 @@
             <q-td v-for="col in props.cols" :key="col.name" :props="props">
               <template v-if="col.name === 'name'">
                 <div class="column" style="max-width: 200px">
-                  <div class="text-weight-medium ellipsis">
+                  <div class="ellipsis">
                     {{ props.row.name || props.row.mission_key }}
                   </div>
                   <div
@@ -81,6 +79,16 @@
               </template>
             </q-td>
           </q-tr>
+
+          <!-- Expanded row content -->
+          <q-tr v-if="props.row.mission_key === selectedMission" :props="props">
+            <q-td colspan="100%">
+              <mission-expanded-details
+                :mission="props.row"
+                @explore="handleExplore"
+              />
+            </q-td>
+          </q-tr>
         </template>
       </q-table>
     </div>
@@ -91,6 +99,7 @@
 import { ref, computed } from "vue";
 import { useQuasar } from "quasar";
 import type { QTableColumn } from "quasar";
+import MissionExpandedDetails from "./MissionExpandedDetails.vue";
 
 interface MissionMetadata {
   points?: number;
@@ -108,11 +117,13 @@ interface Mission {
   last_checked_time?: string | null;
   last_processed_time?: string | null;
   error_message?: string | null;
+  detailed_error_message?: string | null;
+  extra_attributes?: string | null;
   metadata?: MissionMetadata | null;
 }
 
 const emit = defineEmits<{
-  select: [missionKey: string];
+  select: [missionKey: string | null];
   hover: [missionKey: string | null];
   explore: [missionKey: string];
   hiddenMissionsChange: [hiddenMissions: Set<string>];
@@ -207,8 +218,14 @@ function toggleHidden(missionKey: string) {
 }
 
 function handleRowClick(_evt: Event, row: Mission) {
-  emit("select", row.mission_key);
-  emit("hover", row.mission_key);
+  // Toggle selection: unselect if clicking the same row
+  if (props.selectedMission === row.mission_key) {
+    emit("select", null);
+    emit("hover", null);
+  } else {
+    emit("select", row.mission_key);
+    emit("hover", row.mission_key);
+  }
 }
 
 function handleExplore(missionKey: string) {
@@ -257,6 +274,16 @@ function formatNumber(num: number | undefined): string {
 <style scoped>
 :deep(.q-table tbody tr) {
   cursor: pointer;
+}
+
+:deep(.q-table tbody td) {
+  padding-top: 1.25rem !important;
+  padding-bottom: 1.25rem !important;
+}
+
+:deep(.q-table thead th) {
+  padding-top: 1rem !important;
+  padding-bottom: 1rem !important;
 }
 
 :deep(.q-table__card) {
