@@ -11,13 +11,15 @@
 
     <q-separator />
 
-    <div class="col" style="overflow-x: auto; overflow-y: auto">
+    <div class="col q-pa-md" style="overflow-x: auto; overflow-y: auto">
       <q-table
         :rows="visibleMissions"
         :columns="columns"
         row-key="mission_key"
         :pagination="pagination"
         :selected="selectedRows"
+        bordered
+        low-density
       >
         <!-- Custom body to control row classes -->
         <template #body="props">
@@ -64,11 +66,10 @@
                 <q-btn
                   v-if="isProcessed(props.row)"
                   flat
-                  dense
-                  round
                   color="primary"
-                  icon="visibility"
-                  size="sm"
+                  outline
+                  push
+                  icon="open_in_new"
                   @click.stop="handleExplore(props.row.mission_key)"
                 >
                   <q-tooltip>Explore mission</q-tooltip>
@@ -190,7 +191,7 @@ const columns = computed(() => {
   }
 
   // Add size if screen is large or larger
-  if ($q.screen.gt.sm) {
+  if ($q.screen.gt.lg) {
     cols.push(allColumns[2]); // size
   }
 
@@ -291,7 +292,7 @@ function formatNumber(num: number | undefined): string {
 }
 
 :deep(.q-table tbody tr:hover) {
-  background-color: rgba(var(--q-primary-rgb), 0.05);
+  background-color: rgba(var(--q-primary-rgb), 0.001) !important;
 }
 
 :deep(.q-table tbody tr.hidden-row) {
