@@ -175,11 +175,12 @@ function toggleAbout() {
   left: 20px;
   bottom: 20px;
   width: 30%;
-  min-width: 400px;
+  min-width: 550px;
   max-width: 600px;
   border-radius: 12px;
+  border: 1px solid rgba(0, 0, 0, 0.2);
   overflow: hidden;
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
   z-index: 1000;
 }
 

@@ -1,5 +1,5 @@
 <template>
-  <div class="column full-height full-width bg-white">
+  <div class="column full-height bg-white">
     <header class="q-pa-md">
       <div class="row items-center justify-between q-mb-xs">
         <h1 class="text-h6 q-ma-none">Missions</h1>
@@ -14,14 +14,12 @@
 
     <div class="col" style="overflow-x: auto; overflow-y: auto">
       <q-table
-        flat
-        dense
         :rows="visibleMissions"
         :columns="columns"
         row-key="mission_key"
         :pagination="pagination"
         :selected="selectedRows"
-        style="min-width: 100%"
+        dense
       >
         <!-- Custom body to control row classes -->
         <template #body="props">
@@ -29,7 +27,6 @@
             :props="props"
             :class="[
               'cursor-pointer',
-              getRowClass(props.row),
               { 'hidden-row': hiddenMissions.has(props.row.mission_key) },
             ]"
             @click="handleRowClick($event, props.row)"
@@ -67,13 +64,20 @@
               </template>
               <template v-else-if="col.name === 'actions'">
                 <q-btn
+                  v-if="isProcessed(props.row)"
                   flat
                   dense
+                  round
                   color="primary"
-                  label="Explore"
+                  icon="visibility"
                   size="sm"
                   @click.stop="handleExplore(props.row.mission_key)"
-                />
+                >
+                  <q-tooltip>Explore mission</q-tooltip>
+                </q-btn>
+                <q-icon v-else name="warning" color="warning" size="sm">
+                  <q-tooltip>{{ getStatusTooltip(props.row) }}</q-tooltip>
+                </q-icon>
               </template>
             </q-td>
           </q-tr>
@@ -85,6 +89,7 @@
 
 <script setup lang="ts">
 import { ref, computed } from "vue";
+import { useQuasar } from "quasar";
 import type { QTableColumn } from "quasar";
 
 interface MissionMetadata {
@@ -119,12 +124,13 @@ const props = defineProps<{
   hoveredMission?: string | null;
 }>();
 
+const $q = useQuasar();
 const hiddenMissions = ref(new Set<string>());
 const pagination = ref({
   rowsPerPage: 0, // Show all rows
 });
 
-const columns: QTableColumn[] = [
+const allColumns: QTableColumn[] = [
   {
     name: "name",
     label: "Name",
@@ -162,6 +168,28 @@ const columns: QTableColumn[] = [
   },
 ];
 
+const columns = computed(() => {
+  const cols = [
+    allColumns[0], // Always show name
+  ];
+
+  // Add date if screen is medium or larger (gt.xs means greater than extra small)
+  if ($q.screen.gt.xs) {
+    cols.push(allColumns[1]); // date
+  }
+
+  // Add size if screen is large or larger
+  if ($q.screen.gt.sm) {
+    cols.push(allColumns[2]); // size
+  }
+
+  // Always show hide and actions
+  cols.push(allColumns[3]); // hide
+  cols.push(allColumns[4]); // actions
+
+  return cols;
+});
+
 const visibleMissions = computed(() => props.missions);
 
 const selectedRows = computed(() => {
@@ -187,25 +215,20 @@ function handleExplore(missionKey: string) {
   emit("explore", missionKey);
 }
 
-function getRowClass(row: Mission) {
-  console.log("Determining row class for mission", row.mission_key);
+function isProcessed(row: Mission): boolean {
   const status = row.processing_status?.toLowerCase();
-  console.log(
-    `Mission: ${row.mission_key}, Status: "${row.processing_status}" -> "${status}"`,
+  return (
+    status === "completed" || status === "processed" || status === "success"
   );
-  switch (status) {
-    case "completed":
-    case "processed":
-    case "success":
-      return ""; // No background color for successful missions
-    case "pending":
-      return "row-warning";
-    case "error":
-    case "failed":
-      return "row-error";
-    default:
-      return "row-unknown";
+}
+
+function getStatusTooltip(row: Mission): string {
+  const status = row.processing_status?.toLowerCase();
+  if (status === "pending") return "Processing in progress";
+  if (status === "error" || status === "failed") {
+    return row.error_message || "Processing failed";
   }
+  return "Mission not available";
 }
 
 function formatDate(dateStr: string | null | undefined): string {
@@ -238,24 +261,6 @@ function formatNumber(num: number | undefined): string {
 
 :deep(.q-table__card) {
   box-shadow: none;
-}
-
-:deep(.q-table tbody tr.row-warning) {
-  background-color: rgba(255, 152, 0, 0.12) !important;
-}
-
-:deep(.q-table tbody tr.row-error) {
-  background-color: rgba(244, 67, 54, 0.12) !important;
-}
-
-:deep(.q-table tbody tr.row-unknown) {
-  background-color: rgba(158, 158, 158, 0.1) !important;
-}
-
-:deep(.q-table tbody tr.row-warning:hover),
-:deep(.q-table tbody tr.row-error:hover),
-:deep(.q-table tbody tr.row-unknown:hover) {
-  background-color: rgba(var(--q-primary-rgb), 0.15) !important;
 }
 
 :deep(.q-table tbody tr:hover) {
