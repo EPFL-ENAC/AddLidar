@@ -22,7 +22,6 @@ const tabs = [
     <!-- Tab Navigation -->
     <q-tabs
       v-model="activeTab"
-      dense
       class="text-grey-7"
       active-color="primary"
       indicator-color="primary"
@@ -70,7 +69,8 @@ const tabs = [
 .sidebar-container {
   display: flex;
   flex-direction: column;
-  height: 100%;
+  flex: 1;
+  min-height: 0;
 }
 
 .sidebar-content {

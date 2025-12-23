@@ -27,12 +27,17 @@ function toggleAbout() {
 </script>
 
 <template>
-  <div class="row overflow-hidden" style="height: 100vh; width: 100vw">
-    <!-- Left Sidebar -->
-    <aside
-      class="column bg-white sidebar-width"
-      style="border-right: 1px solid #e0e0e0"
-    >
+  <div
+    class="relative-position overflow-hidden"
+    style="height: 100vh; width: 100vw"
+  >
+    <!-- Right Panel (Full Background) -->
+    <main class="absolute-full bg-grey-2">
+      <slot name="content" />
+    </main>
+
+    <!-- Left Sidebar (Floating) -->
+    <aside class="absolute column bg-white sidebar-floating">
       <!-- Header -->
       <header
         class="q-pa-md"
@@ -40,29 +45,24 @@ function toggleAbout() {
       >
         <div class="row items-center justify-between">
           <q-btn
-            v-if="showBackButton"
             flat
             round
             dense
             icon="arrow_back"
             color="grey-8"
             size="sm"
+            :style="{ visibility: showBackButton ? 'visible' : 'hidden' }"
             @click="handleBack"
           >
-            <q-tooltip>Back to missions</q-tooltip>
+            <q-tooltip v-if="showBackButton">Back to missions</q-tooltip>
           </q-btn>
 
-          <div class="col row items-center justify-center q-gutter-sm">
+          <div class="col row items-center justify-center q-gutter-sm q-pa-md">
             <img :src="EPFLLogo" alt="EPFL" style="height: 24px; width: auto" />
             <q-separator vertical inset />
-            <div class="column items-center">
-              <div class="row items-center q-gutter-xs">
-                <q-icon name="terrain" color="primary" size="20px" />
-                <span class="text-h6 text-weight-medium">AddLidar</span>
-              </div>
-              <div v-if="subtitle" class="text-caption text-grey-7 ellipsis">
-                {{ subtitle }}
-              </div>
+            <div class="row items-center q-gutter-xs">
+              <q-icon name="terrain" color="primary" size="20px" />
+              <span class="text-h6 text-weight-medium">AddLidar</span>
             </div>
           </div>
 
@@ -144,39 +144,63 @@ function toggleAbout() {
             Developed by EPFL-ENAC
           </div>
         </div>
-        <slot v-else name="sidebar" />
+        <template v-else>
+          <!-- Mission Name Title -->
+          <div v-if="subtitle" class="q-px-lg q-pt-md q-pb-sm">
+            <div class="row items-center q-my-md justify-between">
+              <div
+                class="text-overline text-grey-6"
+                style="letter-spacing: 0.5px"
+              >
+                SELECTED MISSION
+              </div>
+              <div class="text-h6 text-weight-medium ellipsis">
+                {{ subtitle }}
+              </div>
+            </div>
+          </div>
+
+          <q-separator v-if="subtitle" />
+
+          <slot name="sidebar" />
+        </template>
       </div>
     </aside>
-
-    <!-- Right Panel -->
-    <main class="col relative-position bg-grey-2">
-      <slot name="content" />
-    </main>
   </div>
 </template>
 
 <style scoped>
-.sidebar-width {
+.sidebar-floating {
+  top: 20px;
+  left: 20px;
+  bottom: 20px;
   width: 30%;
-  min-width: 500px;
+  min-width: 400px;
   max-width: 600px;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+  z-index: 1000;
 }
 
 @media (max-width: 1024px) {
-  .sidebar-width {
-    width: 35%;
-    min-width: 350px;
+  .sidebar-floating {
+    width: 40%;
+    min-width: 400px;
   }
 }
 
 @media (max-width: 768px) {
-  .sidebar-width {
+  .sidebar-floating {
+    top: auto;
+    bottom: 0;
+    left: 0;
+    right: 0;
     width: 100%;
     min-width: 0;
     max-width: none;
-    height: 40%;
-    border-right: none !important;
-    border-bottom: 1px solid #e0e0e0;
+    height: 50%;
+    border-radius: 12px 12px 0 0;
   }
 }
 </style>

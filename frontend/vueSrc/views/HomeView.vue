@@ -68,9 +68,11 @@ async function loadMissions() {
 }
 
 function onMissionSelect(missionKey: string) {
-  selectedMission.value = missionKey;
-  zoomToMission.value = missionKey;
-  setTimeout(() => (zoomToMission.value = null), 100);
+  selectedMission.value = missionKey || null;
+  if (missionKey) {
+    zoomToMission.value = missionKey;
+    setTimeout(() => (zoomToMission.value = null), 100);
+  }
 }
 
 function onMissionHover(missionKey: string | null) {

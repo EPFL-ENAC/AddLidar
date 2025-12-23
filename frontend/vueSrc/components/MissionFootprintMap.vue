@@ -232,6 +232,18 @@ onMounted(async () => {
       }
     });
 
+    // Add click handler for map background to deselect
+    map.on("click", (e) => {
+      if (!map) return;
+      const features = map.queryRenderedFeatures(e.point, {
+        layers: ["mission-footprints-fill"],
+      });
+      // If no features clicked, deselect
+      if (!features.length) {
+        emit("missionSelect", "");
+      }
+    });
+
     map.on("mouseenter", "mission-footprints-fill", handleMouseEnter);
     map.on("mousemove", "mission-footprints-fill", handleMouseMove);
     map.on("mouseleave", "mission-footprints-fill", handleMouseLeave);
@@ -274,6 +286,16 @@ watch(
     if (missionKey) zoomToMission(missionKey);
   },
 );
+
+function getSidebarWidth(): number {
+  // Try to get the actual sidebar width from the DOM
+  const sidebar = document.querySelector(".sidebar-floating");
+  if (sidebar) {
+    return sidebar.getBoundingClientRect().width;
+  }
+  // Fallback to calculated value if sidebar not found
+  return Math.min(Math.max(window.innerWidth * 0.3, 400), 850);
+}
 
 // Load footprints for all missions
 async function loadMissionFootprints() {
@@ -353,7 +375,11 @@ async function loadMissionFootprints() {
       );
 
       if (!bounds.isEmpty()) {
-        map.fitBounds(bounds, { padding: 50 });
+        // Get actual sidebar width from DOM
+        const sidebarWidth = getSidebarWidth();
+        map.fitBounds(bounds, {
+          padding: { top: 50, bottom: 50, left: sidebarWidth + 70, right: 50 },
+        });
       }
     }
   } catch (error) {
@@ -389,7 +415,12 @@ function zoomToMission(missionKey: string) {
   );
 
   if (!bounds.isEmpty()) {
-    map.fitBounds(bounds, { padding: 100, duration: 1000 });
+    // Get actual sidebar width from DOM
+    const sidebarWidth = getSidebarWidth();
+    map.fitBounds(bounds, {
+      padding: { top: 100, bottom: 100, left: sidebarWidth + 120, right: 100 },
+      duration: 1000,
+    });
   }
 }
 
