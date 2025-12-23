@@ -7,7 +7,7 @@ import {
 } from "@/stores/directoryStore";
 import DefaultLayout from "@/layouts/DefaultLayout.vue";
 import MissionFootprintMap from "@/components/MissionFootprintMap.vue";
-import MissionCard from "@/components/MissionCard.vue";
+import MissionListPanel from "@/components/MissionListPanel.vue";
 
 interface MissionWithMetadata extends PotreeMetacloudState {
   metadata?: {
@@ -117,43 +117,15 @@ onMounted(() => {
         </div>
 
         <!-- Mission List Panel -->
-        <aside class="home-sidebar">
-          <header class="q-pa-md">
-            <div class="row items-center justify-between q-mb-xs">
-              <h1 class="text-h6 q-ma-none">Missions</h1>
-              <q-badge color="primary" :label="enrichedMissions.length" />
-            </div>
-            <p class="text-caption text-grey-6 q-ma-none">
-              Select a mission to explore LiDAR data
-            </p>
-          </header>
-
-          <q-separator />
-
-          <q-scroll-area class="home-mission-list">
-            <div class="q-pa-md q-gutter-y-md">
-              <mission-card
-                v-for="mission in enrichedMissions"
-                :key="mission.mission_key"
-                :mission="mission"
-                :is-selected="mission.mission_key === selectedMission"
-                :is-hovered="mission.mission_key === hoveredMission"
-                @click="onMissionSelect"
-                @hover="onMissionHover"
-                @view="viewMission"
-              />
-
-              <!-- Empty State -->
-              <div v-if="!enrichedMissions.length" class="empty-state">
-                <q-icon name="folder_open" class="empty-state__icon" />
-                <div class="empty-state__title">No missions available</div>
-                <div class="empty-state__description">
-                  Check back later or contact your administrator
-                </div>
-              </div>
-            </div>
-          </q-scroll-area>
-        </aside>
+        <mission-list-panel
+          class="home-sidebar"
+          :missions="enrichedMissions"
+          :selected-mission="selectedMission"
+          :hovered-mission="hoveredMission"
+          @select="onMissionSelect"
+          @hover="onMissionHover"
+          @explore="viewMission"
+        />
       </div>
     </q-page>
   </default-layout>
@@ -175,15 +147,7 @@ onMounted(() => {
 }
 
 .home-sidebar {
-  width: 380px;
-  border-left: 1px solid var(--border-color);
-  background: white;
-  display: flex;
-  flex-direction: column;
-}
-
-.home-mission-list {
-  flex: 1;
+  width: 600px;
 }
 
 @media (max-width: 900px) {
