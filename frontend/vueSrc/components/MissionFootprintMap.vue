@@ -53,15 +53,9 @@ const NEUTRAL_COLOR = "#9e9e9e";
 const NEUTRAL_LINE_COLOR = "#616161";
 
 const OPACITY = {
-  HOVERED: 0.7,
-  SELECTED: 0.8,
-  NORMAL: 0.4,
-} as const;
-
-const LINE_WIDTH = {
-  HOVERED: 2.5,
-  SELECTED: 3,
-  NORMAL: 2,
+  HOVERED: 0.5,
+  SELECTED: 0.6,
+  NORMAL: 0.3,
 } as const;
 
 const directoryStore = useDirectoryStore();
@@ -72,6 +66,7 @@ let map: maplibregl.Map | null = null;
 let popup: maplibregl.Popup | null = null;
 const missionFootprints = ref<Record<string, any>>({});
 const missionColors = ref<Record<string, string>>({});
+const hoveredLineId = ref<string | null>(null);
 
 function generateColorFromKey(key: string): string {
   let hash = 0;
@@ -82,17 +77,35 @@ function generateColorFromKey(key: string): string {
   return `hsl(${hue}, 70%, 50%)`;
 }
 
+function varyColorForLine(baseColor: string, lineIndex: number): string {
+  // Extract hue from base color HSL format
+  const hueMatch = baseColor.match(/hsl\((\d+),/);
+  if (!hueMatch) return baseColor;
+
+  const baseHue = parseInt(hueMatch[1]);
+  // Vary hue by small increments based on sequential line index
+  const hueShift = ((lineIndex * 8) % 40) - 20;
+  const newHue = (baseHue + hueShift + 360) % 360;
+
+  // Also vary lightness slightly for better distinction
+  const lightness = 50 + ((lineIndex % 5) * 3 - 6);
+
+  return `hsl(${newHue}, 70%, ${lightness}%)`;
+}
+
 function createPaintExpression(fallback: string) {
   return [
     "case",
-    ["==", ["get", "mission_key"], props.hoveredMission || ""],
+    // Highlight the specific hovered line
+    ["==", ["get", "feature_id"], hoveredLineId.value || ""],
     ["get", "color"],
+    // Highlight selected mission lines
     ["==", ["get", "mission_key"], props.selectedMission || ""],
     ["get", "color"],
-    // If there's a hovered or selected mission and this isn't it, show gray
+    // If there's a hovered line or selected mission, dim others
     [
       "any",
-      ["!=", props.hoveredMission || "", ""],
+      ["!=", hoveredLineId.value || "", ""],
       ["!=", props.selectedMission || "", ""],
     ],
     fallback,
@@ -104,38 +117,21 @@ function createPaintExpression(fallback: string) {
 function createOpacityExpression() {
   return [
     "case",
-    ["==", ["get", "mission_key"], props.hoveredMission || ""],
-    OPACITY.HOVERED,
+    // Full opacity for hovered line
+    ["==", ["get", "feature_id"], hoveredLineId.value || ""],
+    0.8,
+    // Selected mission lines
     ["==", ["get", "mission_key"], props.selectedMission || ""],
-    OPACITY.SELECTED,
-    // If there's a hovered or selected mission and this isn't it, dim it
+    0.7,
+    // If there's a hovered line or selected mission, dim others
     [
       "any",
-      ["!=", props.hoveredMission || "", ""],
+      ["!=", hoveredLineId.value || "", ""],
       ["!=", props.selectedMission || "", ""],
     ],
-    0.3,
+    0.2,
     // Otherwise normal opacity
     OPACITY.NORMAL,
-  ] as any;
-}
-
-function createLineWidthExpression() {
-  return [
-    "case",
-    ["==", ["get", "mission_key"], props.hoveredMission || ""],
-    LINE_WIDTH.HOVERED,
-    ["==", ["get", "mission_key"], props.selectedMission || ""],
-    LINE_WIDTH.SELECTED,
-    // If there's a hovered or selected mission and this isn't it, thin line
-    [
-      "any",
-      ["!=", props.hoveredMission || "", ""],
-      ["!=", props.selectedMission || "", ""],
-    ],
-    1.5,
-    // Otherwise normal width
-    LINE_WIDTH.NORMAL,
   ] as any;
 }
 
@@ -181,8 +177,8 @@ onMounted(async () => {
           type: "raster",
           source: "osm",
           paint: {
-            "raster-saturation": -0.25,
-            "raster-brightness-min": 0.25,
+            "raster-saturation": -0.75,
+            "raster-brightness-min": 0.5,
           },
         },
       ],
@@ -220,7 +216,7 @@ onMounted(async () => {
       source: "mission-footprints",
       paint: {
         "line-color": createPaintExpression(NEUTRAL_LINE_COLOR),
-        "line-width": createLineWidthExpression(),
+        "line-width": 1,
       },
     });
 
@@ -235,6 +231,7 @@ onMounted(async () => {
     });
 
     map.on("mouseenter", "mission-footprints-fill", handleMouseEnter);
+    map.on("mousemove", "mission-footprints-fill", handleMouseMove);
     map.on("mouseleave", "mission-footprints-fill", handleMouseLeave);
 
     // Load footprints for existing missions
@@ -259,10 +256,7 @@ watch(
   { deep: true },
 );
 
-watch(
-  [() => props.selectedMission, () => props.hoveredMission],
-  updateMapStyling,
-);
+watch([() => props.selectedMission, hoveredLineId], updateMapStyling);
 
 watch(
   () => props.zoomToMission,
@@ -299,11 +293,18 @@ async function loadMissionFootprints() {
           }
 
           if (geojson?.features) {
-            geojson.features.forEach((feature: any) => {
+            geojson.features.forEach((feature: any, index: number) => {
               if (
                 feature.geometry?.type === "Polygon" ||
                 feature.geometry?.type === "MultiPolygon"
               ) {
+                const lineId = feature.properties?.raster_val || index + 1;
+                const lineColor = varyColorForLine(
+                  missionColors.value[mission.mission_key],
+                  index,
+                );
+                const featureId = `${mission.mission_key}_${lineId}`;
+
                 feature.properties = {
                   ...feature.properties,
                   mission_key: mission.mission_key,
@@ -311,7 +312,9 @@ async function loadMissionFootprints() {
                   last_checked_time: mission.last_checked_time,
                   last_processed_time: mission.last_processed_time,
                   error_message: mission.error_message,
-                  color: missionColors.value[mission.mission_key],
+                  color: lineColor,
+                  line_id: lineId,
+                  feature_id: featureId,
                 };
                 features.push(feature);
               }
@@ -386,11 +389,6 @@ function updateMapStyling() {
     "fill-opacity",
     createOpacityExpression(),
   );
-  map.setPaintProperty(
-    "mission-footprints-line",
-    "line-width",
-    createLineWidthExpression(),
-  );
 }
 
 function handleMouseEnter(e: maplibregl.MapLayerMouseEvent) {
@@ -399,17 +397,22 @@ function handleMouseEnter(e: maplibregl.MapLayerMouseEvent) {
   map.getCanvas().style.cursor = "pointer";
   const feature = e.features?.[0];
   const missionKey = feature?.properties?.mission_key;
-
+  console.log("Hovering over mission:", missionKey);
   if (missionKey) {
     emit("missionHover", missionKey);
 
-    const { processing_status, last_checked_time, last_processed_time } =
-      feature.properties;
+    const {
+      processing_status,
+      last_checked_time,
+      last_processed_time,
+      line_id,
+    } = feature.properties;
     const status = processing_status || "unknown";
 
     const popupContent = `
       <div class="mission-popup">
         <h4>${missionKey}</h4>
+        ${line_id ? `<p><strong>Line ID:</strong> ${line_id}</p>` : ""}
         <p><strong>Status:</strong> ${status.charAt(0).toUpperCase() + status.slice(1)}</p>
         ${last_checked_time ? `<p><strong>Last Checked:</strong> ${new Date(last_checked_time).toLocaleString()}</p>` : ""}
         ${last_processed_time ? `<p><strong>Last Processed:</strong> ${new Date(last_processed_time).toLocaleString()}</p>` : ""}
@@ -427,10 +430,47 @@ function handleMouseEnter(e: maplibregl.MapLayerMouseEvent) {
   }
 }
 
+function handleMouseMove(e: maplibregl.MapLayerMouseEvent) {
+  if (!map || !popup || !e.lngLat) return;
+
+  const feature = e.features?.[0];
+  if (!feature) return;
+
+  const missionKey = feature.properties?.mission_key;
+  const featureId = feature.properties?.feature_id;
+  const { processing_status, last_checked_time, last_processed_time, line_id } =
+    feature.properties;
+  const status = processing_status || "unknown";
+  // Update hovered line ID for highlighting
+  hoveredLineId.value = featureId;
+  // Update hovered line ID
+  hoveredLineId.value = featureId;
+
+  // Update popup position and content
+  const popupContent = `
+    <div class="mission-popup">
+      <h4>${missionKey}</h4>
+      ${line_id ? `<p><strong>Line ID:</strong> ${line_id}</p>` : ""}
+      <p><strong>Status:</strong> ${status.charAt(0).toUpperCase() + status.slice(1)}</p>
+      ${last_checked_time ? `<p><strong>Last Checked:</strong> ${new Date(last_checked_time).toLocaleString()}</p>` : ""}
+      ${last_processed_time ? `<p><strong>Last Processed:</strong> ${new Date(last_processed_time).toLocaleString()}</p>` : ""}
+      <p class="popup-hint">Click to select mission</p>
+    </div>
+  `;
+
+  popup.setLngLat(e.lngLat).setHTML(popupContent);
+
+  // Emit hover event if mission changed
+  if (missionKey) {
+    emit("missionHover", missionKey);
+  }
+}
+
 function handleMouseLeave() {
   if (!map) return;
 
   map.getCanvas().style.cursor = "";
+  hoveredLineId.value = null;
   emit("missionHover", null);
   popup?.remove();
   popup = null;
