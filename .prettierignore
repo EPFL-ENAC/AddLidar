@@ -14,6 +14,14 @@ frontend/resources/*
 frontend/libs/*
 **/.venv/*
 
+*.png 
+*.jpg
+*.jpeg
+*.gif
+*.bmp
+*.tiff
+*.ico
+
 
 # SVG
 *.svg
