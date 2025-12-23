@@ -44,6 +44,7 @@ const props = defineProps<{
   selectedMission?: string | null;
   hoveredMission?: string | null;
   zoomToMission?: string | null;
+  hiddenMissions?: Set<string>;
 }>();
 
 // Constants
@@ -67,6 +68,7 @@ let popup: maplibregl.Popup | null = null;
 const missionFootprints = ref<Record<string, any>>({});
 const missionColors = ref<Record<string, string>>({});
 const hoveredLineId = ref<string | null>(null);
+const allFeatures = ref<any[]>([]);
 
 function generateColorFromKey(key: string): string {
   let hash = 0;
@@ -256,6 +258,14 @@ watch(
   { deep: true },
 );
 
+watch(
+  () => props.hiddenMissions,
+  () => {
+    updateVisibleFeatures();
+  },
+  { deep: true },
+);
+
 watch([() => props.selectedMission, hoveredLineId], updateMapStyling);
 
 watch(
@@ -278,7 +288,8 @@ async function loadMissionFootprints() {
       .filter(
         (mission) =>
           mission.processing_status !== "pending" &&
-          mission.processing_status !== "error",
+          mission.processing_status !== "error" &&
+          !props.hiddenMissions?.has(mission.mission_key),
       )
       .map(async (mission) => {
         try {
@@ -332,13 +343,8 @@ async function loadMissionFootprints() {
 
     await Promise.all(footprintPromises);
 
-    const source = map.getSource(
-      "mission-footprints",
-    ) as maplibregl.GeoJSONSource;
-    source?.setData({
-      type: "FeatureCollection",
-      features,
-    });
+    allFeatures.value = features;
+    updateVisibleFeatures();
 
     if (features.length > 0) {
       const bounds = new maplibregl.LngLatBounds();
@@ -355,6 +361,22 @@ async function loadMissionFootprints() {
   } finally {
     isLoading.value = false;
   }
+}
+
+function updateVisibleFeatures() {
+  if (!map) return;
+
+  const visibleFeatures = allFeatures.value.filter(
+    (feature) => !props.hiddenMissions?.has(feature.properties.mission_key),
+  );
+
+  const source = map.getSource(
+    "mission-footprints",
+  ) as maplibregl.GeoJSONSource;
+  source?.setData({
+    type: "FeatureCollection",
+    features: visibleFeatures,
+  });
 }
 
 function zoomToMission(missionKey: string) {

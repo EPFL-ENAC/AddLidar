@@ -25,7 +25,11 @@
       <template #body="props">
         <q-tr
           :props="props"
-          class="cursor-pointer"
+          :class="[
+            'cursor-pointer',
+            getRowClass(props.row),
+            { 'hidden-row': hiddenMissions.has(props.row.mission_key) },
+          ]"
           @click="handleRowClick($event, props.row)"
         >
           <q-td v-for="col in props.cols" :key="col.name" :props="props">
@@ -100,6 +104,7 @@ const emit = defineEmits<{
   select: [missionKey: string];
   hover: [missionKey: string | null];
   explore: [missionKey: string];
+  hiddenMissionsChange: [hiddenMissions: Set<string>];
 }>();
 
 const props = defineProps<{
@@ -151,9 +156,7 @@ const columns: QTableColumn[] = [
   },
 ];
 
-const visibleMissions = computed(() =>
-  props.missions.filter((m) => !hiddenMissions.value.has(m.mission_key)),
-);
+const visibleMissions = computed(() => props.missions);
 
 const selectedRows = computed(() => {
   if (!props.selectedMission) return [];
@@ -166,6 +169,7 @@ function toggleHidden(missionKey: string) {
   } else {
     hiddenMissions.value.add(missionKey);
   }
+  emit("hiddenMissionsChange", new Set(hiddenMissions.value));
 }
 
 function handleRowClick(_evt: Event, row: Mission) {
@@ -262,5 +266,14 @@ function formatNumber(num: number | undefined): string {
 
 :deep(.q-table tbody tr:hover) {
   background-color: rgba(var(--q-primary-rgb), 0.05);
+}
+
+:deep(.q-table tbody tr.hidden-row) {
+  opacity: 0.4;
+  background-color: rgba(0, 0, 0, 0.02) !important;
+}
+
+:deep(.q-table tbody tr.hidden-row:hover) {
+  opacity: 0.6;
 }
 </style>

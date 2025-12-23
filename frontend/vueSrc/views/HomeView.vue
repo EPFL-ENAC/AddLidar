@@ -28,6 +28,7 @@ const error = ref<string | null>(null);
 const selectedMission = ref<string | null>(null);
 const hoveredMission = ref<string | null>(null);
 const zoomToMission = ref<string | null>(null);
+const hiddenMissions = ref<Set<string>>(new Set());
 
 const enrichedMissions = computed(() => missions.value);
 
@@ -80,6 +81,10 @@ function viewMission(missionKey: string) {
   router.push(`/viewer/${missionKey}`);
 }
 
+function onHiddenMissionsChange(hidden: Set<string>) {
+  hiddenMissions.value = hidden;
+}
+
 onMounted(() => {
   directoryStore.configurePaths("/api", "/static");
   loadMissions();
@@ -111,6 +116,7 @@ onMounted(() => {
             :selected-mission="selectedMission"
             :hovered-mission="hoveredMission"
             :zoom-to-mission="zoomToMission"
+            :hidden-missions="hiddenMissions"
             @mission-select="onMissionSelect"
             @mission-hover="onMissionHover"
           />
@@ -125,6 +131,7 @@ onMounted(() => {
           @select="onMissionSelect"
           @hover="onMissionHover"
           @explore="viewMission"
+          @hidden-missions-change="onHiddenMissionsChange"
         />
       </div>
     </q-page>
