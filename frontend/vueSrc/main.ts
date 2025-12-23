@@ -6,6 +6,9 @@ import { createPinia } from "pinia";
 // Import icon libraries
 import "@quasar/extras/material-icons/material-icons.css";
 
+// Import Roboto font
+import "@quasar/extras/roboto-font/roboto-font.css";
+
 // Import Quasar css
 import "quasar/src/css/index.sass";
 
