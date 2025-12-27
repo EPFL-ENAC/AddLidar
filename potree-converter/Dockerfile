@@ -33,7 +33,7 @@ RUN REPO="potree/PotreeConverter" && \
     echo "Downloading from: $DOWNLOAD_URL" && \
     wget -v "$DOWNLOAD_URL" && \
     unzip "PotreeConverter_${LATEST_RELEASE}_x64_linux.zip" && \
-    mv PotreeConverter_linux_x64 PotreeConverter && \
+    mv "PotreeConverter_${LATEST_RELEASE}_x64_linux" PotreeConverter && \
     rm -rf PotreeConverter/resources && \
     chmod +x PotreeConverter/PotreeConverter
 
