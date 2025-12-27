@@ -31,10 +31,7 @@ function toggleAbout() {
     <!-- Left Sidebar -->
     <aside class="column bg-white sidebar-panel">
       <!-- Header -->
-      <header
-        class="q-pa-md"
-        style="border-bottom: 1px solid rgba(0, 0, 0, 0.06)"
-      >
+      <header class="q-px-lg q-py-lg q-py-lg-lg q-py-xl-xl">
         <div class="row items-center justify-between">
           <q-btn
             flat
@@ -49,13 +46,14 @@ function toggleAbout() {
             <q-tooltip v-if="showBackButton">Back to missions</q-tooltip>
           </q-btn>
 
-          <div class="col row items-center justify-center q-gutter-sm q-pa-md">
-            <div class="row items-center q-gutter-xs">
+          <div class="col row items-center justify-center">
+            <div class="row items-center q-px-sm">
               <q-icon name="view_in_ar" color="primary" size="24px" />
               <span class="text-h5">AddLidar</span>
             </div>
-            <q-separator vertical inset />
+            <q-separator vertical size="2px" inset />
             <img
+              class="q-px-sm"
               src="@/assets/EPFL_Logo.svg"
               alt="AddLidar"
               style="height: 24px; width: auto"
@@ -75,14 +73,14 @@ function toggleAbout() {
           </q-btn>
         </div>
       </header>
-
+      <q-separator />
       <!-- Sidebar Content -->
       <div class="col overflow-auto column sidebar-scrollable">
         <about-content v-if="showAbout" />
         <template v-else>
           <!-- Mission Name Title -->
-          <div v-if="subtitle" class="q-px-lg q-pt-md q-pb-sm">
-            <div class="row items-center q-my-md justify-between">
+          <div v-if="subtitle" class="q-px-lg q-py-md q-py-xl-lg">
+            <div class="row items-center justify-between">
               <div
                 class="text-overline text-grey-6"
                 style="letter-spacing: 0.5px"

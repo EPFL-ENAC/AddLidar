@@ -25,7 +25,6 @@ const tabs = [
       class="text-grey-7"
       active-color="primary"
       indicator-color="primary"
-      narrow-indicator
     >
       <q-tab
         v-for="tab in tabs"
