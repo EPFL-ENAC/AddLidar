@@ -1,7 +1,7 @@
 <template>
   <div class="column full-height bg-white">
-    <header class="q-pa-md">
-      <div class="row items-center justify-between q-mb-xs">
+    <header class="q-pa-md q-py-md">
+      <div class="row items-center justify-between">
         <h1 class="text-h6 q-ma-none">Missions</h1>
       </div>
       <p class="text-caption text-grey-6 q-ma-none">
@@ -9,9 +9,7 @@
       </p>
     </header>
 
-    <q-separator />
-
-    <div class="col q-pa-sm" style="overflow-x: auto; overflow-y: auto">
+    <div class="col q-pa-sm q-pb-md" style="min-height: 0">
       <q-table
         :rows="visibleMissions"
         :columns="columns"
@@ -19,6 +17,8 @@
         :pagination="pagination"
         :selected="selectedRows"
         bordered
+        flat
+        class="sticky-header-table full-height"
       >
         <!-- Custom body to control row classes -->
         <template #body="props">
@@ -301,5 +301,19 @@ function formatNumber(num: number | undefined): string {
 
 :deep(.q-table tbody tr.hidden-row:hover) {
   opacity: 0.6;
+}
+
+/* Make table scrollable with sticky header */
+.sticky-header-table :deep(.q-table__middle) {
+  max-height: 100%;
+  overflow-y: auto;
+  overflow-x: auto;
+}
+
+.sticky-header-table :deep(thead tr th) {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background-color: white;
 }
 </style>
