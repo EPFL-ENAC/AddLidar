@@ -12,6 +12,10 @@ import "@quasar/extras/roboto-font/roboto-font.css";
 // Import Quasar css
 import "quasar/src/css/index.sass";
 
+// Import Quasar flex addon for responsive spacing utilities
+import "quasar/src/css/flex-addon.sass";
+import "quasar/src/css/flex-addon.sass";
+
 // Import app styles
 import "@/assets/styles/app.scss";
 
