@@ -24,28 +24,35 @@ const projections = ["EPSG:4326", "EPSG:3857", "EPSG:2056"];
 </script>
 
 <template>
-  <div class="q-pa-xl overflow-auto" style="max-width: 700px">
-    <div class="text-center q-mb-xl">
-      <h1 class="text-h4 text-weight-medium q-mb-md">
-        About AddLidar <q-icon name="view_in_ar" color="primary" size="36px" />
+  <div
+    class="q-pa-sm q-pa-md-md q-pa-lg-lg overflow-auto"
+    style="max-width: 700px"
+  >
+    <div class="text-center q-mb-md q-mb-lg-lg">
+      <h1 class="text-h6 text-h5-md text-weight-medium q-mb-sm q-mb-md-md">
+        About AddLidar <q-icon name="view_in_ar" color="primary" size="32px" />
       </h1>
-      <p class="text-body1 text-grey-7">
+      <p class="text-body2 text-body1-md text-grey-7">
         A web platform for storing, processing, and visualizing LiDAR datasets
         collected from airborne missions.
       </p>
     </div>
 
     <!-- Features -->
-    <div class="row q-col-gutter-lg q-mb-xl">
+    <div
+      class="row q-col-gutter-sm q-col-gutter-md-md q-col-gutter-lg-lg q-mb-lg q-mb-xl-lg"
+    >
       <div v-for="feature in features" :key="feature.icon" class="col-12">
         <q-card flat bordered class="full-height">
-          <q-card-section class="text-center">
-            <div class="text-subtitle1 text-weight-medium q-mt-xs">
+          <q-card-section class="text-center q-pa-sm q-pa-md-md">
+            <div
+              class="text-subtitle2 text-subtitle1-md text-weight-medium q-mt-xs"
+            >
               <q-icon
                 :name="feature.icon"
-                size="36px"
+                size="28px"
+                class="q-icon-size-md-36 q-pr-sm q-pr-md-md"
                 color="primary"
-                class="q-pr-md"
               />{{ feature.title }}
             </div>
             <div class="text-caption text-grey-6 q-mt-xs">
@@ -57,18 +64,18 @@ const projections = ["EPSG:4326", "EPSG:3857", "EPSG:2056"];
     </div>
 
     <!-- Capabilities -->
-    <div class="q-mb-xl">
-      <div class="text-subtitle1 text-weight-medium q-mb-sm">
+    <div class="q-mb-lg q-mb-xl-lg">
+      <div class="text-subtitle2 text-subtitle1-md text-weight-medium q-mb-sm">
         Processing Capabilities
       </div>
-      <p class="text-body2 text-grey-7">
+      <p class="text-caption text-body2-md text-grey-7">
         Export point cloud subsets with on-demand processing: apply density
         filtering, define regions of interest using 3D clip volumes, and
         transform coordinates between reference systems.
       </p>
 
-      <div class="row q-col-gutter-md q-mt-md">
-        <div class="col-6">
+      <div class="row q-col-gutter-sm q-col-gutter-md-md q-mt-sm q-mt-md-md">
+        <div class="col-12 col-sm-6">
           <div class="text-caption text-grey-6 q-mb-xs">Supported Formats</div>
           <q-chip
             v-for="format in formats"
@@ -76,12 +83,12 @@ const projections = ["EPSG:4326", "EPSG:3857", "EPSG:2056"];
             size="sm"
             color="primary"
             text-color="white"
-            class="q-mr-xs"
+            class="q-mr-xs q-mb-xs"
           >
             {{ format }}
           </q-chip>
         </div>
-        <div class="col-6">
+        <div class="col-12 col-sm-6">
           <div class="text-caption text-grey-6 q-mb-xs">Projections</div>
           <q-chip
             v-for="proj in projections"
@@ -89,7 +96,7 @@ const projections = ["EPSG:4326", "EPSG:3857", "EPSG:2056"];
             size="sm"
             outline
             color="primary"
-            class="q-mr-xs"
+            class="q-mr-xs q-mb-xs"
           >
             {{ proj }}
           </q-chip>
@@ -98,11 +105,11 @@ const projections = ["EPSG:4326", "EPSG:3857", "EPSG:2056"];
     </div>
 
     <!-- Context -->
-    <div class="q-mb-xl">
-      <div class="text-subtitle1 text-weight-medium q-mb-sm">
+    <div class="q-mb-lg q-mb-xl-lg">
+      <div class="text-subtitle2 text-subtitle1-md text-weight-medium q-mb-sm">
         Research Context
       </div>
-      <p class="text-body2 text-grey-7">
+      <p class="text-caption text-body2-md text-grey-7">
         Built to support research at EPFL's ESO laboratory, AddLidar provides an
         efficient pipeline for managing large-scale LiDAR datasets. The platform
         handles datasets exceeding 100GB with automated processing and
@@ -110,7 +117,7 @@ const projections = ["EPSG:4326", "EPSG:3857", "EPSG:2056"];
       </p>
     </div>
 
-    <q-separator class="q-my-lg" />
+    <q-separator class="q-my-md q-my-lg-lg" />
 
     <!-- Credits -->
     <div class="text-center">
@@ -148,3 +155,16 @@ const projections = ["EPSG:4326", "EPSG:3857", "EPSG:2056"];
     </div>
   </div>
 </template>
+
+<style scoped>
+/* Responsive icon size */
+.q-icon-size-md-36 {
+  font-size: 28px;
+}
+
+@media (min-width: 1024px) {
+  .q-icon-size-md-36 {
+    font-size: 36px;
+  }
+}
+</style>
