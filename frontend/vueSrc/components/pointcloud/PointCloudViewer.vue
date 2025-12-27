@@ -231,3 +231,11 @@ onMounted(() => {
   });
 });
 </script>
+
+<style scoped>
+:deep(.potree_menu_toggle) {
+  position: fixed;
+  bottom: 10px;
+  z-index: 1000;
+}
+</style>

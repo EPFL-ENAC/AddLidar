@@ -9,18 +9,97 @@
       </p>
     </header>
 
-    <div class="col q-pa-sm q-pb-md" style="min-height: 0">
+    <div class="col q-pa-sm q-pb-md" style="min-height: 0; overflow: auto">
       <q-table
         :rows="visibleMissions"
+        :grid="$q.screen.xs"
+        :dense="isTableDense"
         :columns="columns"
         row-key="mission_key"
         :pagination="pagination"
         :selected="selectedRows"
-        bordered
+        :bordered="!$q.screen.xs"
         flat
         class="sticky-header-table full-height"
       >
-        <!-- Custom body to control row classes -->
+        <!-- Grid mode (mobile) -->
+        <template #item="props">
+          <div class="col-12 q-pa-xs">
+            <q-card
+              flat
+              bordered
+              :class="[
+                'mission-card cursor-pointer',
+                { 'hidden-card': hiddenMissions.has(props.row.mission_key) },
+                { 'selected-card': props.row.mission_key === selectedMission },
+              ]"
+              @click="handleRowClick($event, props.row)"
+            >
+              <q-card-section>
+                <div class="row items-center justify-between q-mb-sm">
+                  <div class="col ellipsis text-weight-medium">
+                    {{ props.row.name || props.row.mission_key }}
+                  </div>
+                  <div class="row items-center q-gutter-xs">
+                    <span class="text-caption text-grey-6">Hide</span>
+                    <q-checkbox
+                      :model-value="hiddenMissions.has(props.row.mission_key)"
+                      @update:model-value="toggleHidden(props.row.mission_key)"
+                      dense
+                      @click.stop
+                    >
+                      <q-tooltip>Hide from map</q-tooltip>
+                    </q-checkbox>
+                  </div>
+                </div>
+
+                <div class="text-caption text-grey-6 q-mb-xs">
+                  {{ props.row.mission_key }}
+                </div>
+
+                <div class="row items-center q-gutter-md q-mb-sm">
+                  <div class="text-caption">
+                    <q-icon name="event" size="xs" class="q-mr-xs" />
+                    {{ formatDate(props.row.date) }}
+                  </div>
+                  <div v-if="props.row.metadata?.points" class="text-caption">
+                    <q-icon name="grain" size="xs" class="q-mr-xs" />
+                    {{ formatNumber(props.row.metadata.points) }} pts
+                  </div>
+                </div>
+
+                <q-btn
+                  v-if="isProcessed(props.row)"
+                  flat
+                  color="primary"
+                  icon="open_in_new"
+                  label="Explore"
+                  size="sm"
+                  class="full-width"
+                  @click.stop="handleExplore(props.row.mission_key)"
+                />
+                <div v-else class="text-caption text-warning">
+                  <q-icon name="warning" size="xs" class="q-mr-xs" />
+                  {{ getStatusTooltip(props.row) }}
+                </div>
+              </q-card-section>
+
+              <!-- Expanded details -->
+              <q-card-section
+                v-if="props.row.mission_key === selectedMission"
+                class="q-pt-none"
+              >
+                <q-separator class="q-mb-md" />
+                <mission-expanded-details
+                  :mission="props.row"
+                  @explore="handleExplore"
+                />
+              </q-card-section>
+            </q-card>
+          </div>
+        </template>
+
+        <!-- Table mode (desktop) -->
         <template #body="props">
           <q-tr
             :props="props"
@@ -32,7 +111,7 @@
           >
             <q-td v-for="col in props.cols" :key="col.name" :props="props">
               <template v-if="col.name === 'name'">
-                <div class="column" style="max-width: 200px">
+                <div class="column" style="max-width: 150px">
                   <div class="ellipsis">
                     {{ props.row.name || props.row.mission_key }}
                   </div>
@@ -179,17 +258,21 @@ const allColumns: QTableColumn[] = [
   },
 ];
 
+const isTableDense = computed(() => {
+  const value = $q.screen.xs || $q.screen.sm;
+  console.log("isTableDense", value);
+  return value;
+});
 const columns = computed(() => {
   const cols = [
     allColumns[0], // Always show name
   ];
 
-  // Add date if screen is medium or larger (gt.xs means greater than extra small)
-  if ($q.screen.gt.xs) {
+  // Add date if screen is medium or larger
+  if ($q.screen.gt.md) {
     cols.push(allColumns[1]); // date
   }
 
-  // Add size if screen is large or larger
   if ($q.screen.gt.lg) {
     cols.push(allColumns[2]); // size
   }
@@ -315,5 +398,29 @@ function formatNumber(num: number | undefined): string {
   top: 0;
   z-index: 1;
   background-color: white;
+}
+
+/* Grid mode styles */
+.mission-card {
+  transition: all 0.2s;
+}
+
+.mission-card:hover {
+  background-color: rgba(var(--q-primary-rgb), 0.02);
+}
+
+.selected-card {
+  border-color: var(--q-primary);
+  background-color: rgba(var(--q-primary-rgb), 0.05);
+}
+
+.hidden-card {
+  opacity: 0.5;
+}
+
+/* Grid container scrolling */
+.sticky-header-table :deep(.q-table__grid-content) {
+  max-height: 100%;
+  overflow-y: auto;
 }
 </style>

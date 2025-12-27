@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { ref } from "vue";
+import { ref, computed } from "vue";
+import { useQuasar } from "quasar";
 import AboutContent from "@/components/AboutContent.vue";
 
 interface Props {
@@ -15,7 +16,17 @@ const emit = defineEmits<{
   back: [];
 }>();
 
+const $q = useQuasar();
 const showAbout = ref(false);
+const leftDrawerOpen = ref(true);
+
+const drawerWidth = computed(() => {
+  if ($q.screen.lt.sm) return $q.screen.width; // Full width on mobile
+  if ($q.screen.lt.md) return 400;
+  if ($q.screen.lt.lg) return 450;
+  if ($q.screen.lt.xl) return 500;
+  return 650; // 650px on large screens
+});
 
 function handleBack() {
   emit("back");
@@ -24,105 +35,132 @@ function handleBack() {
 function toggleAbout() {
   showAbout.value = !showAbout.value;
 }
+
+function toggleLeftDrawer() {
+  leftDrawerOpen.value = !leftDrawerOpen.value;
+}
 </script>
 
 <template>
-  <div class="row" style="height: 100vh; width: 100vw">
-    <!-- Left Sidebar -->
-    <aside class="column bg-white sidebar-panel">
-      <!-- Header -->
-      <header class="q-px-lg q-py-lg q-py-lg-lg q-py-xl-xl">
-        <div class="row items-center justify-between">
-          <q-btn
-            flat
-            round
-            dense
-            icon="arrow_back"
-            color="grey-8"
-            size="sm"
-            :style="{ visibility: showBackButton ? 'visible' : 'hidden' }"
-            @click="handleBack"
-          >
-            <q-tooltip v-if="showBackButton">Back to missions</q-tooltip>
-          </q-btn>
-
-          <div class="col row items-center justify-center">
-            <div class="row items-center q-px-sm">
-              <q-icon name="view_in_ar" color="primary" size="24px" />
-              <span class="text-h5">AddLidar</span>
-            </div>
-            <q-separator vertical size="2px" inset />
-            <img
-              class="q-px-sm"
-              src="@/assets/EPFL_Logo.svg"
-              alt="AddLidar"
-              style="height: 24px; width: auto"
-            />
-          </div>
-
-          <q-btn
-            flat
-            round
-            dense
-            :icon="showAbout ? 'close' : 'info_outline'"
-            color="grey-8"
-            size="sm"
-            @click="toggleAbout"
-          >
-            <q-tooltip>{{ showAbout ? "Close" : "About" }}</q-tooltip>
-          </q-btn>
-        </div>
-      </header>
-      <q-separator />
-      <!-- Sidebar Content -->
-      <div class="col overflow-auto column sidebar-scrollable">
-        <about-content v-if="showAbout" />
-        <template v-else>
-          <!-- Mission Name Title -->
-          <div v-if="subtitle" class="q-px-lg q-py-md q-py-xl-lg">
-            <div class="row items-center justify-between">
-              <div
-                class="text-overline text-grey-6"
-                style="letter-spacing: 0.5px"
+  <q-layout view="lHh LpR lFf" style="height: 100vh">
+    <!-- Left Drawer -->
+    <q-drawer
+      v-model="leftDrawerOpen"
+      show-if-above
+      :width="drawerWidth"
+      :breakpoint="768"
+      bordered
+      no-swipe-open
+      no-swipe-close
+      class="bg-white drawer-custom"
+    >
+      <div class="column full-height">
+        <!-- Header -->
+        <header class="q-px-md q-px-lg-lg q-py-lg q-py-lg-lg q-py-xl-xl">
+          <div class="row items-center justify-between">
+            <div class="row items-center q-gutter-xs">
+              <q-btn
+                flat
+                round
+                dense
+                icon="arrow_back"
+                color="grey-8"
+                size="md"
+                :style="{ visibility: showBackButton ? 'visible' : 'hidden' }"
+                @click="handleBack"
               >
-                SELECTED MISSION
+                <q-tooltip v-if="showBackButton">Back to missions</q-tooltip>
+              </q-btn>
+            </div>
+
+            <div class="col row items-center justify-center q-px-xs">
+              <div class="row items-center q-px-xs">
+                <q-icon
+                  name="view_in_ar"
+                  color="primary"
+                  size="20px"
+                  class="q-mr-xs"
+                />
+                <span class="text-h6">AddLidar</span>
               </div>
-              <div class="text-h6 text-weight-medium ellipsis">
-                {{ subtitle }}
-              </div>
+              <q-separator vertical size="2px" inset class="q-mx-xs" />
+              <img
+                src="@/assets/EPFL_Logo.svg"
+                alt="EPFL"
+                style="height: 20px; width: auto"
+              />
+            </div>
+
+            <div class="row items-center q-gutter-xs">
+              <q-btn
+                flat
+                round
+                dense
+                :icon="showAbout ? 'close' : 'info_outline'"
+                color="grey-8"
+                size="md"
+                @click="toggleAbout"
+              >
+                <q-tooltip>{{ showAbout ? "Close" : "About" }}</q-tooltip>
+              </q-btn>
             </div>
           </div>
+        </header>
+        <q-separator />
 
-          <q-separator v-if="subtitle" />
+        <!-- Sidebar Content -->
+        <div class="col overflow-auto column sidebar-scrollable">
+          <about-content v-if="showAbout" />
+          <template v-else>
+            <!-- Mission Name Title -->
+            <div v-if="subtitle" class="q-px-md q-px-lg-lg q-py-md q-py-xl-lg">
+              <div class="column">
+                <div
+                  class="text-overline text-grey-6 q-mb-xs"
+                  style="letter-spacing: 0.5px"
+                >
+                  SELECTED MISSION
+                </div>
+                <div class="text-subtitle1 text-weight-medium ellipsis">
+                  {{ subtitle }}
+                </div>
+              </div>
+            </div>
+            <q-separator v-if="subtitle" />
 
-          <div class="col column overflow-hidden">
-            <slot name="sidebar" />
-          </div>
-        </template>
+            <div class="col column overflow-hidden">
+              <slot name="sidebar" />
+            </div>
+          </template>
+        </div>
       </div>
-    </aside>
+    </q-drawer>
 
-    <!-- Right Content Panel -->
-    <main class="col column bg-grey-2 content-panel">
-      <slot name="content" />
-    </main>
-  </div>
+    <!-- Floating Toggle Button (outside drawer so it's always visible) -->
+    <q-btn
+      icon="menu"
+      color="primary"
+      round
+      unelevated
+      class="drawer-edge-toggle"
+      :style="{ left: leftDrawerOpen ? `${drawerWidth - 20}px` : '16px' }"
+      @click="toggleLeftDrawer"
+    >
+      <q-tooltip>{{ leftDrawerOpen ? "Close" : "Open" }} sidebar</q-tooltip>
+    </q-btn>
+
+    <!-- Main Content -->
+    <q-page-container>
+      <q-page class="bg-grey-2">
+        <div class="content-wrapper">
+          <slot name="content" />
+        </div>
+      </q-page>
+    </q-page-container>
+  </q-layout>
 </template>
 
 <style scoped>
-.sidebar-panel {
-  width: 550px;
-  min-width: 550px;
-  max-height: 100vh;
-  border-right: 1px solid rgba(0, 0, 0, 0.08);
-  overflow: hidden;
-  background: rgb(187, 126, 46);
-}
-
-.content-panel {
-  overflow: hidden;
-}
-
 /* Modern minimalist scrollbar */
 .sidebar-scrollable {
   scrollbar-width: thin;
@@ -147,20 +185,46 @@ function toggleAbout() {
   background-color: rgba(0, 0, 0, 0.3);
 }
 
-@media (max-width: 1200px) {
-  .sidebar-panel {
-    width: 450px;
-    min-width: 450px;
+.q-page {
+  min-height: 100vh;
+  position: relative;
+}
+
+.content-wrapper {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 100%;
+}
+
+.drawer-custom {
+  max-width: 100vw;
+  overflow-x: hidden;
+}
+
+.drawer-custom :deep(*) {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+.drawer-edge-toggle {
+  position: fixed;
+  top: 15%;
+  transform: translateY(-50%);
+  z-index: 3000;
+  transition: left 0.1s ease;
+}
+
+/* Mobile: button inside drawer */
+@media (max-width: 600px) {
+  .drawer-edge-toggle {
+    right: 16px !important;
+    left: auto !important;
   }
 }
 
-@media (max-width: 768px) {
-  .sidebar-panel {
-    width: 100%;
-    min-width: 0;
-    border-right: none;
-    border-bottom: 1px solid rgba(0, 0, 0, 0.08);
-    max-height: 50vh;
-  }
-}
+/* Remove conflicting media queries - width is now controlled by computed property */
 </style>

@@ -1,8 +1,8 @@
 <template>
-  <div class="q-pa-md q-pl-lg">
+  <div class="expanded-details-container q-pa-md q-pl-lg">
     <!-- Metadata details -->
     <div v-if="mission.metadata" class="q-mb-md">
-      <div class="text-body2 text-grey-8">
+      <div class="text-body2 text-grey-8 text-wrap">
         {{ formatNumber(mission.metadata.points) }} points
         <span v-if="mission.metadata.boundingBox" class="q-ml-md">
           {{ formatBoundsCompact(mission.metadata.boundingBox) }}
@@ -13,7 +13,7 @@
     <!-- Description -->
     <div
       v-if="parsedExtraAttributes?.description"
-      class="text-body2 text-grey-8 q-mb-md"
+      class="text-body2 text-grey-8 q-mb-md text-wrap"
     >
       {{ parsedExtraAttributes.description }}
     </div>
@@ -23,7 +23,7 @@
       <div
         v-for="(value, key) in otherAttributes"
         :key="key"
-        class="text-body2 text-grey-8"
+        class="text-body2 text-grey-8 text-wrap"
       >
         <span class="text-weight-medium">{{ key }}:</span> {{ value }}
       </div>
@@ -34,17 +34,23 @@
       v-if="mission.last_checked_time || mission.last_processed_time"
       class="q-mb-md"
     >
-      <div v-if="mission.last_checked_time" class="text-body2 text-grey-7">
+      <div
+        v-if="mission.last_checked_time"
+        class="text-body2 text-grey-7 text-wrap"
+      >
         Last checked: {{ formatDateTime(mission.last_checked_time) }}
       </div>
-      <div v-if="mission.last_processed_time" class="text-body2 text-grey-7">
+      <div
+        v-if="mission.last_processed_time"
+        class="text-body2 text-grey-7 text-wrap"
+      >
         Last processed: {{ formatDateTime(mission.last_processed_time) }}
       </div>
     </div>
 
     <!-- Error message -->
     <div v-if="mission.error_message" class="q-mb-md">
-      <div class="text-body2 text-negative q-mb-sm">
+      <div class="text-body2 text-negative q-mb-sm text-wrap">
         {{ mission.error_message }}
       </div>
       <q-btn
@@ -178,6 +184,20 @@ async function copyToClipboard() {
 </script>
 
 <style scoped>
+.expanded-details-container {
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
+  box-sizing: border-box;
+}
+
+.text-wrap {
+  word-wrap: break-word;
+  overflow-wrap: break-word;
+  word-break: break-word;
+  white-space: normal;
+}
+
 .error-logs {
   font-family: monospace;
   font-size: 11px;
