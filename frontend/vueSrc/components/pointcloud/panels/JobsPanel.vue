@@ -2,6 +2,7 @@
 import { computed } from "vue";
 import { useJobStore } from "@/stores/jobStore";
 import { useQuasar } from "quasar";
+import { formatJobName } from "@/utils/formatJobName";
 
 const $q = useQuasar();
 const jobStore = useJobStore();
@@ -46,7 +47,7 @@ function selectJob(jobName: string) {
 
 function removeJob(jobName: string) {
   $q.dialog({
-    title: "Remove Job",
+    title: "Remove Export",
     message: `Remove "${jobName}" from history?`,
     cancel: true,
   }).onOk(() => jobStore.removeJob(jobName));
@@ -55,7 +56,7 @@ function removeJob(jobName: string) {
 function clearAll() {
   $q.dialog({
     title: "Clear History",
-    message: "Remove all jobs from history?",
+    message: "Remove all exports from history?",
     cancel: true,
   }).onOk(() => jobStore.clearAllJobs());
 }
@@ -65,7 +66,7 @@ function clearAll() {
   <!-- Empty State -->
   <div v-if="!allJobs.length" class="empty-state">
     <q-icon name="history" class="empty-state__icon" />
-    <div class="empty-state__title">No jobs yet</div>
+    <div class="empty-state__title">No exports yet</div>
     <div class="empty-state__description">Export requests will appear here</div>
   </div>
 
@@ -91,7 +92,7 @@ function clearAll() {
           />
           <div class="col">
             <div class="text-body2 text-weight-medium ellipsis">
-              {{ job.job_name }}
+              {{ formatJobName(job.job_name) }}
             </div>
             <div class="text-caption text-grey-6">
               {{ formatDate(job.created_at) }}
@@ -150,6 +151,7 @@ function clearAll() {
 
 .job-card--active {
   border-left: 3px solid var(--q-primary);
+  background: var(--q-surface);
 }
 
 .empty-state {

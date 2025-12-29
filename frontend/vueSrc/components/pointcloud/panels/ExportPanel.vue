@@ -3,6 +3,7 @@ import { ref, computed, watch, onBeforeUnmount, onMounted } from "vue";
 import ClipVolume from "@/components/pointcloud/ClipVolume.vue";
 import JobsPanel from "@/components/pointcloud/panels/JobsPanel.vue";
 import { formatOptions, epsgOptions, type SelectOption } from "@/utils/api";
+import { formatJobName } from "@/utils/formatJobName";
 import useDownloadService from "@/utils/useDownloadService";
 import type { JobParams } from "@/utils/useDownloadService";
 import { useExportJobStore } from "@/stores/exportJobStore";
@@ -194,7 +195,7 @@ onBeforeUnmount(closeConnection);
 
       <div class="form-section">
         <div class="section-header">
-          <span class="section-header__title">Current Job</span>
+          <span class="section-header__title">Current Export</span>
           <q-chip
             :color="isComplete ? 'positive' : isError ? 'negative' : 'primary'"
             text-color="white"
@@ -206,7 +207,7 @@ onBeforeUnmount(closeConnection);
         </div>
 
         <div class="text-caption text-grey-6 q-mb-sm">
-          {{ currentJob.job_name }}
+          {{ formatJobName(currentJob.job_name) }}
         </div>
 
         <!-- Progress -->
@@ -288,7 +289,7 @@ onBeforeUnmount(closeConnection);
 
     <q-expansion-item
       icon="history"
-      label="Job History"
+      label="Export History"
       header-class="text-grey-8"
       dense
       default-opened
