@@ -2,7 +2,6 @@
 import { ref } from "vue";
 import FilesPanel from "@/components/pointcloud/panels/FilesPanel.vue";
 import ExportPanel from "@/components/pointcloud/panels/ExportPanel.vue";
-import JobsPanel from "@/components/pointcloud/panels/JobsPanel.vue";
 import AppearancePanel from "@/components/pointcloud/panels/AppearancePanel.vue";
 import FiltersPanel from "@/components/pointcloud/panels/FiltersPanel.vue";
 
@@ -10,7 +9,6 @@ const activeTab = ref("export");
 
 const tabs = [
   { name: "export", icon: "file_download", label: "Export" },
-  { name: "jobs", icon: "history", label: "Jobs" },
   { name: "files", icon: "folder", label: "Files" },
   { name: "appearance", icon: "palette", label: "Color" },
   { name: "filters", icon: "filter_list", label: "Filters" },
@@ -42,10 +40,6 @@ const tabs = [
       <q-tab-panels v-model="activeTab" animated keep-alive>
         <q-tab-panel name="export" class="q-pa-none">
           <export-panel />
-        </q-tab-panel>
-
-        <q-tab-panel name="jobs" class="q-pa-none">
-          <jobs-panel />
         </q-tab-panel>
 
         <q-tab-panel name="files" class="q-pa-none">

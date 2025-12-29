@@ -69,30 +69,42 @@ function clearAll() {
     <div class="empty-state__description">Export requests will appear here</div>
   </div>
 
-  <!-- Job List -->
-  <template v-else>
-    <q-list separator>
-      <q-item
-        v-for="job in allJobs"
-        :key="job.job_name"
-        clickable
-        :active="currentJobName === job.job_name"
-        active-class="bg-blue-1"
-        @click="selectJob(job.job_name)"
-      >
-        <q-item-section avatar>
+  <!-- Job Cards -->
+  <div v-else class="jobs-container q-my-lg">
+    <q-card
+      v-for="job in allJobs"
+      :key="job.job_name"
+      flat
+      bordered
+      :class="[
+        'job-card q-mx-lg',
+        { 'job-card--active': currentJobName === job.job_name },
+      ]"
+      @click="selectJob(job.job_name)"
+    >
+      <q-card-section class="q-pa-sm">
+        <div class="row items-center q-gutter-sm">
           <q-icon
             :name="getStatusIcon(job.status)"
             :color="getStatusColor(job.status)"
+            size="sm"
           />
-        </q-item-section>
-
-        <q-item-section>
-          <q-item-label lines="1">{{ job.job_name }}</q-item-label>
-          <q-item-label caption>{{ formatDate(job.created_at) }}</q-item-label>
-        </q-item-section>
-
-        <q-item-section side>
+          <div class="col">
+            <div class="text-body2 text-weight-medium ellipsis">
+              {{ job.job_name }}
+            </div>
+            <div class="text-caption text-grey-6">
+              {{ formatDate(job.created_at) }}
+            </div>
+          </div>
+          <q-chip
+            :color="getStatusColor(job.status)"
+            text-color="white"
+            size="sm"
+            dense
+          >
+            {{ job.status }}
+          </q-chip>
           <q-btn
             flat
             round
@@ -101,21 +113,69 @@ function clearAll() {
             size="sm"
             color="grey-6"
             @click.stop="removeJob(job.job_name)"
-          />
-        </q-item-section>
-      </q-item>
-    </q-list>
+          >
+            <q-tooltip>Remove</q-tooltip>
+          </q-btn>
+        </div>
+      </q-card-section>
+    </q-card>
 
-    <div class="form-section">
-      <q-btn
-        flat
-        dense
-        color="negative"
-        label="Clear All"
-        icon="delete_sweep"
-        class="full-width"
-        @click="clearAll"
-      />
-    </div>
-  </template>
+    <q-btn
+      flat
+      dense
+      color="negative"
+      label="Clear All"
+      icon="delete_sweep"
+      class="full-width q-mt-sm"
+      size="sm"
+      @click="clearAll"
+    />
+  </div>
 </template>
+
+<style scoped>
+.jobs-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.job-card {
+  cursor: pointer;
+}
+
+.job-card:hover {
+  border-left: 3px solid black;
+}
+
+.job-card--active {
+  border-left: 3px solid var(--q-primary);
+}
+
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 16px;
+  text-align: center;
+}
+
+.empty-state__icon {
+  font-size: 48px;
+  color: #bdbdbd;
+  margin-bottom: 12px;
+}
+
+.empty-state__title {
+  font-size: 16px;
+  font-weight: 500;
+  color: #757575;
+  margin-bottom: 4px;
+}
+
+.empty-state__description {
+  font-size: 14px;
+  color: #9e9e9e;
+}
+</style>

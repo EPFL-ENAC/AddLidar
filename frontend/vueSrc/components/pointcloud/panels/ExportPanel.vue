@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, watch, onBeforeUnmount, onMounted } from "vue";
 import ClipVolume from "@/components/pointcloud/ClipVolume.vue";
+import JobsPanel from "@/components/pointcloud/panels/JobsPanel.vue";
 import { formatOptions, epsgOptions, type SelectOption } from "@/utils/api";
 import useDownloadService from "@/utils/useDownloadService";
 import type { JobParams } from "@/utils/useDownloadService";
@@ -140,14 +141,6 @@ onBeforeUnmount(closeConnection);
 
 <template>
   <q-form @submit.prevent="onSubmit">
-    <!-- Restored Banner -->
-    <q-banner v-if="parametersRestored" class="bg-blue-1 text-blue-9" dense>
-      <template #avatar>
-        <q-icon name="info" color="primary" />
-      </template>
-      Restored from {{ currentJob?.job_name }}
-    </q-banner>
-
     <!-- Form Fields -->
     <div class="form-section">
       <q-select
@@ -289,6 +282,19 @@ onBeforeUnmount(closeConnection);
         </q-slide-transition>
       </div>
     </template>
+
+    <!-- Job History Section -->
+    <q-separator class="q-my-md" />
+
+    <q-expansion-item
+      icon="history"
+      label="Job History"
+      header-class="text-grey-8"
+      dense
+      default-opened
+    >
+      <jobs-panel />
+    </q-expansion-item>
   </q-form>
 </template>
 
