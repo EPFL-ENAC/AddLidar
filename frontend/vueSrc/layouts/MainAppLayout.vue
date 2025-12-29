@@ -50,8 +50,6 @@ function toggleLeftDrawer() {
       :width="drawerWidth"
       :breakpoint="768"
       bordered
-      no-swipe-open
-      no-swipe-close
       class="bg-white drawer-custom"
     >
       <div class="column full-height">
@@ -83,15 +81,12 @@ function toggleLeftDrawer() {
                 />
                 <span class="text-h6">AddLidar</span>
               </div>
-              <q-separator vertical size="2px" inset class="q-mx-xs" />
+              <q-separator vertical size="2px" inset class="q-mx-sm" />
               <img
                 src="@/assets/EPFL_Logo.svg"
                 alt="EPFL"
                 style="height: 20px; width: auto"
               />
-            </div>
-
-            <div class="row items-center q-gutter-xs">
               <q-btn
                 flat
                 round
@@ -99,10 +94,19 @@ function toggleLeftDrawer() {
                 :icon="showAbout ? 'close' : 'info_outline'"
                 color="grey-8"
                 size="md"
+                class="q-ml-sm"
                 @click="toggleAbout"
               >
                 <q-tooltip>{{ showAbout ? "Close" : "About" }}</q-tooltip>
               </q-btn>
+            </div>
+
+            <!-- Fake spacer to balance the left side and center the middle content -->
+            <div
+              class="row items-center q-gutter-xs"
+              style="visibility: hidden"
+            >
+              <q-btn flat round dense icon="arrow_back" size="md" />
             </div>
           </div>
         </header>
@@ -114,7 +118,7 @@ function toggleLeftDrawer() {
           <template v-else>
             <!-- Mission Name Title -->
             <div v-if="subtitle" class="q-px-md q-px-lg-lg q-py-md q-py-xl-lg">
-              <div class="column">
+              <div class="row justify-between items-center">
                 <div
                   class="text-overline text-grey-6 q-mb-xs"
                   style="letter-spacing: 0.5px"
@@ -138,7 +142,7 @@ function toggleLeftDrawer() {
 
     <!-- Floating Toggle Button (outside drawer so it's always visible) -->
     <q-btn
-      icon="menu"
+      :icon="leftDrawerOpen ? 'menu_open' : 'menu'"
       color="primary"
       round
       unelevated
@@ -212,10 +216,10 @@ function toggleLeftDrawer() {
 
 .drawer-edge-toggle {
   position: fixed;
-  top: 15%;
+  top: 5%;
   transform: translateY(-50%);
   z-index: 3000;
-  transition: left 0.1s ease;
+  transition: left 0.15s ease;
 }
 
 /* Mobile: button inside drawer */
