@@ -37,6 +37,7 @@ interface Mission {
 const emit = defineEmits<{
   missionSelect: [missionKey: string];
   missionHover: [missionKey: string | null];
+  visibleMissionsChange: [missionKeys: string[]];
 }>();
 
 const props = defineProps<{
@@ -289,6 +290,10 @@ onMounted(async () => {
     map.on("mousemove", "mission-footprints-fill", handleMouseMove);
     map.on("mouseleave", "mission-footprints-fill", handleMouseLeave);
 
+    // Track visible missions on viewport changes
+    map.on("moveend", updateVisibleMissions);
+    map.on("zoomend", updateVisibleMissions);
+
     // Load footprints for existing missions
     loadMissionFootprints();
   });
@@ -418,11 +423,30 @@ async function loadMissionFootprints() {
         });
       }
     }
+
+    // Update visible missions after loading
+    updateVisibleMissions();
   } catch (error) {
     console.error("Error loading mission footprints:", error);
   } finally {
     isLoading.value = false;
   }
+}
+
+function updateVisibleMissions() {
+  if (!map) return;
+
+  const features = map.queryRenderedFeatures(undefined, {
+    layers: ["mission-footprints-fill"],
+  });
+
+  const visibleKeys = new Set<string>();
+  features.forEach((feature) => {
+    const missionKey = feature.properties?.mission_key;
+    if (missionKey) visibleKeys.add(missionKey);
+  });
+
+  emit("visibleMissionsChange", Array.from(visibleKeys));
 }
 
 function updateVisibleFeatures() {

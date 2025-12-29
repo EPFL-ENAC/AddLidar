@@ -32,6 +32,7 @@ const selectedMission = ref<string | null>(null);
 const hoveredMission = ref<string | null>(null);
 const zoomToMission = ref<string | null>(null);
 const hiddenMissions = ref<Set<string>>(new Set());
+const visibleMissions = ref<string[]>([]);
 
 const enrichedMissions = computed(() => missions.value);
 
@@ -94,6 +95,10 @@ function onHiddenMissionsChange(hidden: Set<string>) {
   hiddenMissions.value = hidden;
 }
 
+function onVisibleMissionsChange(missionKeys: string[]) {
+  visibleMissions.value = missionKeys;
+}
+
 onMounted(() => {
   directoryStore.configurePaths("/api", "/static");
   loadMissions();
@@ -122,6 +127,7 @@ onMounted(() => {
         :missions="enrichedMissions"
         :selected-mission="selectedMission"
         :hovered-mission="hoveredMission"
+        :visible-missions="visibleMissions"
         @select="onMissionSelect"
         @hover="onMissionHover"
         @explore="viewMission"
@@ -139,6 +145,7 @@ onMounted(() => {
         :hidden-missions="hiddenMissions"
         @mission-select="onMissionSelect"
         @mission-hover="onMissionHover"
+        @visible-missions-change="onVisibleMissionsChange"
       />
     </template>
   </main-app-layout>

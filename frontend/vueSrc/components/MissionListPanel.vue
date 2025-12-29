@@ -168,11 +168,18 @@
                   outline
                   push
                   icon="open_in_new"
+                  size="md"
                   @click.stop="handleExplore(props.row.mission_key)"
                 >
                   <q-tooltip>Explore mission</q-tooltip>
                 </q-btn>
-                <q-icon v-else name="warning" color="warning" size="sm">
+                <q-icon
+                  v-else
+                  class="q-pa-xs"
+                  name="warning"
+                  color="warning"
+                  size="sm"
+                >
                   <q-tooltip>{{ getStatusTooltip(props.row) }}</q-tooltip>
                 </q-icon>
               </template>
@@ -187,6 +194,23 @@
                 @explore="handleExplore"
               />
             </q-td>
+          </q-tr>
+
+          <!-- Separator between visible and out-of-view missions -->
+          <q-tr
+            v-if="
+              showSeparator && props.row.mission_key === lastVisibleMissionKey
+            "
+            class="separator-row"
+          >
+            <q-td colspan="100%" class="separator-cell">
+              <div class="separator-content q-px-md">
+                <q-separator class="separator-line" />
+                <span class="separator-label">Out of map view</span>
+                <q-separator class="separator-line" />
+              </div>
+            </q-td>
+            <q-separator />
           </q-tr>
         </template>
       </q-table>
@@ -232,6 +256,7 @@ const props = defineProps<{
   missions: Mission[];
   selectedMission?: string | null;
   hoveredMission?: string | null;
+  visibleMissions?: string[];
 }>();
 
 const $q = useQuasar();
@@ -323,7 +348,46 @@ const columns = computed(() => {
   return cols;
 });
 
-const visibleMissions = computed(() => props.missions);
+const visibleMissionSet = computed(() => new Set(props.visibleMissions || []));
+
+const sortedMissions = computed(() => {
+  if (!props.visibleMissions?.length) return props.missions;
+
+  const visible: Mission[] = [];
+  const notVisible: Mission[] = [];
+
+  props.missions.forEach((mission) => {
+    if (visibleMissionSet.value.has(mission.mission_key)) {
+      visible.push(mission);
+    } else {
+      notVisible.push(mission);
+    }
+  });
+
+  return [...visible, ...notVisible];
+});
+
+const lastVisibleMissionKey = computed(() => {
+  if (!props.visibleMissions?.length) return null;
+
+  const visibleInList = sortedMissions.value.filter((m) =>
+    visibleMissionSet.value.has(m.mission_key),
+  );
+
+  return visibleInList.length > 0
+    ? visibleInList[visibleInList.length - 1].mission_key
+    : null;
+});
+
+const showSeparator = computed(() => {
+  if (!props.visibleMissions?.length) return false;
+  const notVisibleCount = sortedMissions.value.filter(
+    (m) => !visibleMissionSet.value.has(m.mission_key),
+  ).length;
+  return notVisibleCount > 0;
+});
+
+const visibleMissions = computed(() => sortedMissions.value);
 
 const selectedRows = computed(() => {
   if (!props.selectedMission) return [];
@@ -399,13 +463,13 @@ function formatNumber(num: number | undefined): string {
 }
 
 :deep(.q-table tbody td) {
-  padding-top: 1.25rem !important;
-  padding-bottom: 1.25rem !important;
+  padding-top: 1.25rem;
+  padding-bottom: 1.25rem;
 }
 
 :deep(.q-table thead th) {
-  padding-top: 1rem !important;
-  padding-bottom: 1rem !important;
+  padding-top: 1rem;
+  padding-bottom: 1rem;
 }
 
 :deep(.q-table__card) {
@@ -432,6 +496,63 @@ function formatNumber(num: number | undefined): string {
 :deep(.q-table tbody tr.map-hovered) {
   box-shadow: inset 3px 0 0 0 var(--q-secondary);
   animation: pulse-highlight 1.5s ease-in-out infinite;
+}
+
+:deep(.q-table tbody tr.separator-row) {
+  background-color: transparent !important;
+  cursor: default !important;
+}
+
+:deep(.q-table tbody tr.separator-row:hover) {
+  background-color: transparent !important;
+}
+
+.separator-cell {
+  padding: 0.25rem !important;
+  padding-top: 5rem !important;
+}
+
+.separator-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+}
+
+.separator-line {
+  flex: 1;
+  opacity: 0.8;
+}
+
+.separator-label {
+  font-size: 0.7rem;
+  color: #9e9e9e;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 500;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+:deep(.q-table tbody tr.in-viewport) {
+  position: relative;
+}
+
+:deep(.q-table tbody tr.in-viewport::before) {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 4px;
+  height: 60%;
+  background: linear-gradient(
+    to bottom,
+    transparent,
+    rgba(0, 116, 128, 0.3),
+    transparent
+  );
+  border-radius: 0 2px 2px 0;
 }
 
 :deep(.q-table tbody tr.hidden-row) {
