@@ -101,6 +101,13 @@ function createPaintExpression(fallback: string) {
     // Highlight the specific hovered line
     ["==", ["get", "feature_id"], hoveredLineId.value || ""],
     ["get", "color"],
+    // Highlight mission hovered from list panel
+    [
+      "all",
+      ["==", ["get", "mission_key"], props.hoveredMission || ""],
+      ["!=", props.hoveredMission || "", ""],
+    ],
+    ["get", "color"],
     // Highlight selected mission lines
     ["==", ["get", "mission_key"], props.selectedMission || ""],
     ["get", "color"],
@@ -109,6 +116,7 @@ function createPaintExpression(fallback: string) {
       "any",
       ["!=", hoveredLineId.value || "", ""],
       ["!=", props.selectedMission || "", ""],
+      ["!=", props.hoveredMission || "", ""],
     ],
     fallback,
     // Otherwise show the mission's color
@@ -119,19 +127,35 @@ function createPaintExpression(fallback: string) {
 function createOpacityExpression() {
   return [
     "case",
-    // Full opacity for hovered line
+    // Full opacity for hovered line (highest priority)
     ["==", ["get", "feature_id"], hoveredLineId.value || ""],
+    0.9,
+    // Mission hovered from list panel (not line-specific)
+    [
+      "all",
+      ["==", ["get", "mission_key"], props.hoveredMission || ""],
+      ["!=", props.hoveredMission || "", ""],
+      ["==", hoveredLineId.value || "", ""],
+    ],
     0.8,
-    // Selected mission lines
+    // Other lines of selected mission (when hovering a line within selected mission)
+    [
+      "all",
+      ["==", ["get", "mission_key"], props.selectedMission || ""],
+      ["!=", hoveredLineId.value || "", ""],
+    ],
+    0.5,
+    // Selected mission lines (when no hover)
     ["==", ["get", "mission_key"], props.selectedMission || ""],
-    0.7,
-    // If there's a hovered line or selected mission, dim others
+    0.6,
+    // If there's a hovered line or selected mission, dim others more
     [
       "any",
       ["!=", hoveredLineId.value || "", ""],
       ["!=", props.selectedMission || "", ""],
+      ["!=", props.hoveredMission || "", ""],
     ],
-    0.2,
+    0.15,
     // Otherwise normal opacity
     OPACITY.NORMAL,
   ] as any;
@@ -222,6 +246,23 @@ onMounted(async () => {
       },
     });
 
+    // Add outline layer for selected mission
+    map.addLayer({
+      id: "mission-footprints-selected-outline",
+      type: "line",
+      source: "mission-footprints",
+      paint: {
+        "line-color": "#1976d2",
+        "line-width": [
+          "case",
+          ["==", ["get", "mission_key"], props.selectedMission || ""],
+          3,
+          0,
+        ],
+        "line-opacity": 1,
+      },
+    });
+
     // Add click handler
     map.on("click", "mission-footprints-fill", (e) => {
       if (e.features && e.features[0]) {
@@ -279,6 +320,13 @@ watch(
 );
 
 watch([() => props.selectedMission, hoveredLineId], updateMapStyling);
+
+watch(
+  () => props.hoveredMission,
+  () => {
+    updateMapStyling();
+  },
+);
 
 watch(
   () => props.zoomToMission,
@@ -428,6 +476,12 @@ function updateMapStyling() {
     "fill-opacity",
     createOpacityExpression(),
   );
+  map.setPaintProperty("mission-footprints-selected-outline", "line-width", [
+    "case",
+    ["==", ["get", "mission_key"], props.selectedMission || ""],
+    3,
+    0,
+  ] as any);
 }
 
 function handleMouseEnter(e: maplibregl.MapLayerMouseEvent) {

@@ -32,8 +32,15 @@
                 'mission-card cursor-pointer',
                 { 'hidden-card': hiddenMissions.has(props.row.mission_key) },
                 { 'selected-card': props.row.mission_key === selectedMission },
+                {
+                  'map-hovered-card':
+                    props.row.mission_key === hoveredMission &&
+                    props.row.mission_key !== selectedMission,
+                },
               ]"
               @click="handleRowClick($event, props.row)"
+              @mouseenter="emit('hover', props.row.mission_key)"
+              @mouseleave="emit('hover', null)"
             >
               <q-card-section>
                 <div class="row items-center justify-between q-mb-sm">
@@ -106,8 +113,21 @@
             :class="[
               'cursor-pointer',
               { 'hidden-row': hiddenMissions.has(props.row.mission_key) },
+              { selected: props.row.mission_key === selectedMission },
+              {
+                'map-hovered':
+                  props.row.mission_key === hoveredMission &&
+                  props.row.mission_key !== selectedMission,
+              },
             ]"
+            :ref="
+              props.row.mission_key === hoveredMission
+                ? 'hoveredRow'
+                : undefined
+            "
             @click="handleRowClick($event, props.row)"
+            @mouseenter="emit('hover', props.row.mission_key)"
+            @mouseleave="emit('hover', null)"
           >
             <q-td v-for="col in props.cols" :key="col.name" :props="props">
               <template v-if="col.name === 'name'">
@@ -175,7 +195,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, computed } from "vue";
+import { ref, computed, watch, nextTick } from "vue";
 import { useQuasar } from "quasar";
 import type { QTableColumn } from "quasar";
 import MissionExpandedDetails from "./MissionExpandedDetails.vue";
@@ -219,6 +239,25 @@ const hiddenMissions = ref(new Set<string>());
 const pagination = ref({
   rowsPerPage: 0, // Show all rows
 });
+
+// Auto-scroll to hovered mission from map
+watch(
+  () => props.hoveredMission,
+  async (newHovered) => {
+    if (newHovered && newHovered !== props.selectedMission) {
+      await nextTick();
+      const rowElement = document.querySelector(
+        `.q-tr.map-hovered`,
+      ) as HTMLElement;
+      if (rowElement) {
+        rowElement.scrollIntoView({
+          behavior: "smooth",
+          block: "center",
+        });
+      }
+    }
+  },
+);
 
 const allColumns: QTableColumn[] = [
   {
@@ -373,8 +412,26 @@ function formatNumber(num: number | undefined): string {
   box-shadow: none;
 }
 
+:deep(.q-table tbody tr) {
+  border-left: 3px solid transparent;
+}
+
 :deep(.q-table tbody tr:hover) {
-  background-color: rgba(var(--q-primary-rgb), 0.001) !important;
+  background-color: rgba(var(--q-primary-rgb), 0.08) !important;
+}
+
+:deep(.q-table tbody tr.selected) {
+  border-left-color: var(--q-primary);
+  background-color: rgba(var(--q-primary-rgb), 0.04) !important;
+}
+
+:deep(.q-table tbody tr.selected:hover) {
+  background-color: rgba(var(--q-primary-rgb), 0.12) !important;
+}
+
+:deep(.q-table tbody tr.map-hovered) {
+  box-shadow: inset 3px 0 0 0 var(--q-secondary);
+  animation: pulse-highlight 1.5s ease-in-out infinite;
 }
 
 :deep(.q-table tbody tr.hidden-row) {
@@ -402,16 +459,27 @@ function formatNumber(num: number | undefined): string {
 
 /* Grid mode styles */
 .mission-card {
-  transition: all 0.2s;
+  transition: all 0.2s ease-in-out;
+  border-left: 3px solid transparent;
 }
 
 .mission-card:hover {
-  background-color: rgba(var(--q-primary-rgb), 0.02);
+  background-color: rgba(var(--q-primary-rgb), 0.08);
+  transform: translateX(2px);
 }
 
 .selected-card {
-  border-color: var(--q-primary);
-  background-color: rgba(var(--q-primary-rgb), 0.05);
+  border-left-color: var(--q-primary);
+  background-color: rgba(var(--q-primary-rgb), 0.04);
+}
+
+.selected-card:hover {
+  background-color: rgba(var(--q-primary-rgb), 0.12);
+}
+
+.map-hovered-card {
+  box-shadow: inset 3px 0 0 0 var(--q-secondary);
+  animation: pulse-highlight 1.5s ease-in-out infinite;
 }
 
 .hidden-card {
