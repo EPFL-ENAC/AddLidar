@@ -1,11 +1,27 @@
 install:
 	$(MAKE) -C lidar-api install
+
+dev:
+	@echo "Starting backend in development mode..."
+	$(MAKE) -C lidar-api run
+
 run:
 	$(MAKE) -C lidar-api run
+
+build:
+	@echo "Building backend..."
+	@if [ -f lidar-api/Makefile ] && grep -q "^build:" lidar-api/Makefile; then \
+		$(MAKE) -C lidar-api build; \
+	else \
+		echo "No build target found in lidar-api, skipping..."; \
+	fi
+
 test:
 	$(MAKE) -C lidar-api test
+
 format:
 	$(MAKE) -C lidar-api format
+
 lint:
 	$(MAKE) -C lidar-api lint
 	

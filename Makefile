@@ -1,4 +1,4 @@
-.PHONY: setup install clean uninstall lint format subtree-add subtree-pull subtree-push-backend subtree-push-frontend subtree-push-potree-converter check-git-clean verify-subtrees reset-subtrees subtree-status deprecate-repos create-deprecation-notices help
+.PHONY: setup install clean uninstall lint format dev dev-backend dev-frontend test test-backend build build-backend build-frontend subtree-add subtree-pull subtree-push-backend subtree-push-frontend subtree-push-potree-converter check-git-clean verify-subtrees reset-subtrees subtree-status deprecate-repos create-deprecation-notices help
 
 # Repository configuration
 SUBTREES = backend frontend potree-converter
@@ -48,6 +48,45 @@ format:
 	@echo "Running formatter..."
 	npx prettier --write .
 	@echo "Formatting complete!"
+
+# Development commands
+dev:
+	@echo "Starting backend and frontend in development mode..."
+	@echo "Backend will run on http://localhost:8000"
+	@echo "Frontend will run on http://localhost:5173"
+	@echo "Press Ctrl+C to stop all services"
+	@trap 'kill 0' EXIT; \
+	$(MAKE) -C backend dev & \
+	$(MAKE) -C frontend dev & \
+	wait
+
+dev-backend:
+	@echo "Starting backend in development mode..."
+	$(MAKE) -C backend dev
+
+dev-frontend:
+	@echo "Starting frontend in development mode..."
+	$(MAKE) -C frontend dev
+
+# Build commands
+build:
+	@echo "Building backend and frontend..."
+	$(MAKE) -C backend build
+	$(MAKE) -C frontend build
+
+build-backend:
+	$(MAKE) -C backend build
+
+build-frontend:
+	$(MAKE) -C frontend build
+
+# Test commands
+test:
+	@echo "Running backend tests..."
+	$(MAKE) -C backend test
+
+test-backend:
+	$(MAKE) -C backend test
 
 # Safe subtree addition
 subtree-add:
@@ -281,6 +320,32 @@ create-deprecation-notices:
 
 # Help target (single definition)
 help:
+	@echo "AddLidar Monorepo - Available Commands:"
+	@echo "========================================"
+	@echo ""
+	@echo "Development Commands:"
+	@echo "  dev                       - Start both backend and frontend in dev mode"
+	@echo "  dev-backend               - Start only backend in dev mode"
+	@echo "  dev-frontend              - Start only frontend in dev mode"
+	@echo ""
+	@echo "Build Commands:"
+	@echo "  build                     - Build both backend and frontend"
+	@echo "  build-backend             - Build backend only"
+	@echo "  build-frontend            - Build frontend only"
+	@echo ""
+	@echo "Test Commands:"
+	@echo "  test                      - Run backend tests"
+	@echo "  test-backend              - Run backend tests"
+	@echo ""
+	@echo "Code Quality:"
+	@echo "  lint                      - Run linter on all code"
+	@echo "  format                    - Format all code with prettier"
+	@echo ""
+	@echo "Setup & Maintenance:"
+	@echo "  install                   - Install dependencies and set up git hooks"
+	@echo "  clean                     - Clean node_modules and package-lock.json"
+	@echo "  uninstall                 - Remove git hooks and clean dependencies"
+	@echo ""
 	@echo "Git Subtree Commands:"
 	@echo "  subtree-add               - Add all repos as subtrees (safe, can run multiple times)"
 	@echo "  subtree-pull              - Pull updates from all original repos"
@@ -292,10 +357,5 @@ help:
 	@echo "  reset-subtrees            - Remove all subtrees (dangerous!)"
 	@echo "  deprecate-repos           - Start repository deprecation process"
 	@echo ""
-	@echo "Standard Commands:"
-	@echo "  install    - Install dependencies and set up git hooks"
-	@echo "  clean      - Clean node_modules and package-lock.json"
-	@echo "  uninstall  - Remove git hooks and clean dependencies"
-	@echo "  lint       - Run linter"
-	@echo "  format     - Run formatter"
-	@echo "  help       - Show this help message"
+	@echo "Help:"
+	@echo "  help                      - Show this help message"
