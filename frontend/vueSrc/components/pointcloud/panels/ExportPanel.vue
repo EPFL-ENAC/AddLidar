@@ -38,6 +38,11 @@ const { clipPosition, clipRotation, clipScale } = exportJobStore;
 const format = ref<SelectOption | undefined>(undefined);
 const epsg = ref<string | undefined>(undefined);
 const maxPoints = ref(1000);
+const density = ref<number | undefined>(undefined);
+const removeColor = ref(false);
+const removeAllAttributes = ref(false);
+const lineIndex = ref<number | undefined>(undefined);
+const maxReturns = ref<number | undefined>(undefined);
 const parametersRestored = ref(false);
 const showLogs = ref(false);
 
@@ -79,6 +84,11 @@ function onSubmit() {
   };
 
   if (epsg.value) params.outcrs = epsg.value;
+  if (density.value !== undefined) params.density = density.value;
+  if (removeColor.value) params.remove_color = true;
+  if (removeAllAttributes.value) params.remove_all_attributes = true;
+  if (lineIndex.value !== undefined) params.line = lineIndex.value;
+  if (maxReturns.value !== undefined) params.returns = maxReturns.value;
 
   if (exportJobStore.clipVolume) {
     params.roi = [
@@ -108,6 +118,12 @@ function restoreJobParameters() {
   }
   if (params.outcrs) epsg.value = params.outcrs;
   if (params.number) maxPoints.value = params.number;
+  if (params.density !== undefined) density.value = params.density as number;
+  if (params.remove_color) removeColor.value = params.remove_color;
+  if (params.remove_all_attributes)
+    removeAllAttributes.value = params.remove_all_attributes;
+  if (params.line !== undefined) lineIndex.value = params.line;
+  if (params.returns !== undefined) maxReturns.value = params.returns;
 
   if (params.roi?.length === 9) {
     const [x, y, z, sx, sy, sz, rx, ry, rz] = params.roi;
@@ -141,42 +157,152 @@ onBeforeUnmount(closeConnection);
 </script>
 
 <template>
-  <q-form @submit.prevent="onSubmit">
+  <q-form class="q-pa-sm" @submit.prevent="onSubmit">
+    <!-- Info Banner -->
+    <q-banner dense class="bg-grey-1 text-grey-9 q-ma-xs" rounded>
+      <template v-slot:avatar>
+        <q-icon name="info" size="xs" color="primary" />
+      </template>
+      <div class="text-caption">
+        Export and filter point cloud data on-the-fly. Combine filters to reduce
+        file size and focus on specific data.
+      </div>
+    </q-banner>
+
     <!-- Form Fields -->
-    <div class="form-section">
-      <q-select
-        v-model="format"
-        :options="formatOptions"
-        label="Output Format"
-        dense
-        outlined
-        class="q-mb-md"
-      />
+    <div class="q-pa-md">
+      <!-- Output Settings -->
+      <q-expansion-item
+        label="Output Settings"
+        icon="settings"
+        header-class="text-grey-8"
+        :default-opened="true"
+      >
+        <div class="q-pt-sm">
+          <q-select
+            v-model="format"
+            :options="formatOptions"
+            label="Output Format"
+            hint="File format for exported point cloud"
+            dense
+            outlined
+            class="q-mb-md"
+          />
 
-      <q-select
-        v-model="epsg"
-        :options="epsgOptions"
-        label="Coordinate System (EPSG)"
-        dense
-        outlined
-        clearable
-        class="q-mb-md"
-      />
+          <q-select
+            v-model="epsg"
+            :options="epsgOptions"
+            label="Output Coordinate System"
+            hint="Transform to this CRS (e.g., EPSG:4326). Leave empty for no transformation"
+            dense
+            outlined
+            clearable
+            class="q-mb-md"
+          />
+        </div>
+      </q-expansion-item>
 
-      <q-input
-        v-model.number="maxPoints"
-        type="number"
-        label="Max Points"
-        dense
-        outlined
-        class="q-mb-md"
-      />
+      <!-- Sampling & Filtering -->
+      <q-expansion-item
+        label="Sampling & Filtering"
+        icon="filter_alt"
+        header-class="text-grey-8"
+      >
+        <div class="q-pt-sm">
+          <q-input
+            v-model.number="maxPoints"
+            type="number"
+            label="Max Points"
+            hint="Maximum number of points in output. Points will be spread uniformly"
+            dense
+            outlined
+            class="q-mb-md"
+          />
 
-      <clip-volume />
+          <q-input
+            v-model.number="density"
+            type="number"
+            label="Max Density (pts/m²)"
+            hint="Maximum point density in points per square meter"
+            dense
+            outlined
+            clearable
+            class="q-mb-md"
+            :min="0"
+            step="0.1"
+          />
+
+          <q-input
+            v-model.number="lineIndex"
+            type="number"
+            label="Line Index"
+            hint="Export only a specific line index from the scan"
+            dense
+            outlined
+            clearable
+            class="q-mb-md"
+            :min="0"
+          />
+
+          <q-input
+            v-model.number="maxReturns"
+            type="number"
+            label="Max Return Index"
+            hint="Maximum return index to include (use -1 for no limit)"
+            dense
+            outlined
+            clearable
+            class="q-mb-md"
+            :min="-1"
+          />
+        </div>
+      </q-expansion-item>
+
+      <!-- Attribute Filtering -->
+      <q-expansion-item
+        label="Attribute Filtering"
+        icon="tune"
+        header-class="text-grey-8"
+      >
+        <div class="q-pt-sm">
+          <q-checkbox
+            v-model="removeColor"
+            label="Remove Color Data"
+            dense
+            class="q-mb-sm"
+          >
+            <q-tooltip
+              >Remove RGB color information from the point cloud</q-tooltip
+            >
+          </q-checkbox>
+
+          <q-checkbox
+            v-model="removeAllAttributes"
+            label="Remove All Attributes"
+            dense
+            class="q-mb-md"
+          >
+            <q-tooltip
+              >Keep only geometry (XYZ), remove all other attributes</q-tooltip
+            >
+          </q-checkbox>
+        </div>
+      </q-expansion-item>
+
+      <!-- Region of Interest -->
+      <q-expansion-item
+        label="Region of Interest"
+        icon="crop"
+        header-class="text-grey-8"
+      >
+        <div class="q-pt-sm">
+          <clip-volume />
+        </div>
+      </q-expansion-item>
     </div>
 
     <!-- Submit Button -->
-    <div class="form-section">
+    <div class="form-section row justify-center q-my-md q-mx-lg">
       <q-btn
         type="submit"
         color="primary"
@@ -191,9 +317,7 @@ onBeforeUnmount(closeConnection);
 
     <!-- Job Status -->
     <template v-if="currentJob">
-      <q-separator />
-
-      <div class="form-section">
+      <div class="q-pa-md">
         <div class="section-header">
           <span class="section-header__title">Current Export</span>
           <q-chip
@@ -285,17 +409,17 @@ onBeforeUnmount(closeConnection);
     </template>
 
     <!-- Job History Section -->
-    <q-separator class="q-my-md" />
 
-    <q-expansion-item
-      icon="history"
-      label="Export History"
-      header-class="text-grey-8"
-      dense
-      default-opened
-    >
-      <jobs-panel />
-    </q-expansion-item>
+    <div class="q-pa-md">
+      <q-expansion-item
+        icon="history"
+        label="Export History"
+        header-class="text-grey-8"
+        default-opened
+      >
+        <jobs-panel />
+      </q-expansion-item>
+    </div>
   </q-form>
 </template>
 

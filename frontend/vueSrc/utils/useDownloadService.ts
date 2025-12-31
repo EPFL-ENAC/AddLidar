@@ -38,6 +38,9 @@ export interface JobParams {
   roi?: number[];
   number?: number;
   remove_all_attributes?: boolean;
+  remove_color?: boolean;
+  line?: number;
+  returns?: number;
   [key: string]: any;
 }
 
@@ -132,7 +135,15 @@ export default function useDownloadService(
           format: params.format,
           outcrs: params.outcrs,
           number: params.number,
+          density:
+            typeof params.density === "string"
+              ? parseFloat(params.density)
+              : params.density,
           roi: params.roi,
+          remove_color: params.remove_color,
+          remove_all_attributes: params.remove_all_attributes,
+          line: params.line,
+          returns: params.returns,
           last_updated: new Date().toISOString(),
           error_message: errorMessage,
         });
@@ -158,7 +169,15 @@ export default function useDownloadService(
           format: params.format,
           outcrs: params.outcrs,
           number: params.number,
+          density:
+            typeof params.density === "string"
+              ? parseFloat(params.density)
+              : params.density,
           roi: params.roi,
+          remove_color: params.remove_color,
+          remove_all_attributes: params.remove_all_attributes,
+          line: params.line,
+          returns: params.returns,
           last_updated: new Date().toISOString(),
         });
         jobStore.setCurrentJob(jobData.job_name);
@@ -431,7 +450,12 @@ export default function useDownloadService(
       format: job.format,
       outcrs: job.outcrs,
       number: job.number,
+      density: job.density,
       roi: job.roi,
+      remove_color: job.remove_color,
+      remove_all_attributes: job.remove_all_attributes,
+      line: job.line,
+      returns: job.returns,
     };
   }
 

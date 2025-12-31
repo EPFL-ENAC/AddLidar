@@ -9,7 +9,12 @@ export interface JobRecord {
   format?: string;
   outcrs?: string;
   number?: number;
+  density?: number;
   roi?: number[];
+  remove_color?: boolean;
+  remove_all_attributes?: boolean;
+  line?: number;
+  returns?: number;
   last_updated: string;
   completed_at?: string;
   error_message?: string;
