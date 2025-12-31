@@ -157,20 +157,9 @@ onBeforeUnmount(closeConnection);
 </script>
 
 <template>
-  <q-form class="q-pa-sm" @submit.prevent="onSubmit">
-    <!-- Info Banner -->
-    <q-banner dense class="bg-grey-1 text-grey-9 q-ma-xs" rounded>
-      <template v-slot:avatar>
-        <q-icon name="info" size="xs" color="primary" />
-      </template>
-      <div class="text-caption">
-        Export and filter point cloud data on-the-fly. Combine filters to reduce
-        file size and focus on specific data.
-      </div>
-    </q-banner>
-
+  <q-form @submit.prevent="onSubmit">
     <!-- Form Fields -->
-    <div class="q-pa-md">
+    <div>
       <!-- Output Settings -->
       <q-expansion-item
         label="Output Settings"
@@ -302,7 +291,7 @@ onBeforeUnmount(closeConnection);
     </div>
 
     <!-- Submit Button -->
-    <div class="form-section row justify-center q-my-md q-mx-lg">
+    <div class="form-section row justify-center q-my-md q-mx-sm">
       <q-btn
         type="submit"
         color="primary"
@@ -410,7 +399,7 @@ onBeforeUnmount(closeConnection);
 
     <!-- Job History Section -->
 
-    <div class="q-pa-md">
+    <div class="q-pt-lg q-pt-md">
       <q-expansion-item
         icon="history"
         label="Export History"

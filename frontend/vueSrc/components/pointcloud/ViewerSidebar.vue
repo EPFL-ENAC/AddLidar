@@ -8,10 +8,34 @@ import FiltersPanel from "@/components/pointcloud/panels/FiltersPanel.vue";
 const activeTab = ref("export");
 
 const tabs = [
-  { name: "export", icon: "file_download", label: "Export" },
-  { name: "files", icon: "folder", label: "Files" },
-  { name: "appearance", icon: "palette", label: "Color" },
-  { name: "filters", icon: "filter_list", label: "Filters" },
+  {
+    name: "export",
+    icon: "file_download",
+    label: "Export",
+    tooltip:
+      "Export and filter point cloud data on-the-fly. Combine filters to reduce file size and focus on specific data.",
+  },
+  {
+    name: "files",
+    icon: "folder",
+    label: "Files",
+    tooltip:
+      "Browse and manage mission files. Select point cloud data to visualize and work with.",
+  },
+  {
+    name: "appearance",
+    icon: "palette",
+    label: "Color",
+    tooltip:
+      "Customize point cloud visualization. Choose color schemes, adjust point size and display settings.",
+  },
+  {
+    name: "filters",
+    icon: "filter_list",
+    label: "Filters",
+    tooltip:
+      "Apply display filters to the point cloud. Control which points are visible based on various attributes.",
+  },
 ];
 </script>
 
@@ -30,13 +54,15 @@ const tabs = [
         :name="tab.name"
         :icon="tab.icon"
         :label="tab.label"
-      />
+      >
+        <q-tooltip>{{ tab.tooltip }}</q-tooltip>
+      </q-tab>
     </q-tabs>
 
     <q-separator />
 
     <!-- Tab Panels -->
-    <q-scroll-area class="sidebar-content">
+    <q-scroll-area class="sidebar-content q-pa-lg">
       <q-tab-panels v-model="activeTab" animated keep-alive>
         <q-tab-panel name="export" class="q-pa-none">
           <export-panel />
