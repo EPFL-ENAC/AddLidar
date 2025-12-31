@@ -49,6 +49,7 @@ const selectedAttribute = computed({
           <q-radio
             v-model="selectedAttribute"
             :val="attr.value"
+            dense
             color="primary"
           />
         </q-item-section>

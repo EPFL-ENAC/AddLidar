@@ -103,13 +103,7 @@ watch(
 
   <!-- File List -->
   <q-list v-else separator class="file-list">
-    <q-item
-      v-for="item in filteredFiles"
-      :key="item.folder_key"
-      clickable
-      :disable="!item.file_count"
-      @click="item.file_count && downloadArchive(item.output_path)"
-    >
+    <q-item v-for="item in filteredFiles" :key="item.folder_key">
       <q-item-section avatar>
         <q-icon
           :name="item.file_count ? 'folder_zip' : 'folder'"
@@ -128,12 +122,25 @@ watch(
       </q-item-section>
 
       <q-item-section side>
-        <q-badge
-          v-if="item.file_count"
-          color="primary"
-          :label="item.file_count"
-        />
-        <q-badge v-else color="grey-4" text-color="grey-7" label="Empty" />
+        <div class="row items-center q-gutter-sm">
+          <q-badge
+            v-if="item.file_count"
+            color="primary"
+            :label="item.file_count"
+          />
+          <q-badge v-else color="grey-4" text-color="grey-7" label="Empty" />
+          <q-btn
+            v-if="item.file_count"
+            flat
+            dense
+            round
+            icon="download"
+            color="primary"
+            @click="downloadArchive(item.output_path)"
+          >
+            <q-tooltip>Download archive</q-tooltip>
+          </q-btn>
+        </div>
       </q-item-section>
     </q-item>
 
