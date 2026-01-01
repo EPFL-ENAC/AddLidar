@@ -404,7 +404,6 @@ onBeforeUnmount(closeConnection);
         icon="history"
         label="Export History"
         header-class="text-grey-8"
-        default-opened
       >
         <jobs-panel />
       </q-expansion-item>
@@ -415,11 +414,15 @@ onBeforeUnmount(closeConnection);
 <style scoped>
 .log-container {
   max-height: 200px;
+  max-width: 100%;
   overflow-y: auto;
+  overflow-x: auto;
   background: #f8fafc;
   border-radius: 4px;
   padding: 8px;
   font-family: monospace;
   font-size: 11px;
+  word-break: break-word;
+  overflow-wrap: anywhere;
 }
 </style>
