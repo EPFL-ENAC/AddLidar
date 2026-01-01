@@ -17,7 +17,10 @@ const router = useRouter();
 const directoryStore = useDirectoryStore();
 
 const missionName = computed(
-  () => directoryStore.activeMission || props.missionId,
+  () =>
+    directoryStore.missionData?.name ||
+    directoryStore.activeMission ||
+    props.missionId,
 );
 
 watch(
@@ -34,12 +37,40 @@ function handleBack() {
 </script>
 
 <template>
-  <main-app-layout show-back-button :subtitle="missionName" @back="handleBack">
+  <main-app-layout show-back-button @back="handleBack">
     <template #sidebar>
       <viewer-sidebar />
     </template>
     <template #content>
-      <point-cloud-viewer />
+      <div class="full-width full-height relative-position">
+        <point-cloud-viewer />
+        <div class="floating-banner">
+          <div
+            class="banner-pill row items-center q-px-lg q-py-sm bg-white shadow-1"
+          >
+            <q-icon name="location_on" size="16px" class="q-mr-sm" />
+            <span class="text-weight-medium">{{ missionName }}</span>
+          </div>
+        </div>
+      </div>
     </template>
   </main-app-layout>
 </template>
+
+<style scoped>
+.floating-banner {
+  position: absolute;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+  pointer-events: none;
+}
+
+.banner-pill {
+  opacity: 0.92;
+  backdrop-filter: blur(12px);
+  border-radius: 24px;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+}
+</style>

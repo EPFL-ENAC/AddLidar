@@ -110,7 +110,6 @@ function toggleLeftDrawer() {
             </div>
           </div>
         </header>
-        <q-separator />
 
         <!-- Sidebar Content -->
         <div class="col overflow-auto column sidebar-scrollable">
