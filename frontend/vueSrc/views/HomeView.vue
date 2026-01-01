@@ -33,6 +33,7 @@ const hoveredMission = ref<string | null>(null);
 const zoomToMission = ref<string | null>(null);
 const hiddenMissions = ref<Set<string>>(new Set());
 const visibleMissions = ref<string[]>([]);
+const autoFilterEnabled = ref(false);
 
 const enrichedMissions = computed(() => missions.value);
 
@@ -99,6 +100,10 @@ function onVisibleMissionsChange(missionKeys: string[]) {
   visibleMissions.value = missionKeys;
 }
 
+function onAutoFilterToggle(enabled: boolean) {
+  autoFilterEnabled.value = enabled;
+}
+
 onMounted(() => {
   directoryStore.configurePaths("/api", "/static");
   loadMissions();
@@ -128,10 +133,12 @@ onMounted(() => {
         :selected-mission="selectedMission"
         :hovered-mission="hoveredMission"
         :visible-missions="visibleMissions"
+        :auto-filter="autoFilterEnabled"
         @select="onMissionSelect"
         @hover="onMissionHover"
         @explore="viewMission"
         @hidden-missions-change="onHiddenMissionsChange"
+        @auto-filter-toggle="onAutoFilterToggle"
       />
     </template>
 

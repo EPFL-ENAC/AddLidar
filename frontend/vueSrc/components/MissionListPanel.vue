@@ -1,12 +1,22 @@
 <template>
   <div class="column full-height bg-white">
     <header class="q-pa-md q-py-md">
+      <h1 class="text-h6 q-ma-none q-mb-xs">Missions</h1>
       <div class="row items-center justify-between">
-        <h1 class="text-h6 q-ma-none">Missions</h1>
+        <p class="text-caption text-grey-6 q-ma-none">
+          Select a mission to explore LiDAR data
+        </p>
+        <q-checkbox
+          :model-value="autoFilter"
+          dense
+          size="sm"
+          label="Viewport filter"
+          class="text-caption"
+          @update:model-value="emit('autoFilterToggle', $event)"
+        >
+          <q-tooltip>Show visible missions first</q-tooltip>
+        </q-checkbox>
       </div>
-      <p class="text-caption text-grey-6 q-ma-none">
-        Select a mission to explore LiDAR data
-      </p>
     </header>
 
     <div class="col q-pa-sm q-pb-md" style="min-height: 0; overflow: auto">
@@ -250,6 +260,7 @@ const emit = defineEmits<{
   hover: [missionKey: string | null];
   explore: [missionKey: string];
   hiddenMissionsChange: [hiddenMissions: Set<string>];
+  autoFilterToggle: [enabled: boolean];
 }>();
 
 const props = defineProps<{
@@ -257,6 +268,7 @@ const props = defineProps<{
   selectedMission?: string | null;
   hoveredMission?: string | null;
   visibleMissions?: string[];
+  autoFilter?: boolean;
 }>();
 
 const $q = useQuasar();
@@ -351,7 +363,8 @@ const columns = computed(() => {
 const visibleMissionSet = computed(() => new Set(props.visibleMissions || []));
 
 const sortedMissions = computed(() => {
-  if (!props.visibleMissions?.length) return props.missions;
+  if (!props.autoFilter || !props.visibleMissions?.length)
+    return props.missions;
 
   const visible: Mission[] = [];
   const notVisible: Mission[] = [];
@@ -380,7 +393,7 @@ const lastVisibleMissionKey = computed(() => {
 });
 
 const showSeparator = computed(() => {
-  if (!props.visibleMissions?.length) return false;
+  if (!props.autoFilter || !props.visibleMissions?.length) return false;
   const notVisibleCount = sortedMissions.value.filter(
     (m) => !visibleMissionSet.value.has(m.mission_key),
   ).length;
