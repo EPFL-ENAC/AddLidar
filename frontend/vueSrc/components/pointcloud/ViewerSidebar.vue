@@ -2,8 +2,7 @@
 import { ref } from "vue";
 import FilesPanel from "@/components/pointcloud/panels/FilesPanel.vue";
 import ExportPanel from "@/components/pointcloud/panels/ExportPanel.vue";
-import AppearancePanel from "@/components/pointcloud/panels/AppearancePanel.vue";
-import FiltersPanel from "@/components/pointcloud/panels/FiltersPanel.vue";
+import DisplayPanel from "@/components/pointcloud/panels/DisplayPanel.vue";
 
 const activeTab = ref("export");
 
@@ -23,18 +22,11 @@ const tabs = [
       "Browse and manage mission files. Select point cloud data to visualize and work with.",
   },
   {
-    name: "appearance",
-    icon: "palette",
-    label: "Color",
+    name: "display",
+    icon: "visibility",
+    label: "Display",
     tooltip:
-      "Customize point cloud visualization. Choose color schemes, adjust point size and display settings.",
-  },
-  {
-    name: "filters",
-    icon: "filter_list",
-    label: "Filters",
-    tooltip:
-      "Apply display filters to the point cloud. Control which points are visible based on various attributes.",
+      "Customize point cloud visualization. Choose color modes, apply filters, and control display settings.",
   },
 ];
 </script>
@@ -72,12 +64,8 @@ const tabs = [
           <files-panel />
         </q-tab-panel>
 
-        <q-tab-panel name="appearance" class="q-pa-none">
-          <appearance-panel />
-        </q-tab-panel>
-
-        <q-tab-panel name="filters" class="q-pa-none">
-          <filters-panel />
+        <q-tab-panel name="display" class="q-pa-none">
+          <display-panel />
         </q-tab-panel>
       </q-tab-panels>
     </q-scroll-area>
