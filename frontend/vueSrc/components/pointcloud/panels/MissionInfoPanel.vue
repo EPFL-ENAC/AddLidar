@@ -1,44 +1,44 @@
 <script setup lang="ts">
-import { computed } from 'vue'
-import { useDirectoryStore } from '@/stores/directoryStore'
-import { getClassificationInfo } from '@/types/classification'
+import { computed } from "vue";
+import { useDirectoryStore } from "@/stores/directoryStore";
+import { getClassificationInfo } from "@/types/classification";
 
-const directoryStore = useDirectoryStore()
+const directoryStore = useDirectoryStore();
 
-const missionData = computed(() => directoryStore.missionData)
-const metadata = computed(() => directoryStore.pointcloudMetadata)
+const missionData = computed(() => directoryStore.missionData);
+const metadata = computed(() => directoryStore.pointcloudMetadata);
 
 const extraAttributes = computed(() => {
-  if (!missionData.value?.extra_attributes) return null
+  if (!missionData.value?.extra_attributes) return null;
   try {
-    return JSON.parse(missionData.value.extra_attributes)
+    return JSON.parse(missionData.value.extra_attributes);
   } catch {
-    return null
+    return null;
   }
-})
+});
 
 const boundingBoxDimensions = computed(() => {
-  const bbox = metadata.value?.boundingBox
-  if (!bbox) return null
+  const bbox = metadata.value?.boundingBox;
+  if (!bbox) return null;
 
-  const [minX, minY, minZ] = bbox.min
-  const [maxX, maxY, maxZ] = bbox.max
+  const [minX, minY, minZ] = bbox.min;
+  const [maxX, maxY, maxZ] = bbox.max;
 
   return {
     width: (maxX - minX).toFixed(2),
     length: (maxY - minY).toFixed(2),
     height: (maxZ - minZ).toFixed(2),
-  }
-})
+  };
+});
 
 const availableClassifications = computed(() => {
-  if (!metadata.value?.attributes) return []
+  if (!metadata.value?.attributes) return [];
 
   const classAttr = metadata.value.attributes.find((attr) =>
-    attr.name.toLowerCase().includes('classification')
-  )
+    attr.name.toLowerCase().includes("classification"),
+  );
 
-  if (!classAttr?.histogram) return []
+  if (!classAttr?.histogram) return [];
 
   return Object.entries(classAttr.histogram)
     .filter(([, count]) => count > 0)
@@ -46,8 +46,8 @@ const availableClassifications = computed(() => {
       value: parseInt(value),
       count,
       info: getClassificationInfo(parseInt(value)),
-    }))
-})
+    }));
+});
 </script>
 
 <template>
@@ -185,7 +185,7 @@ const availableClassifications = computed(() => {
 }
 
 .monospace {
-  font-family: 'Courier New', monospace;
+  font-family: "Courier New", monospace;
   font-size: 13px;
 }
 
