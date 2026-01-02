@@ -87,9 +87,7 @@ def parse_progress_from_log(log_line: str) -> Optional[Dict[str, Any]]:
     return None
 
 
-def calculate_eta(
-    processed: int, total: int, start_time: float, current_time: float
-) -> Optional[Dict[str, Any]]:
+def calculate_eta(processed: int, total: int, start_time: float, current_time: float) -> Optional[Dict[str, Any]]:
     """
     Calculate estimated time of arrival based on processing speed.
 
@@ -117,16 +115,12 @@ def calculate_eta(
     return {
         "eta_seconds": round(eta_seconds, 2),
         "points_per_second": round(points_per_second, 2),
-        "estimated_completion_time": datetime.fromtimestamp(
-            estimated_completion
-        ).isoformat(),
+        "estimated_completion_time": datetime.fromtimestamp(estimated_completion).isoformat(),
         "elapsed_seconds": round(elapsed_time, 2),
     }
 
 
-def stream_pod_logs(
-    job_name: str, pod_name: str, namespace: str, loop: asyncio.AbstractEventLoop
-) -> None:
+def stream_pod_logs(job_name: str, pod_name: str, namespace: str, loop: asyncio.AbstractEventLoop) -> None:
     """
     Stream logs from a running pod and parse progress information.
     Uses polling with timeout to avoid blocking when Kubernetes buffers logs.
@@ -168,9 +162,7 @@ def stream_pod_logs(
                     pod_ready = True
                     logger.info(f"Pod {pod_name} is now Running, starting log polling")
                 else:
-                    logger.debug(
-                        f"Waiting for pod {pod_name} to be Running (current: {pod.status.phase})"
-                    )
+                    logger.debug(f"Waiting for pod {pod_name} to be Running (current: {pod.status.phase})")
                     time.sleep(2)
             except Exception as e:
                 logger.error(f"Error checking pod status: {str(e)}")
@@ -233,9 +225,7 @@ def stream_pod_logs(
                         last_progress_info.update(eta_info)
 
                     # Send progress update
-                    logger.debug(
-                        f"Sending progress update for {job_name}: {last_progress_info['percentage']:.1f}%"
-                    )
+                    logger.debug(f"Sending progress update for {job_name}: {last_progress_info['percentage']:.1f}%")
                     update_job_statuses(
                         job_name,
                         JobStatus(
@@ -285,9 +275,7 @@ def stream_pod_logs(
             del log_stream_control[job_name]
 
 
-def start_log_streaming(
-    job_name: str, namespace: str, loop: asyncio.AbstractEventLoop
-) -> None:
+def start_log_streaming(job_name: str, namespace: str, loop: asyncio.AbstractEventLoop) -> None:
     """
     Start streaming logs for a job in a separate thread.
     Will retry if pod is not ready yet.
@@ -301,14 +289,10 @@ def start_log_streaming(
         logger.info(f"start_log_streaming called for job {job_name}")
         # Get the pod name for this job
         core_v1 = client.CoreV1Api()
-        pods = core_v1.list_namespaced_pod(
-            namespace=namespace, label_selector=f"job-name={job_name}"
-        )
+        pods = core_v1.list_namespaced_pod(namespace=namespace, label_selector=f"job-name={job_name}")
 
         if not pods.items:
-            logger.warning(
-                f"No pods found for job {job_name}, will retry when pod is ready"
-            )
+            logger.warning(f"No pods found for job {job_name}, will retry when pod is ready")
             return
 
         pod_name = pods.items[0].metadata.name
@@ -324,9 +308,7 @@ def start_log_streaming(
             daemon=True,
         )
         thread.start()
-        logger.info(
-            f"Started log streaming thread for job {job_name} (pod phase: {pod_phase})"
-        )
+        logger.info(f"Started log streaming thread for job {job_name} (pod phase: {pod_phase})")
 
     except Exception as e:
         logger.error(f"Error starting log stream for job {job_name}: {str(e)}")
@@ -344,9 +326,7 @@ def stop_log_streaming(job_name: str) -> None:
         logger.info(f"Stopped log streaming for job {job_name}")
 
 
-def update_job_statuses(
-    job_name: str, job_status: JobStatus, loop: asyncio.AbstractEventLoop
-) -> None:
+def update_job_statuses(job_name: str, job_status: JobStatus, loop: asyncio.AbstractEventLoop) -> None:
     """
     Update the status of a job in the job_statuses dictionary.
     Only updates fields that are provided in the new status, preserving existing values.
@@ -403,9 +383,7 @@ def get_pod_info(pod_name: str) -> str:
     """
     core_v1 = client.CoreV1Api()
     settings_dict = get_settings()
-    pod = core_v1.read_namespaced_pod(
-        name=pod_name, namespace=settings_dict["NAMESPACE"]
-    )
+    pod = core_v1.read_namespaced_pod(name=pod_name, namespace=settings_dict["NAMESPACE"])
     pod_info = f"Pod phase: {pod.status.phase}\n"
     if pod.status.container_statuses:
         for container in pod.status.container_statuses:
@@ -427,9 +405,7 @@ def get_log_job_status(job_name: str) -> str:
 
     label_selector = f"job-name={job_name}"
     core_v1 = client.CoreV1Api()
-    pods = core_v1.list_namespaced_pod(
-        namespace=settings_dict["NAMESPACE"], label_selector=label_selector
-    )
+    pods = core_v1.list_namespaced_pod(namespace=settings_dict["NAMESPACE"], label_selector=label_selector)
 
     if not pods.items:
         logger.error(f"No pods found for job {job_name}")
@@ -440,9 +416,7 @@ def get_log_job_status(job_name: str) -> str:
 
     try:
         # Get the logs
-        logs = core_v1.read_namespaced_pod_log(
-            name=pod_name, namespace=settings_dict["NAMESPACE"]
-        )
+        logs = core_v1.read_namespaced_pod_log(name=pod_name, namespace=settings_dict["NAMESPACE"])
 
         # if not logs or logs == "\n":
         #     # If logs are empty, try to get pod status information
@@ -458,9 +432,7 @@ def get_log_job_status(job_name: str) -> str:
         return f"Error retrieving logs: {str(e)}"
 
 
-def watch_job_status_thread(
-    job_name: str, namespace: str, loop: asyncio.AbstractEventLoop
-) -> None:
+def watch_job_status_thread(job_name: str, namespace: str, loop: asyncio.AbstractEventLoop) -> None:
     """
     Watches a Kubernetes Job in a separate thread and sends status updates via event loop.
 
@@ -495,9 +467,7 @@ def watch_job_status_thread(
                 # simple_status = job_status_manager.interpret_job_status(status)
                 # logger.info(f"Simple status: {simple_status}")
                 if job.status.active == 1:
-                    logger.info(
-                        f"Job {job_name} is active/running, status: {str(job.status)}"
-                    )
+                    logger.info(f"Job {job_name} is active/running, status: {str(job.status)}")
                     update_job_statuses(
                         job_name,
                         JobStatus(
@@ -510,9 +480,7 @@ def watch_job_status_thread(
 
                     # Start log streaming when job starts running (only once)
                     if not log_streaming_started:
-                        logger.info(
-                            f"Attempting to start log streaming for job {job_name}"
-                        )
+                        logger.info(f"Attempting to start log streaming for job {job_name}")
                         start_log_streaming(job_name, namespace, loop)
                         log_streaming_started = True
                         logger.info(f"Log streaming start requested for job {job_name}")
@@ -527,9 +495,7 @@ def watch_job_status_thread(
                         try:
                             logs = get_log_job_status(job_name)
                         except Exception as log_error:
-                            logger.error(
-                                f"Error getting logs for job {job_name}: {str(log_error)}"
-                            )
+                            logger.error(f"Error getting logs for job {job_name}: {str(log_error)}")
                             logs = f"Error retrieving logs: {str(log_error)}"
 
                     update_job_statuses(
@@ -585,9 +551,7 @@ async def notify_websocket(job_status: JobStatus) -> None:
             connection = active_connections[job_name]
             status_dict = prepare_status_dict(job_status)
             await connection.send_json(status_dict)
-            logger.info(
-                f"WebSocket notification sent for job {job_name}: {job_status.message}"
-            )
+            logger.info(f"WebSocket notification sent for job {job_name}: {job_status.message}")
 
             if job_status.status in AUTHORIZED_STATUSES:
                 await connection.close()
@@ -607,9 +571,7 @@ def prepare_status_dict(job_status: JobStatus) -> Dict[str, Any]:
     status_dict = job_status.dict(exclude_unset=True)
     if status_dict.get("timestamp") and isinstance(status_dict["timestamp"], datetime):
         status_dict["timestamp"] = status_dict["timestamp"].isoformat()
-    if status_dict.get("created_at") and isinstance(
-        status_dict["created_at"], datetime
-    ):
+    if status_dict.get("created_at") and isinstance(status_dict["created_at"], datetime):
         status_dict["created_at"] = status_dict["created_at"].isoformat()
     if "logs" in status_dict and isinstance(status_dict["logs"], bytes):
         status_dict["logs"] = status_dict["logs"].decode("utf-8", errors="replace")
@@ -623,18 +585,12 @@ def prepare_status_dict(job_status: JobStatus) -> Dict[str, Any]:
 def handle_notification_error(e: Exception, job_status: JobStatus) -> None:
     job_name_str = "unknown"
     try:
-        job_name_str = (
-            job_status.job_name
-            if isinstance(job_status, JobStatus)
-            else job_status.get("job_name", "unknown")
-        )
+        job_name_str = job_status.job_name if isinstance(job_status, JobStatus) else job_status.get("job_name", "unknown")
         logger.error(f"Error notifying WebSocket for job {job_name_str}: {str(e)}")
         if job_name_str in active_connections:
             del active_connections[job_name_str]
     except Exception as nested_e:
-        logger.error(
-            f"Critical error in notify_websocket error handler: {str(nested_e)}"
-        )
+        logger.error(f"Critical error in notify_websocket error handler: {str(nested_e)}")
 
 
 def stop_watching_job(job_name: str) -> None:
@@ -722,9 +678,7 @@ def delete_k8s_job(job_name: str, namespace: str) -> bool:
     try:
         batch_v1 = client.BatchV1Api()
         delete_options = client.V1DeleteOptions(propagation_policy="Background")
-        batch_v1.delete_namespaced_job(
-            name=job_name, namespace=namespace, body=delete_options
-        )
+        batch_v1.delete_namespaced_job(name=job_name, namespace=namespace, body=delete_options)
         logger.info(f"Deleted job {job_name}")
         return True
     except Exception as e:
@@ -732,9 +686,7 @@ def delete_k8s_job(job_name: str, namespace: str) -> bool:
         return False
 
 
-def generate_k8s_addlidarmanager_job(
-    job_name: str, unique_filename: str, cli_args: Optional[List[str]]
-) -> None:
+def generate_k8s_addlidarmanager_job(job_name: str, unique_filename: str, cli_args: Optional[List[str]]) -> None:
     """
     Create a Kubernetes job that runs the LidarDataManager container.
 
@@ -765,15 +717,11 @@ def generate_k8s_addlidarmanager_job(
     volumes = [
         client.V1Volume(
             name="data-volume",
-            persistent_volume_claim=client.V1PersistentVolumeClaimVolumeSource(
-                claim_name=settings_dict["PVC_NAME"]
-            ),
+            persistent_volume_claim=client.V1PersistentVolumeClaimVolumeSource(claim_name=settings_dict["PVC_NAME"]),
         ),
         client.V1Volume(
             name="data-output-volume",
-            persistent_volume_claim=client.V1PersistentVolumeClaimVolumeSource(
-                claim_name=settings_dict["PVC_OUTPUT_NAME"]
-            ),
+            persistent_volume_claim=client.V1PersistentVolumeClaimVolumeSource(claim_name=settings_dict["PVC_OUTPUT_NAME"]),
         ),
     ]
     volume_mounts = [
@@ -782,9 +730,7 @@ def generate_k8s_addlidarmanager_job(
             mount_path=settings_dict["MOUNT_PATH"],
             sub_path=settings_dict["SUB_PATH"],
         ),
-        client.V1VolumeMount(
-            name="data-output-volume", mount_path=settings_dict["OUTPUT_PATH"]
-        ),
+        client.V1VolumeMount(name="data-output-volume", mount_path=settings_dict["OUTPUT_PATH"]),
     ]
     logger.info(f"Using PVC: {settings_dict['PVC_NAME']}")
     logger.info(f"Using PVC OUTPOUT: {settings_dict['PVC_OUTPUT_NAME']}")
@@ -871,15 +817,11 @@ fi
         resources=client.V1ResourceRequirements(
             requests={
                 "cpu": os.getenv("LIDAR_JOB_CPU_REQUEST", "500m"),
-                "memory": os.getenv(
-                    "LIDAR_JOB_MEMORY_REQUEST", "2Gi"
-                ),  # Increased default
+                "memory": os.getenv("LIDAR_JOB_MEMORY_REQUEST", "2Gi"),  # Increased default
             },
             limits={
                 "cpu": os.getenv("LIDAR_JOB_CPU_LIMIT", "2"),
-                "memory": os.getenv(
-                    "LIDAR_JOB_MEMORY_LIMIT", "8Gi"
-                ),  # Increased default
+                "memory": os.getenv("LIDAR_JOB_MEMORY_LIMIT", "8Gi"),  # Increased default
             },
         ),
     )
@@ -985,9 +927,7 @@ def create_k8s_job(job_name: str, cli_args: Optional[List[str]]) -> None:
             ),
             asyncio.get_event_loop(),
         )
-        logger.info(
-            f"Created job {job_name}, output will be saved to {unique_filename}, cli_args: {cli_args}"
-        )
+        logger.info(f"Created job {job_name}, output will be saved to {unique_filename}, cli_args: {cli_args}")
         logger.info(f"Created job {job_name}")
         return job_name
     except Exception as e:

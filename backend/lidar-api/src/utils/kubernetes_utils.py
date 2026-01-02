@@ -21,13 +21,9 @@ def get_current_namespace() -> str:
     """Get the current Kubernetes namespace where the scanner is running."""
     try:
         if os.path.exists("/var/run/secrets/kubernetes.io/serviceaccount/namespace"):
-            with open(
-                "/var/run/secrets/kubernetes.io/serviceaccount/namespace", "r"
-            ) as f:
+            with open("/var/run/secrets/kubernetes.io/serviceaccount/namespace", "r") as f:
                 namespace = f.read().strip()
-                logger.info(
-                    f"Detected current namespace from service account: {namespace}"
-                )
+                logger.info(f"Detected current namespace from service account: {namespace}")
                 return namespace
     except Exception as e:
         logger.warning(f"Failed to read namespace from service account: {e}")
@@ -63,9 +59,7 @@ def get_node_scheduling_config() -> Tuple[Optional[List[Dict]], Optional[Dict]]:
 
     # Check if this is a production environment that should use RCP HAAS nodes
     if current_namespace == "epfl-eso-addlidar-prod":
-        logger.info(
-            "Detected production environment - configuring jobs for RCP HAAS nodes"
-        )
+        logger.info("Detected production environment - configuring jobs for RCP HAAS nodes")
         tolerations = [
             {
                 "key": "dedicated",
@@ -77,9 +71,7 @@ def get_node_scheduling_config() -> Tuple[Optional[List[Dict]], Optional[Dict]]:
         node_selector = {"rcpnas3": "available"}
         return tolerations, node_selector
     else:
-        logger.info(
-            f"Standard environment detected ({current_namespace}) - no special node scheduling required"
-        )
+        logger.info(f"Standard environment detected ({current_namespace}) - no special node scheduling required")
         return None, None
 
 
@@ -87,9 +79,7 @@ def get_resource_config_from_env() -> Dict[str, str]:
     """Read resource configuration from environment variables."""
     return {
         "compression_cpu_request": os.environ.get("COMPRESSION_CPU_REQUEST", "500m"),
-        "compression_memory_request": os.environ.get(
-            "COMPRESSION_MEMORY_REQUEST", "1Gi"
-        ),
+        "compression_memory_request": os.environ.get("COMPRESSION_MEMORY_REQUEST", "1Gi"),
         "compression_cpu_limit": os.environ.get("COMPRESSION_CPU_LIMIT", "2"),
         "compression_memory_limit": os.environ.get("COMPRESSION_MEMORY_LIMIT", "4Gi"),
         "potree_cpu_request": os.environ.get("POTREE_CPU_REQUEST", "1"),
@@ -99,9 +89,7 @@ def get_resource_config_from_env() -> Dict[str, str]:
     }
 
 
-def create_kubernetes_job(
-    template_path: str, context: Dict[str, Any], export_only: bool = False
-) -> Optional[int]:
+def create_kubernetes_job(template_path: str, context: Dict[str, Any], export_only: bool = False) -> Optional[int]:
     """Create a Kubernetes job from a Jinja2 template."""
     try:
         # Import these modules only when needed

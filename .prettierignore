@@ -6,13 +6,17 @@ node_modules/
 package-lock.json
 npm-shrinkwrap.json
 CHANGELOG.md
-
+dist/
+**/dist/
+**/build/potree/
+**/public/libs/
 
 # Ignore all files in the following directories (Potree specific)
-frontend/src/*
-frontend/resources/*
-frontend/libs/*
-**/.venv/*
+frontend/src/
+frontend/resources/
+frontend/libs/
+frontend/build/
+**/.venv/
 
 *.png 
 *.jpg
@@ -50,6 +54,8 @@ Makefile
 .editorconfig
 lefthook.yml
 commitlint.config.js
+*.toml
+pyproject.toml
 
 # CITATION files
 CITATION.cff

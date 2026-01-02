@@ -21,9 +21,7 @@ from typing import List, Optional, Tuple
 import argparse
 
 # Configure logging
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
-)
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
 
@@ -55,9 +53,7 @@ class SnapshotManager:
         logger.info(f"Snapshots directory: {self.snapshots_dir}")
         logger.info(f"Current database: {self.current_db_path}")
 
-    def get_production_pods(
-        self, namespace: str = "epfl-eso-addlidar-prod"
-    ) -> List[str]:
+    def get_production_pods(self, namespace: str = "epfl-eso-addlidar-prod") -> List[str]:
         """Get list of production pods that might contain the database
 
         Args:
@@ -75,10 +71,7 @@ class SnapshotManager:
                 if line.startswith("pod/"):
                     pod_name = line.replace("pod/", "")
                     # Filter for relevant pods (backend, api, etc.)
-                    if any(
-                        keyword in pod_name.lower()
-                        for keyword in ["backend", "api", "lidar"]
-                    ):
+                    if any(keyword in pod_name.lower() for keyword in ["backend", "api", "lidar"]):
                         pods.append(pod_name)
 
             return pods
@@ -86,9 +79,7 @@ class SnapshotManager:
             logger.error(f"Failed to get production pods: {e}")
             return []
         except FileNotFoundError:
-            logger.error(
-                "kubectl not found. Please install kubectl and configure access to the cluster."
-            )
+            logger.error("kubectl not found. Please install kubectl and configure access to the cluster.")
             return []
 
     def download_snapshot_from_pod(
@@ -153,9 +144,7 @@ class SnapshotManager:
         for location in search_locations:
             if location.exists():
                 for file_path in location.glob("*.db"):
-                    if "snapshot" in file_path.name or file_path.name.startswith(
-                        "snapshot_"
-                    ):
+                    if "snapshot" in file_path.name or file_path.name.startswith("snapshot_"):
                         stat = file_path.stat()
                         mod_time = datetime.fromtimestamp(stat.st_mtime)
                         snapshots.append((str(file_path), mod_time, stat.st_size))
@@ -185,9 +174,7 @@ class SnapshotManager:
             logger.error(f"Failed to backup current database: {e}")
             return None
 
-    def switch_to_snapshot(
-        self, snapshot_path: str, create_backup: bool = True
-    ) -> bool:
+    def switch_to_snapshot(self, snapshot_path: str, create_backup: bool = True) -> bool:
         """Switch the current database to use a specific snapshot
 
         Args:
@@ -219,9 +206,7 @@ class SnapshotManager:
             logger.error(f"Failed to switch to snapshot: {e}")
             return False
 
-    def auto_download_latest(
-        self, namespace: str = "epfl-eso-addlidar-prod"
-    ) -> Optional[str]:
+    def auto_download_latest(self, namespace: str = "epfl-eso-addlidar-prod") -> Optional[str]:
         """Automatically download the latest snapshot from production
 
         Args:
@@ -266,9 +251,7 @@ def main():
     list_parser = subparsers.add_parser("list", help="List local snapshots")
 
     # Download command
-    download_parser = subparsers.add_parser(
-        "download", help="Download snapshot from production"
-    )
+    download_parser = subparsers.add_parser("download", help="Download snapshot from production")
     download_parser.add_argument("--pod", help="Specific pod name to download from")
     download_parser.add_argument(
         "--auto",
@@ -277,13 +260,9 @@ def main():
     )
 
     # Switch command
-    switch_parser = subparsers.add_parser(
-        "switch", help="Switch to a specific snapshot"
-    )
+    switch_parser = subparsers.add_parser("switch", help="Switch to a specific snapshot")
     switch_parser.add_argument("snapshot_path", help="Path to snapshot file")
-    switch_parser.add_argument(
-        "--no-backup", action="store_true", help="Don't backup current database"
-    )
+    switch_parser.add_argument("--no-backup", action="store_true", help="Don't backup current database")
 
     # Backup command
     backup_parser = subparsers.add_parser("backup", help="Backup current database")
@@ -307,9 +286,7 @@ def main():
             for path, mod_time, size in snapshots:
                 filename = Path(path).name
                 size_mb = size / (1024 * 1024)
-                print(
-                    f"{filename:<50} {mod_time.strftime('%Y-%m-%d %H:%M:%S'):<20} {size_mb:.1f} MB"
-                )
+                print(f"{filename:<50} {mod_time.strftime('%Y-%m-%d %H:%M:%S'):<20} {size_mb:.1f} MB")
         else:
             print("No local snapshots found")
 

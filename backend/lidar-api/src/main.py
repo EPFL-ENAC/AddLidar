@@ -29,9 +29,7 @@ async def lifespan(app: FastAPI):
         raise
 
     # Start pod log collector to capture logs from failing jobs
-    print(
-        f"[STARTUP] Attempting to start pod log collector for namespace: {settings.NAMESPACE}"
-    )
+    print(f"[STARTUP] Attempting to start pod log collector for namespace: {settings.NAMESPACE}")
     try:
         start_pod_log_collector(namespace=settings.NAMESPACE)
         print(f"[STARTUP] Pod log collector started successfully")
@@ -52,14 +50,10 @@ async def lifespan(app: FastAPI):
 
 
 # Create public app (external access)
-public_app = FastAPI(
-    title="AddLidar API - Public", root_path=settings.PATH_PREFIX, lifespan=lifespan
-)
+public_app = FastAPI(title="AddLidar API - Public", root_path=settings.PATH_PREFIX, lifespan=lifespan)
 
 # Create internal app (cluster-only access)
-internal_app = FastAPI(
-    title="AddLidar API - Internal", root_path=settings.PATH_PREFIX, lifespan=lifespan
-)
+internal_app = FastAPI(title="AddLidar API - Internal", root_path=settings.PATH_PREFIX, lifespan=lifespan)
 
 
 # Shared exception handler
@@ -104,9 +98,7 @@ async def public_health():
 public_app.include_router(public_router)
 internal_app.include_router(sqlite_internal_router, tags=["sqlite"])
 public_app.include_router(sqlite_public_router, tags=["sqlite"])
-internal_app.include_router(
-    pod_logs_router, tags=["pod-logs"]
-)  # Add pod logs to internal API
+internal_app.include_router(pod_logs_router, tags=["pod-logs"])  # Add pod logs to internal API
 
 
 # Single startup function to run both servers

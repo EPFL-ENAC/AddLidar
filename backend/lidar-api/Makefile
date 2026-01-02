@@ -46,11 +46,11 @@ docker-run: docker-build
 
 
 format:
-	black src
+	uv run black src
 
 lint:
-	flake8 src --count --select=E9,F63,F7,F82 --show-source --statistics
-	flake8 src --count --exit-zero --max-complexity=15 --max-line-length=127 --statistics
+	uv run flake8 src --count --select=E9,F63,F7,F82 --show-source --statistics
+	uv run flake8 src --count --exit-zero --max-complexity=15 --max-line-length=127 --statistics
 
 test:
 	uv run pytest

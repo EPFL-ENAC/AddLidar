@@ -4,30 +4,18 @@ from pathlib import Path
 
 
 class PointCloudRequest(BaseModel):
-    file_path: Path = Field(
-        ..., description="Path to the input point cloud file (inside mounted volume)"
-    )
-    remove_attribute: Optional[List[str]] = Field(
-        None, description="Remove specified attribute(s)"
-    )
-    remove_all_attributes: bool = Field(
-        False, description="Remove all non-geometry attributes"
-    )
+    file_path: Path = Field(..., description="Path to the input point cloud file (inside mounted volume)")
+    remove_attribute: Optional[List[str]] = Field(None, description="Remove specified attribute(s)")
+    remove_all_attributes: bool = Field(False, description="Remove all non-geometry attributes")
     remove_color: bool = Field(False, description="Remove color data")
-    format: Optional[str] = Field(
-        None, description="Output format (pcd-ascii, lasv14, etc.)"
-    )
+    format: Optional[str] = Field(None, description="Output format (pcd-ascii, lasv14, etc.)")
     line: Optional[int] = Field(None, description="Export a specific line index", ge=0)
     returns: Optional[int] = Field(None, description="Max return index", ge=-1)
-    number: Optional[int] = Field(
-        None, description="Max number of points in output", ge=-1
+    number: Optional[int] = Field(None, description="Max number of points in output", ge=-1)
+    density: Optional[float] = Field(None, description="Max density (points per m²)", gt=0.0)
+    roi: Optional[Tuple[float, float, float, float, float, float, float, float, float]] = Field(
+        None, description="Region of interest (x0,y0,z0,dx,dy,dz,rx,ry,rz)"
     )
-    density: Optional[float] = Field(
-        None, description="Max density (points per m²)", gt=0.0
-    )
-    roi: Optional[
-        Tuple[float, float, float, float, float, float, float, float, float]
-    ] = Field(None, description="Region of interest (x0,y0,z0,dx,dy,dz,rx,ry,rz)")
     outcrs: Optional[str] = Field(None, description="Output CRS (e.g., EPSG:4326)")
     incrs: Optional[str] = Field(None, description="Override input CRS")
 
@@ -70,13 +58,9 @@ class PointCloudRequest(BaseModel):
 
     @field_validator("roi")
     @classmethod
-    def validate_roi(
-        cls, v: Optional[Tuple[float, ...]]
-    ) -> Optional[Tuple[float, ...]]:
+    def validate_roi(cls, v: Optional[Tuple[float, ...]]) -> Optional[Tuple[float, ...]]:
         if v and len(v) != 9:
-            raise ValueError(
-                "ROI must have exactly 9 values (x0,y0,z0,dx,dy,dz,rx,ry,rz)"
-            )
+            raise ValueError("ROI must have exactly 9 values (x0,y0,z0,dx,dy,dz,rx,ry,rz)")
         return v
 
     @field_validator("outcrs", "incrs")
@@ -126,19 +110,9 @@ class PointCloudRequest(BaseModel):
 
 
 class ProcessPointCloudResponse(BaseModel):
-    status: str = Field(
-        ..., description="Status of the processing operation (success or error)"
-    )
+    status: str = Field(..., description="Status of the processing operation (success or error)")
     output: str = Field(..., description="Output of the processing operation")
-    error_type: Optional[str] = Field(
-        None, description="Type of error if status is error"
-    )
-    error_details: Optional[dict] = Field(
-        None, description="Detailed error information"
-    )
+    error_type: Optional[str] = Field(None, description="Type of error if status is error")
+    error_details: Optional[dict] = Field(None, description="Detailed error information")
 
-    model_config = {
-        "json_schema_extra": {
-            "examples": [{"status": "success", "output": "Processed point cloud data"}]
-        }
-    }
+    model_config = {"json_schema_extra": {"examples": [{"status": "success", "output": "Processed point cloud data"}]}}

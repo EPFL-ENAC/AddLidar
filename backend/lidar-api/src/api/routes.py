@@ -52,9 +52,7 @@ def remove_output_file(file_path: str) -> None:
         logger.error(f"Error deleting output file {file_path}: {str(e)}")
 
 
-async def return_file_from_output(
-    file_format: str, output_file_path: str
-) -> FileResponse:
+async def return_file_from_output(file_format: str, output_file_path: str) -> FileResponse:
     # Try to determine content type based on format
     content_type = "application/octet-stream"
 
@@ -81,9 +79,7 @@ async def return_file_from_output(
 
     # Log the file name we're serving
     logger.debug(f"Serving file {file_name} with content type {content_type}")
-    return FileResponse(
-        path=full_output_path, media_type=content_type, filename=file_name
-    )
+    return FileResponse(path=full_output_path, media_type=content_type, filename=file_name)
 
 
 @router.get("/health")
@@ -122,9 +118,7 @@ async def stop_job(job_name: str):
         job_status = k8s_job_statuses.get(job_name, {})
         output_file_path = job_status.get("output_path")
         if output_file_path:
-            full_output_path = os.path.join(
-                settings.DEFAULT_OUTPUT_ROOT, output_file_path
-            )
+            full_output_path = os.path.join(settings.DEFAULT_OUTPUT_ROOT, output_file_path)
             if os.path.exists(full_output_path):
                 os.unlink(full_output_path)
                 logger.info(f"Deleted output file for job: {job_name}")
@@ -233,9 +227,7 @@ async def get_job_status(job_name: str):
     status = k8s_job_statuses.get(job_name, {})
 
     if not status:
-        return JSONResponse(
-            status_code=404, content={"job_name": job_name, "status": "Not Found"}
-        )
+        return JSONResponse(status_code=404, content={"job_name": job_name, "status": "Not Found"})
 
     return JSONResponse(
         content={
@@ -247,9 +239,7 @@ async def get_job_status(job_name: str):
 
 
 @router.get("/download/{job_name}")
-async def get_job_file(
-    background_tasks: BackgroundTasks, job_name: str
-) -> FileResponse:
+async def get_job_file(background_tasks: BackgroundTasks, job_name: str) -> FileResponse:
     """Download the output file from a job."""
     try:
 
@@ -312,9 +302,7 @@ async def websocket_endpoint(websocket: WebSocket, job_name: str) -> None:
         logger.info(f"WebSocket connection established for job {job_name}")
 
         # Send initial status message
-        initial_status = k8s_job_statuses.get(
-            job_name, {"status": "Pending", "message": f"Tracking job: {job_name}"}
-        )
+        initial_status = k8s_job_statuses.get(job_name, {"status": "Pending", "message": f"Tracking job: {job_name}"})
         await websocket.send_json(
             {
                 "job_name": job_name,
@@ -334,9 +322,7 @@ async def websocket_endpoint(websocket: WebSocket, job_name: str) -> None:
 
                 # If client sends a close message, close the connection gracefully
                 if data == "close":
-                    logger.info(
-                        f"Client requested to close WebSocket for job {job_name}"
-                    )
+                    logger.info(f"Client requested to close WebSocket for job {job_name}")
                     await websocket.close()
                     break
 
@@ -356,9 +342,7 @@ async def websocket_endpoint(websocket: WebSocket, job_name: str) -> None:
                 try:
                     await websocket.send_json({"type": "ping", "job_name": job_name})
                 except Exception:
-                    logger.warning(
-                        f"Failed to send ping to WebSocket for job {job_name}, closing connection"
-                    )
+                    logger.warning(f"Failed to send ping to WebSocket for job {job_name}, closing connection")
                     break
 
     except WebSocketDisconnect:
@@ -368,10 +352,7 @@ async def websocket_endpoint(websocket: WebSocket, job_name: str) -> None:
     finally:
         # Always try to close the connection and clean up
         try:
-            if (
-                job_name in active_connections
-                and active_connections[job_name] == websocket
-            ):
+            if job_name in active_connections and active_connections[job_name] == websocket:
                 del active_connections[job_name]
                 logger.info(f"Cleaned up WebSocket connection for job {job_name}")
         except Exception as e:
@@ -392,21 +373,13 @@ async def websocket_health_check() -> dict:
         "active_connections": (
             len(active_connections.keys())
             if hasattr(active_connections, "keys")
-            else (
-                sum(1 for _ in active_connections)
-                if hasattr(active_connections, "__iter__")
-                else 0
-            )
+            else (sum(1 for _ in active_connections) if hasattr(active_connections, "__iter__") else 0)
         ),
         "job_statuses": len(k8s_job_statuses),
         "namespace": settings.NAMESPACE,
         "watch_connections": (
             len(watch_control.keys())
             if hasattr(watch_control, "keys")
-            else (
-                sum(1 for _ in watch_control)
-                if hasattr(watch_control, "__iter__")
-                else 0
-            )
+            else (sum(1 for _ in watch_control) if hasattr(watch_control, "__iter__") else 0)
         ),
     }

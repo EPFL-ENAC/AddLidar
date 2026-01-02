@@ -34,9 +34,7 @@ class KubernetesJobStatusManager:
         self.batch_v1 = client.BatchV1Api()
         self.core_v1 = client.CoreV1Api()
 
-    def get_job_status(
-        self, job_name: str, namespace: str = "default"
-    ) -> Dict[str, Any]:
+    def get_job_status(self, job_name: str, namespace: str = "default") -> Dict[str, Any]:
         """
         Get the current status of a Kubernetes job.
 
@@ -89,14 +87,10 @@ class KubernetesJobStatusManager:
                 return {"name": job_name, "error": str(e), "code": e.status}
 
         except Exception as e:
-            logger.error(
-                f"Unexpected error getting job status for {job_name}: {str(e)}"
-            )
+            logger.error(f"Unexpected error getting job status for {job_name}: {str(e)}")
             return {"name": job_name, "error": str(e)}
 
-    def get_detailed_job_status(
-        self, job_name: str, namespace: str = "default"
-    ) -> Dict[str, Any]:
+    def get_detailed_job_status(self, job_name: str, namespace: str = "default") -> Dict[str, Any]:
         """
         Get detailed status of a job by examining its pods
 
@@ -112,9 +106,7 @@ class KubernetesJobStatusManager:
 
         try:
             # Get pods associated with this job
-            pod_list = self.core_v1.list_namespaced_pod(
-                namespace=namespace, label_selector=f"job-name={job_name}"
-            )
+            pod_list = self.core_v1.list_namespaced_pod(namespace=namespace, label_selector=f"job-name={job_name}")
 
             # Add detailed pod status information
             pods_status = []
@@ -122,10 +114,7 @@ class KubernetesJobStatusManager:
                 pod_status = {
                     "name": pod.metadata.name,
                     "phase": pod.status.phase,  # Pending, Running, Succeeded, Failed, Unknown
-                    "conditions": [
-                        {"type": cond.type, "status": cond.status}
-                        for cond in pod.status.conditions or []
-                    ],
+                    "conditions": [{"type": cond.type, "status": cond.status} for cond in pod.status.conditions or []],
                     "container_statuses": [],
                 }
 
@@ -156,9 +145,7 @@ class KubernetesJobStatusManager:
             return job_status
 
         except Exception as e:
-            logger.error(
-                f"Error getting detailed pod status for job {job_name}: {str(e)}"
-            )
+            logger.error(f"Error getting detailed pod status for job {job_name}: {str(e)}")
             job_status["pods_error"] = str(e)
             return job_status
 
@@ -189,15 +176,9 @@ class KubernetesJobStatusManager:
         # 3. Check status from conditions
         if job_status.get("conditions"):
             for condition in job_status.get("conditions", []):
-                if (
-                    condition.get("type") == "Complete"
-                    and condition.get("status") == "True"
-                ):
+                if condition.get("type") == "Complete" and condition.get("status") == "True":
                     return "Completed"
-                if (
-                    condition.get("type") == "Failed"
-                    and condition.get("status") == "True"
-                ):
+                if condition.get("type") == "Failed" and condition.get("status") == "True":
                     return "Failed"
 
         # 4. Check active job states
@@ -226,10 +207,7 @@ class KubernetesJobStatusManager:
             if pod.get("phase") == "Running":
                 # Check if all containers are ready
                 container_statuses = pod.get("container_statuses", [])
-                if not container_statuses or all(
-                    container.get("state") == "Running"
-                    for container in container_statuses
-                ):
+                if not container_statuses or all(container.get("state") == "Running" for container in container_statuses):
                     return "Running"
                 return "Creating"
 

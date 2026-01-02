@@ -34,9 +34,7 @@ def parse_cli_error(error_text):
 
     for arg, desc in long_arguments:
         if arg not in ["help", "version"]:  # Skip common flags
-            all_arguments.append(
-                {"flag": f"--{arg}", "description": desc if desc else "No description"}
-            )
+            all_arguments.append({"flag": f"--{arg}", "description": desc if desc else "No description"})
 
     # Create result dictionary
     result = {

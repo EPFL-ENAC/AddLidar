@@ -51,9 +51,7 @@ async def list_pod_logs(
             return []
 
         log_files = []
-        for log_file in sorted(
-            log_path.glob("*.log"), key=lambda x: x.stat().st_mtime, reverse=True
-        ):
+        for log_file in sorted(log_path.glob("*.log"), key=lambda x: x.stat().st_mtime, reverse=True):
             # Apply pod name filter if provided
             if pod_name_filter and pod_name_filter not in log_file.stem:
                 continue
@@ -101,9 +99,7 @@ async def get_pod_log(filename: str):
             raise HTTPException(status_code=404, detail="Log file not found")
 
         # Security check: ensure the file is within LOG_STORAGE_PATH
-        if not str(log_path.resolve()).startswith(
-            str(Path(LOG_STORAGE_PATH).resolve())
-        ):
+        if not str(log_path.resolve()).startswith(str(Path(LOG_STORAGE_PATH).resolve())):
             raise HTTPException(status_code=403, detail="Access denied")
 
         return FileResponse(
@@ -116,9 +112,7 @@ async def get_pod_log(filename: str):
         raise
     except Exception as e:
         logger.error(f"Error retrieving pod log {filename}: {e}")
-        raise HTTPException(
-            status_code=500, detail=f"Error retrieving pod log: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Error retrieving pod log: {str(e)}")
 
 
 @router.delete("/{filename}")
@@ -139,17 +133,13 @@ async def delete_pod_log(filename: str):
             raise HTTPException(status_code=404, detail="Log file not found")
 
         # Security check: ensure the file is within LOG_STORAGE_PATH
-        if not str(log_path.resolve()).startswith(
-            str(Path(LOG_STORAGE_PATH).resolve())
-        ):
+        if not str(log_path.resolve()).startswith(str(Path(LOG_STORAGE_PATH).resolve())):
             raise HTTPException(status_code=403, detail="Access denied")
 
         log_path.unlink()
         logger.info(f"Deleted pod log file: {filename}")
 
-        return JSONResponse(
-            content={"message": f"Log file {filename} deleted successfully"}
-        )
+        return JSONResponse(content={"message": f"Log file {filename} deleted successfully"})
 
     except HTTPException:
         raise

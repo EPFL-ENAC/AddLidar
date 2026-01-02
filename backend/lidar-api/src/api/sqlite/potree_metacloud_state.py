@@ -100,12 +100,8 @@ async def get_potree_metacloud_state(
     return QueryResult(data=data, count=count)
 
 
-@internal_router.put(
-    "/potree_metacloud_state/{mission_key:path}", response_model=Dict[str, Any]
-)
-async def update_potree_metacloud_state(
-    mission_key: str, update_data: PotreeMetacloudStateUpdate
-):
+@internal_router.put("/potree_metacloud_state/{mission_key:path}", response_model=Dict[str, Any])
+async def update_potree_metacloud_state(mission_key: str, update_data: PotreeMetacloudStateUpdate):
     """Update potree metacloud state record (Internal use only)"""
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -154,10 +150,7 @@ async def update_potree_metacloud_state(
             update_fields.append("detailed_error_message = NULL")
 
     # Add metacloud_filename if provided
-    if (
-        hasattr(update_data, "metacloud_filename")
-        and update_data.metacloud_filename is not None
-    ):
+    if hasattr(update_data, "metacloud_filename") and update_data.metacloud_filename is not None:
         update_fields.append("metacloud_filename = ?")
         update_values.append(update_data.metacloud_filename)
 
@@ -204,12 +197,8 @@ async def update_potree_metacloud_state(
     }
 
 
-@public_router.get(
-    "/potree_metacloud_state/{mission_key}", response_model=Dict[str, Any]
-)
-@internal_router.get(
-    "/potree_metacloud_state/{mission_key}", response_model=Dict[str, Any]
-)
+@public_router.get("/potree_metacloud_state/{mission_key}", response_model=Dict[str, Any])
+@internal_router.get("/potree_metacloud_state/{mission_key}", response_model=Dict[str, Any])
 async def get_potree_metacloud_state_by_mission(mission_key: str):
     """Get potree metacloud state for a specific mission"""
     conn = get_db_connection()
@@ -303,9 +292,7 @@ async def create_potree_metacloud_state(create_data: PotreeMetacloudStateCreate)
         }
     except Exception as e:
         conn.close()
-        raise HTTPException(
-            status_code=500, detail=f"Error creating potree metacloud state: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Error creating potree metacloud state: {str(e)}")
 
 
 @internal_router.patch(

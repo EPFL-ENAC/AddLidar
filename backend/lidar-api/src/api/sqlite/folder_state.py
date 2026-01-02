@@ -100,9 +100,7 @@ async def update_folder_state(folder_key: str, update_data: FolderStateUpdate):
     cursor = conn.cursor()
 
     # Check if record exists
-    cursor.execute(
-        "SELECT folder_key FROM folder_state WHERE folder_key = ?", (folder_key,)
-    )
+    cursor.execute("SELECT folder_key FROM folder_state WHERE folder_key = ?", (folder_key,))
     if not cursor.fetchone():
         conn.close()
         raise HTTPException(
@@ -330,14 +328,10 @@ async def create_folder_state(create_data: FolderStateCreate):
         }
     except Exception as e:
         conn.close()
-        raise HTTPException(
-            status_code=500, detail=f"Error creating folder state: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Error creating folder state: {str(e)}")
 
 
-@internal_router.patch(
-    "/folder_state/{folder_key:path}/last_checked", response_model=Dict[str, Any]
-)
+@internal_router.patch("/folder_state/{folder_key:path}/last_checked", response_model=Dict[str, Any])
 async def update_folder_state_last_checked(folder_key: str):
     """Update only the last_checked timestamp for folder state (Internal use only)"""
     conn = get_db_connection()

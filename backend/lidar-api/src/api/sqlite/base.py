@@ -42,9 +42,7 @@ def get_db_connection():
         return conn
     except sqlite3.Error as e:
         logger.error(f"Database connection error: {e} with path {db_path}")
-        raise HTTPException(
-            status_code=500, detail=f"Database connection failed: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Database connection failed: {str(e)}")
 
 
 @public_router.get("/tables", response_model=List[TableInfo])
