@@ -24,6 +24,6 @@ pre-commit:
       run: npx prettier --write {staged_files}
     eslint:
       root: "frontend/"
-      glob: "*.{js,ts,jsx,tsx,vue}"
+      glob: "vueSrc/**/*.{js,ts,jsx,tsx,vue}"
       tags: frontend eslint
       run: npm run lint:fix

@@ -33,6 +33,14 @@ clean:
 	@echo "Cleaning frontend build artifacts and dependencies..."
 	rm -rf node_modules dist build vueSrc/public/build vueSrc/public/libs
 
+lint:
+	@echo "Running linter..."
+	npm run lint
+
+type-check:
+	@echo "Running TypeScript type checker..."
+	npm run type-check
+
 help:
 	@echo "Frontend Makefile - Available Commands:"
 	@echo "======================================="

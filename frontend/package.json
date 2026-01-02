@@ -1,5 +1,6 @@
 {
   "name": "addlidar-potree",
+  "type": "module",
   "private": false,
   "version": "2.0.0",
   "description": "WebGL point cloud viewer for Add Lidar project at ENAC EPFL",
@@ -11,7 +12,10 @@
     "start": "gulp watch",
     "build-potree-dev": "mkdir vueSrc/public/build/ && mkdir vueSrc/public/libs && cp -r libs/* vueSrc/public/libs/ && gulp build pack && cp -r build/* vueSrc/public/build/",
     "build-potree": "gulp build pack",
-    "build": "vite build"
+    "build": "vite build",
+    "lint": "eslint .",
+    "lint:fix": "eslint . --fix",
+    "type-check": "vue-tsc --noEmit"
   },
   "dependencies": {
     "@quasar/extras": "^1.16.17",
@@ -34,8 +38,16 @@
     "@quasar/vite-plugin": "^1.9.0",
     "@types/jquery": "^3.5.32",
     "@types/maplibre-gl": "^1.13.2",
+    "@typescript-eslint/eslint-plugin": "^8.51.0",
+    "@typescript-eslint/parser": "^8.51.0",
     "@vitejs/plugin-vue": "^5.2.1",
+    "@vue/eslint-config-typescript": "^14.6.0",
+    "eslint": "^9.39.2",
+    "eslint-config-prettier": "^10.1.8",
+    "eslint-plugin-vue": "^10.6.2",
     "sass-embedded": "^1.85.0",
-    "vite": "^6.1.0"
+    "typescript": "^5.9.3",
+    "vite": "^6.1.0",
+    "vue-tsc": "^3.2.1"
   }
 }
