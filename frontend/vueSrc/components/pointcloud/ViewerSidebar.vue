@@ -1,34 +1,42 @@
 <script setup lang="ts">
-import { ref } from "vue";
-import FilesPanel from "@/components/pointcloud/panels/FilesPanel.vue";
-import ExportPanel from "@/components/pointcloud/panels/ExportPanel.vue";
-import DisplayPanel from "@/components/pointcloud/panels/DisplayPanel.vue";
+import { ref } from 'vue'
+import FilesPanel from '@/components/pointcloud/panels/FilesPanel.vue'
+import ExportPanel from '@/components/pointcloud/panels/ExportPanel.vue'
+import DisplayPanel from '@/components/pointcloud/panels/DisplayPanel.vue'
+import MissionInfoPanel from '@/components/pointcloud/panels/MissionInfoPanel.vue'
 
-const activeTab = ref("export");
+const activeTab = ref('export')
 
 const tabs = [
   {
-    name: "export",
-    icon: "file_download",
-    label: "Export",
+    name: 'export',
+    icon: 'file_download',
+    label: 'Export',
     tooltip:
-      "Export and filter point cloud data on-the-fly. Combine filters to reduce file size and focus on specific data.",
+      'Export and filter point cloud data on-the-fly. Combine filters to reduce file size and focus on specific data.',
   },
   {
-    name: "files",
-    icon: "folder",
-    label: "Files",
+    name: 'files',
+    icon: 'folder',
+    label: 'Files',
     tooltip:
-      "Browse and manage mission files. Select point cloud data to visualize and work with.",
+      'Browse and manage mission files. Select point cloud data to visualize and work with.',
   },
   {
-    name: "display",
-    icon: "visibility",
-    label: "Display",
+    name: 'display',
+    icon: 'visibility',
+    label: 'Display',
     tooltip:
-      "Customize point cloud visualization. Choose color modes, apply filters, and control display settings.",
+      'Customize point cloud visualization. Choose color modes, apply filters, and control display settings.',
   },
-];
+  {
+    name: 'info',
+    icon: 'info',
+    label: 'Info',
+    tooltip:
+      'View mission details, point cloud statistics, and metadata. Get comprehensive information about the current mission.',
+  },
+]
 </script>
 
 <template>
@@ -66,6 +74,9 @@ const tabs = [
 
         <q-tab-panel name="display" class="q-pa-none">
           <display-panel />
+        </q-tab-panel>
+        <q-tab-panel name="info" class="q-pa-none">
+          <mission-info-panel />
         </q-tab-panel>
       </q-tab-panels>
     </q-scroll-area>
