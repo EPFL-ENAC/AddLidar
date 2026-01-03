@@ -11,8 +11,6 @@ const props = defineProps<{
   missionId: string;
 }>();
 
-useAppMeta({ title: props.missionId });
-
 const router = useRouter();
 const directoryStore = useDirectoryStore();
 
@@ -22,7 +20,13 @@ const missionName = computed(
     directoryStore.activeMission ||
     props.missionId,
 );
-
+watch(
+  () => missionName.value,
+  (newName) => {
+    useAppMeta({ title: newName });
+  },
+  { immediate: true },
+);
 watch(
   () => props.missionId,
   (newId) => {
