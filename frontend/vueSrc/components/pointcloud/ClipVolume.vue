@@ -1,6 +1,6 @@
 <template>
-  <div class="q-mb-md">
-    <div class="q-mb-sm">Clip Volume</div>
+  <div>
+    <div class="q-mb-sm text-grey-7">Clip Volume</div>
     <q-btn
       v-if="!item"
       outline

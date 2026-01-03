@@ -37,7 +37,7 @@ const { clipPosition, clipRotation, clipScale } = exportJobStore;
 // Form state
 const format = ref<SelectOption | undefined>(undefined);
 const epsg = ref<string | undefined>(undefined);
-const maxPoints = ref(1000);
+const maxPoints = ref(null);
 const density = ref<number | undefined>(undefined);
 const removeColor = ref(false);
 const removeAllAttributes = ref(false);
@@ -167,7 +167,7 @@ onBeforeUnmount(closeConnection);
         header-class="text-grey-8"
         :default-opened="true"
       >
-        <div class="q-pt-sm">
+        <div class="q-pa-md q-pt-sm">
           <q-select
             v-model="format"
             :options="formatOptions"
@@ -197,7 +197,7 @@ onBeforeUnmount(closeConnection);
         icon="filter_alt"
         header-class="text-grey-8"
       >
-        <div class="q-pt-sm">
+        <div class="q-pa-md q-pt-sm">
           <q-input
             v-model.number="maxPoints"
             type="number"
@@ -253,28 +253,25 @@ onBeforeUnmount(closeConnection);
         icon="tune"
         header-class="text-grey-8"
       >
-        <div class="q-pt-sm">
-          <q-checkbox
-            v-model="removeColor"
-            label="Remove Color Data"
-            dense
-            class="q-mb-sm"
-          >
-            <q-tooltip
-              >Remove RGB color information from the point cloud</q-tooltip
-            >
-          </q-checkbox>
+        <div class="q-pa-md q-px-lg q-mb-md q-pt-sm">
+          <div class="row justify-between q-gutter-y-md">
+            <q-checkbox v-model="removeColor" label="Remove Color Data" dense>
+              <q-tooltip
+                >Remove RGB color information from the point cloud</q-tooltip
+              >
+            </q-checkbox>
 
-          <q-checkbox
-            v-model="removeAllAttributes"
-            label="Remove All Attributes"
-            dense
-            class="q-mb-md"
-          >
-            <q-tooltip
-              >Keep only geometry (XYZ), remove all other attributes</q-tooltip
+            <q-checkbox
+              v-model="removeAllAttributes"
+              label="Remove All Attributes"
+              dense
             >
-          </q-checkbox>
+              <q-tooltip
+                >Keep only geometry (XYZ), remove all other
+                attributes</q-tooltip
+              >
+            </q-checkbox>
+          </div>
         </div>
       </q-expansion-item>
 
@@ -284,7 +281,7 @@ onBeforeUnmount(closeConnection);
         icon="crop"
         header-class="text-grey-8"
       >
-        <div class="q-pt-sm">
+        <div class="q-pa-md q-px-lg q-mb-md q-pt-sm">
           <clip-volume />
         </div>
       </q-expansion-item>
