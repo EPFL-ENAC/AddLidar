@@ -51,81 +51,112 @@ const availableClassifications = computed(() => {
 </script>
 
 <template>
-  <div class="panel">
-    <q-expansion-item label="Mission Details" icon="info" default-opened>
-      <div class="content">
-        <div v-if="missionData?.name" class="item">
-          <div class="label">Name</div>
-          <div>{{ missionData.name }}</div>
-        </div>
+  <div>
+    <q-expansion-item
+      label="Mission Details"
+      icon="info"
+      header-class="text-grey-8"
+      default-opened
+    >
+      <div class="q-pa-md q-pt-sm">
+        <div class="q-gutter-y-sm">
+          <div v-if="missionData?.name">
+            <div class="text-caption text-grey-6 text-uppercase q-mb-xs">
+              Name
+            </div>
+            <div>{{ missionData.name }}</div>
+          </div>
 
-        <div v-if="missionData?.date" class="item">
-          <div class="label">Date</div>
-          <div>{{ missionData.date }}</div>
-        </div>
+          <div v-if="missionData?.date">
+            <div class="text-caption text-grey-6 text-uppercase q-mb-xs">
+              Date
+            </div>
+            <div>{{ missionData.date }}</div>
+          </div>
 
-        <div class="item">
-          <div class="label">Mission Key</div>
-          <div class="monospace">{{ missionData?.mission_key }}</div>
-        </div>
-
-        <div v-for="(value, key) in extraAttributes" :key="key" class="item">
-          <div class="label">{{ key }}</div>
-          <div>{{ value }}</div>
-        </div>
-      </div>
-    </q-expansion-item>
-
-    <q-expansion-item label="Point Cloud Statistics" icon="scatter_plot">
-      <div class="content">
-        <div v-if="metadata?.points" class="item">
-          <div class="label">Total Points</div>
-          <div>{{ metadata.points.toLocaleString() }}</div>
-        </div>
-
-        <div v-if="metadata?.spacing" class="item">
-          <div class="label">Point Spacing</div>
-          <div>{{ metadata.spacing.toFixed(4) }} m</div>
-        </div>
-
-        <div v-if="boundingBoxDimensions" class="item">
-          <div class="label">Bounding Box</div>
           <div>
-            {{ boundingBoxDimensions.width }} ×
-            {{ boundingBoxDimensions.length }} ×
-            {{ boundingBoxDimensions.height }} m
+            <div class="text-caption text-grey-6 text-uppercase q-mb-xs">
+              Mission Key
+            </div>
+            <div class="monospace">{{ missionData?.mission_key }}</div>
+          </div>
+
+          <div v-for="(value, key) in extraAttributes" :key="key">
+            <div class="text-caption text-grey-6 text-uppercase q-mb-xs">
+              {{ key }}
+            </div>
+            <div>{{ value }}</div>
           </div>
         </div>
+      </div>
+    </q-expansion-item>
 
-        <div v-if="metadata?.projection" class="item">
-          <div class="label">Projection</div>
-          <div class="monospace">{{ metadata.projection }}</div>
+    <q-expansion-item
+      label="Point Cloud Statistics"
+      icon="scatter_plot"
+      header-class="text-grey-8"
+    >
+      <div class="q-pa-md q-pt-sm">
+        <div class="q-gutter-y-sm">
+          <div v-if="metadata?.points">
+            <div class="text-caption text-grey-6 text-uppercase q-mb-xs">
+              Total Points
+            </div>
+            <div>{{ metadata.points.toLocaleString() }}</div>
+          </div>
+
+          <div v-if="metadata?.spacing">
+            <div class="text-caption text-grey-6 text-uppercase q-mb-xs">
+              Point Spacing
+            </div>
+            <div>{{ metadata.spacing.toFixed(4) }} m</div>
+          </div>
+
+          <div v-if="boundingBoxDimensions">
+            <div class="text-caption text-grey-6 text-uppercase q-mb-xs">
+              Bounding Box
+            </div>
+            <div>
+              {{ boundingBoxDimensions.width }} ×
+              {{ boundingBoxDimensions.length }} ×
+              {{ boundingBoxDimensions.height }} m
+            </div>
+          </div>
+
+          <div v-if="metadata?.projection">
+            <div class="text-caption text-grey-6 text-uppercase q-mb-xs">
+              Projection
+            </div>
+            <div class="monospace">{{ metadata.projection }}</div>
+          </div>
         </div>
       </div>
     </q-expansion-item>
 
-    <q-expansion-item label="Point Attributes" icon="data_array">
-      <div class="content">
+    <q-expansion-item
+      label="Point Attributes"
+      icon="data_array"
+      header-class="text-grey-8"
+    >
+      <div class="q-pa-md q-pt-sm">
         <div v-if="!metadata?.attributes?.length" class="empty">
           <q-icon name="info" size="24px" color="grey-5" />
-          <p>No attributes available</p>
+          <p class="q-ma-none">No attributes available</p>
         </div>
 
-        <template v-else>
-          <div
-            v-for="attr in metadata.attributes"
-            :key="attr.name"
-            class="item"
-          >
-            <div class="label">{{ attr.name }}</div>
+        <div v-else class="q-gutter-y-sm">
+          <div v-for="attr in metadata.attributes" :key="attr.name">
+            <div class="text-caption text-grey-6 text-uppercase q-mb-xs">
+              {{ attr.name }}
+            </div>
             <div>
               {{ attr.type }}, {{ attr.numElements }} elements
-              <span v-if="attr.min && attr.max" class="muted">
+              <span v-if="attr.min && attr.max" class="text-grey-6">
                 [{{ attr.min[0]?.toFixed(2) }}, {{ attr.max[0]?.toFixed(2) }}]
               </span>
             </div>
           </div>
-        </template>
+        </div>
       </div>
     </q-expansion-item>
 
@@ -133,23 +164,26 @@ const availableClassifications = computed(() => {
       v-if="availableClassifications.length"
       label="Classification Distribution"
       icon="category"
+      header-class="text-grey-8"
     >
-      <div class="content">
-        <div
-          v-for="cls in availableClassifications"
-          :key="cls.value"
-          class="classification"
-        >
+      <div class="q-pa-md q-pt-sm">
+        <div class="q-gutter-y-sm">
           <div
-            class="indicator"
-            :style="{ backgroundColor: cls.info?.color || '#808080' }"
-          />
-          <div>
-            <div>{{ cls.info?.label || `Class ${cls.value}` }}</div>
-            <div class="muted">
-              {{ cls.count.toLocaleString() }} points ({{
-                ((cls.count / (metadata?.points || 1)) * 100).toFixed(1)
-              }}%)
+            v-for="cls in availableClassifications"
+            :key="cls.value"
+            class="row items-start q-gutter-x-sm"
+          >
+            <div
+              class="indicator"
+              :style="{ backgroundColor: cls.info?.color || '#808080' }"
+            />
+            <div>
+              <div>{{ cls.info?.label || `Class ${cls.value}` }}</div>
+              <div class="text-caption text-grey-6">
+                {{ cls.count.toLocaleString() }} points ({{
+                  ((cls.count / (metadata?.points || 1)) * 100).toFixed(1)
+                }}%)
+              </div>
             </div>
           </div>
         </div>
@@ -159,38 +193,8 @@ const availableClassifications = computed(() => {
 </template>
 
 <style scoped>
-.panel {
-  font-size: 14px;
-}
-
-.content {
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  gap: 20px;
-}
-
-.item {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
-
-.label {
-  font-size: 12px;
-  color: #757575;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  font-weight: 500;
-}
-
 .monospace {
-  font-family: "Courier New", monospace;
-  font-size: 13px;
-}
-
-.muted {
-  color: #9e9e9e;
+  font-family: monospace;
 }
 
 .empty {
@@ -202,18 +206,9 @@ const availableClassifications = computed(() => {
   color: #9e9e9e;
 }
 
-.empty p {
-  margin: 0;
-}
-
-.classification {
-  display: flex;
-  gap: 12px;
-}
-
 .indicator {
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
   border-radius: 3px;
   flex-shrink: 0;
   margin-top: 2px;
