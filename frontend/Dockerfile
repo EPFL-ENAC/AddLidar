@@ -6,6 +6,7 @@ COPY src ./src
 COPY libs ./libs
 COPY resources ./resources
 COPY *.js ./
+COPY *.cjs ./
 COPY *.sh ./
 RUN npm ci
 # COPY .env ./
