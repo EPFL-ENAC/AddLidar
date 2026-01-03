@@ -54,6 +54,7 @@ const tabs = [
         :name="tab.name"
         :icon="tab.icon"
         :label="tab.label"
+        class="text-header6"
       >
         <q-tooltip>{{ tab.tooltip }}</q-tooltip>
       </q-tab>
