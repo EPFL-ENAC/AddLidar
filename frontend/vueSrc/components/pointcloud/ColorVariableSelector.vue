@@ -23,7 +23,7 @@
             />
           </q-item-section>
           <q-item-section>
-            <q-item-label>{{ attr.label }}</q-item-label>
+            <q-item-label>{{ capitalize(attr.label) }}</q-item-label>
           </q-item-section>
         </q-item>
       </q-list>
@@ -36,6 +36,8 @@ import { computed } from "vue";
 import { usePointcloudStore } from "@/stores/pointcloudStore";
 
 const pointcloudStore = usePointcloudStore();
+
+const capitalize = (str: string) => str.charAt(0).toUpperCase() + str.slice(1);
 
 // Setup attribute options - prioritize most commonly used
 const defaultAttributes = [
