@@ -1,40 +1,70 @@
 <template>
-  <q-card flat class="q-mt-md">
-    <q-card-section>
-      <div class="row items-center justify-between q-mb-md">
-        <div class="text-subtitle2">Point Source ID</div>
-        <div>
-          <q-btn flat dense color="primary" label="All" @click="selectAll" />
-          <q-btn flat dense color="primary" label="None" @click="selectNone" />
-        </div>
+  <q-expansion-item
+    label="Point Source ID"
+    icon="layers"
+    header-class="text-grey-8"
+  >
+    <div class="q-pt-sm">
+      <div class="filter-actions q-px-md q-pb-sm">
+        <q-btn
+          flat
+          dense
+          size="sm"
+          label="Color by source ID"
+          :color="isColoredBySourceID ? 'grey-5' : 'primary'"
+          @click="colorBySourceID"
+        />
+        <q-btn
+          flat
+          dense
+          size="sm"
+          label="Select all"
+          color="grey-7"
+          @click="selectAll"
+        />
+        <q-btn
+          flat
+          dense
+          size="sm"
+          label="Clear"
+          color="grey-7"
+          @click="selectNone"
+        />
       </div>
 
-      <div v-if="!sourceIDs.length" class="text-center q-pa-md">
-        <q-spinner color="primary" size="32px" />
-        <div class="q-mt-sm text-grey-6">Loading...</div>
+      <div v-if="!sourceIDs.length" class="empty-state">
+        <div class="text-caption text-grey-6">No source IDs available</div>
       </div>
 
-      <div v-else class="source-id-list">
+      <div v-else class="source-id-grid">
         <q-checkbox
           v-for="id in sourceIDs"
           :key="id"
           v-model="selectedIDs[id]"
-          :label="`${id}`"
+          :label="String(id)"
+          dense
           color="primary"
           @update:model-value="updateSelectedIDs"
         />
       </div>
-    </q-card-section>
-  </q-card>
+    </div>
+  </q-expansion-item>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, watch } from "vue";
+import { ref, onMounted, watch, computed } from "vue";
 import { usePointcloudStore } from "@/stores/pointcloudStore";
 
 const pointcloudStore = usePointcloudStore();
 const sourceIDs = ref<number[]>([]); // Available source IDs
 const selectedIDs = ref<Record<number, boolean>>({}); // Selection state
+
+// Check if already colored by point source ID
+const isColoredBySourceID = computed(
+  () =>
+    pointcloudStore.activeAttribute.toLowerCase() === "point source id" ||
+    pointcloudStore.activeAttribute.toLowerCase() === "pointsourceid",
+);
 
 // Watch for changes in point source ID attribute from metadata
 watch(
@@ -115,14 +145,39 @@ function selectNone() {
   selectedIDs.value = selection;
   updateSelectedIDs();
 }
+
+function colorBySourceID() {
+  // Try to find the point source ID attribute name from store
+  const pointSourceAttr = pointcloudStore.attributes.find(
+    (attr) =>
+      attr.name.toLowerCase().includes("point source") ||
+      attr.name.toLowerCase().includes("pointsource"),
+  );
+  if (pointSourceAttr) {
+    pointcloudStore.setActiveAttribute(pointSourceAttr.name);
+  }
+}
 </script>
 
 <style scoped>
-.source-id-list {
-  max-height: 250px;
-  overflow-y: auto;
+.filter-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.empty-state {
+  display: flex;
+  justify-content: center;
+  padding: 16px;
+}
+
+.source-id-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
-  gap: 8px;
+  grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+  gap: 4px;
+  padding: 0 16px 8px;
 }
 </style>

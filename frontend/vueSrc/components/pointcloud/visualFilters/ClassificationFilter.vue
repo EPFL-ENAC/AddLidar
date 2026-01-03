@@ -1,17 +1,39 @@
 <template>
-  <q-card flat class="q-mt-md">
-    <q-card-section>
-      <div class="row items-center justify-between q-mb-md">
-        <div class="text-subtitle2">Classification</div>
-        <div>
-          <q-btn flat dense color="primary" label="All" @click="selectAll" />
-          <q-btn flat dense color="primary" label="None" @click="selectNone" />
-        </div>
+  <q-expansion-item
+    label="Classification"
+    icon="category"
+    header-class="text-grey-8"
+  >
+    <div class="q-pt-sm">
+      <div class="filter-actions q-px-md q-pb-sm">
+        <q-btn
+          flat
+          dense
+          size="sm"
+          label="Color by classification"
+          :color="isColoredByClassification ? 'grey-5' : 'primary'"
+          @click="colorByClassification"
+        />
+        <q-btn
+          flat
+          dense
+          size="sm"
+          label="Select all"
+          color="grey-7"
+          @click="selectAll"
+        />
+        <q-btn
+          flat
+          dense
+          size="sm"
+          label="Clear"
+          color="grey-7"
+          @click="selectNone"
+        />
       </div>
 
-      <div v-if="!availableClasses.length" class="text-center q-pa-md">
-        <q-spinner color="primary" size="32px" />
-        <div class="q-mt-sm text-grey-6">Loading...</div>
+      <div v-if="!availableClasses.length" class="empty-state">
+        <q-spinner color="primary" size="24px" />
       </div>
 
       <div v-else class="classification-list">
@@ -22,11 +44,12 @@
         >
           <q-checkbox
             v-model="selectedClasses[classValue]"
+            dense
             color="primary"
             @update:model-value="updateSelectedClasses"
           />
           <div
-            class="classification-color cursor-pointer"
+            class="classification-indicator"
             :style="{ backgroundColor: getClassColor(classValue) }"
             @click.stop
           >
@@ -42,19 +65,21 @@
             </q-popup-proxy>
             <q-tooltip>Click to change color</q-tooltip>
           </div>
-          <div class="text-body2 classification-label">
-            {{ getClassLabel(classValue) }}
-            <span v-if="classCount(classValue)" class="text-grey-6">
-              ({{ formatCount(classCount(classValue)) }})
-            </span>
-          </div>
-          <q-tooltip>
-            {{ getClassDescription(classValue) }}
-          </q-tooltip>
+          <label
+            class="classification-content"
+            @click="toggleClass(classValue)"
+          >
+            <div class="classification-label">
+              {{ getClassLabel(classValue) }}
+            </div>
+            <div v-if="classCount(classValue)" class="classification-count">
+              {{ formatCount(classCount(classValue)) }} points
+            </div>
+          </label>
         </div>
       </div>
-    </q-card-section>
-  </q-card>
+    </div>
+  </q-expansion-item>
 </template>
 
 <script setup lang="ts">
@@ -68,6 +93,11 @@ const selectedClasses = ref<Record<number, boolean>>({});
 // Use available classifications from store
 const availableClasses = computed(
   () => pointcloudStore.availableClassifications,
+);
+
+// Check if already colored by classification
+const isColoredByClassification = computed(
+  () => pointcloudStore.activeAttribute.toLowerCase() === "classification",
 );
 
 // Watch for available classifications changes
@@ -97,16 +127,7 @@ function getClassLabel(value: number): string {
     return `${capitalizeFirstLetter(potreeClass.name)}`;
   }
   const info = getClassificationInfo(value);
-  return info ? `${value} - ${info.label}` : `${value}`;
-}
-
-function getClassDescription(value: number): string {
-  const potreeClass = pointcloudStore.potreeClassifications[value];
-  if (potreeClass) {
-    return potreeClass.name;
-  }
-  const info = getClassificationInfo(value);
-  return info ? info.description : `Class ${value}`;
+  return info ? `${info.label}` : `Class ${value}`;
 }
 
 function getClassColor(value: number): string {
@@ -175,31 +196,80 @@ function selectNone() {
   selectedClasses.value = selection;
   updateSelectedClasses();
 }
+
+function colorByClassification() {
+  pointcloudStore.setActiveAttribute("classification");
+}
+
+function toggleClass(classValue: number) {
+  selectedClasses.value[classValue] = !selectedClasses.value[classValue];
+  updateSelectedClasses();
+}
 </script>
 
 <style scoped>
-.classification-list {
-  max-height: 300px;
-  overflow-y: auto;
+.filter-actions {
   display: flex;
-  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
   gap: 4px;
+  flex-wrap: wrap;
+}
+
+.empty-state {
+  display: flex;
+  justify-content: center;
+  padding: 16px;
+}
+
+.classification-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 0;
+  padding: 0 16px 8px;
 }
 
 .classification-item {
   display: flex;
   align-items: center;
   gap: 8px;
+  padding: 6px 8px;
+  margin: 2px 0;
+  min-width: 0;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
 }
 
-.classification-color {
-  width: 16px;
-  height: 16px;
-  border-radius: 2px;
-  border: 1px solid rgba(0, 0, 0, 0.2);
+.classification-item:hover {
+  background-color: rgba(0, 0, 0, 0.03);
+}
+
+.classification-indicator {
+  width: 18px;
+  height: 18px;
+  border-radius: 3px;
+  border: 1px solid rgba(0, 0, 0, 0.15);
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.classification-content {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  cursor: pointer;
 }
 
 .classification-label {
-  flex: 1;
+  font-size: 13px;
+  line-height: 1.3;
+}
+
+.classification-count {
+  font-size: 12px;
+  color: #9e9e9e;
+  line-height: 1.2;
 }
 </style>

@@ -13,9 +13,6 @@
           tag="label"
           dense
           clickable
-          @mouseenter="previewAttribute(attr.value)"
-          @mouseleave="restoreAttribute"
-          @click="confirmSelection(attr.value)"
         >
           <q-item-section side>
             <q-radio
@@ -35,14 +32,10 @@
 </template>
 
 <script setup lang="ts">
-import { computed, ref } from "vue";
+import { computed } from "vue";
 import { usePointcloudStore } from "@/stores/pointcloudStore";
 
 const pointcloudStore = usePointcloudStore();
-
-// Preview state for hover
-const isPreviewMode = ref(false);
-const previousAttribute = ref<string>("");
 
 // Setup attribute options - prioritize most commonly used
 const defaultAttributes = [
@@ -111,29 +104,6 @@ const selectedAttribute = computed({
     pointcloudStore.setActiveAttribute(value);
   },
 });
-
-// Preview attribute on hover
-function previewAttribute(value: string) {
-  if (!isPreviewMode.value) {
-    previousAttribute.value = pointcloudStore.activeAttribute;
-    isPreviewMode.value = true;
-  }
-  pointcloudStore.setActiveAttribute(value);
-}
-
-// Restore previous attribute on mouse leave
-function restoreAttribute() {
-  if (isPreviewMode.value) {
-    pointcloudStore.setActiveAttribute(previousAttribute.value);
-    isPreviewMode.value = false;
-  }
-}
-
-// Confirm selection on click
-function confirmSelection(value: string) {
-  isPreviewMode.value = false;
-  selectedAttribute.value = value;
-}
 </script>
 
 <style scoped>
