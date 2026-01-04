@@ -31,6 +31,8 @@
           :min="attribute.minValue!"
           :max="attribute.maxValue!"
           :step="getAttributeStep(attribute)"
+          :left-label-value="formatRangeValue(rangeValue.min)"
+          :right-label-value="formatRangeValue(rangeValue.max)"
           color="primary"
           label-always
           switch-label-side
@@ -44,7 +46,11 @@
 <script setup lang="ts">
 import { ref, computed, watch } from "vue";
 import { usePointcloudStore } from "@/stores/pointcloudStore";
-import { getAttributeLabel, getAttributeStep } from "@/types/attributeFilters";
+import {
+  getAttributeLabel,
+  getAttributeStep,
+  formatAttributeValue,
+} from "@/types/attributeFilters";
 
 interface Props {
   attributeName: string;
@@ -81,6 +87,11 @@ const isColoredBy = computed(() => {
     attribute.value.name.toLowerCase()
   );
 });
+
+function formatRangeValue(value: number): string {
+  if (!attribute.value) return value.toString();
+  return formatAttributeValue(value, attribute.value);
+}
 
 function colorByAttribute() {
   if (attribute.value) {
