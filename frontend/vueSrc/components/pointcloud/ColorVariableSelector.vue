@@ -5,7 +5,7 @@
     header-class="text-grey-8"
     :default-opened="true"
   >
-    <div class="q-pt-sm">
+    <div class="q-pt-sm q-pb-md">
       <q-list class="attribute-grid">
         <q-item
           v-for="attr in attributeOptions"

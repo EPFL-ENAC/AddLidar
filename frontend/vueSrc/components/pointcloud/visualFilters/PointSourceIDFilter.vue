@@ -4,7 +4,7 @@
     icon="layers"
     header-class="text-grey-8"
   >
-    <div class="q-pt-sm">
+    <div class="q-pt-sm q-pb-md">
       <div class="filter-actions q-px-md q-pb-sm">
         <q-btn
           flat
