@@ -55,6 +55,9 @@ export const usePointcloudStore = defineStore("pointcloud", () => {
   const visualFilterMin = ref(0);
   const visualFilterMax = ref(100);
 
+  // Attribute range filters: { attributeName: [min, max] }
+  const attributeRanges = ref<Record<string, [number, number]>>({});
+
   // Potree viewer tool reference
   const volumeTool = ref<
     { startInsertion?: (params: any) => void } | undefined
@@ -128,6 +131,7 @@ export const usePointcloudStore = defineStore("pointcloud", () => {
       attributes.value = data.attributes.map(parseAttribute);
       initializeSourceIDs();
       initializeClassifications();
+      initializeAttributeRanges();
     } else {
       attributes.value = [];
     }
@@ -198,6 +202,39 @@ export const usePointcloudStore = defineStore("pointcloud", () => {
 
     availableClassifications.value = classes.sort((a, b) => a - b);
     selectedClassifications.value = [...classes]; // All selected by default
+  }
+
+  /** Set range for a specific attribute */
+  function setAttributeRange(attributeName: string, min: number, max: number) {
+    attributeRanges.value[attributeName] = [min, max];
+  }
+
+  /** Reset range for a specific attribute to its metadata min/max */
+  function resetAttributeRange(attributeName: string) {
+    const attr = getAttributeByName.value(attributeName);
+    if (attr && attr.minValue !== null && attr.maxValue !== null) {
+      attributeRanges.value[attributeName] = [attr.minValue, attr.maxValue];
+    }
+  }
+
+  /** Clear range filter for a specific attribute */
+  function clearAttributeRange(attributeName: string) {
+    delete attributeRanges.value[attributeName];
+  }
+
+  /** Initialize all attribute ranges based on metadata */
+  function initializeAttributeRanges() {
+    const ranges: Record<string, [number, number]> = {};
+    attributes.value.forEach((attr) => {
+      if (
+        attr.numElements === 1 &&
+        attr.minValue !== null &&
+        attr.maxValue !== null
+      ) {
+        ranges[attr.name] = [attr.minValue, attr.maxValue];
+      }
+    });
+    attributeRanges.value = ranges;
   }
 
   /** Set active attribute for point cloud coloring */
@@ -316,6 +353,7 @@ export const usePointcloudStore = defineStore("pointcloud", () => {
     potreeClassifications,
     visualFilterMin,
     visualFilterMax,
+    attributeRanges,
     volumeTool,
 
     // Actions
@@ -335,5 +373,9 @@ export const usePointcloudStore = defineStore("pointcloud", () => {
     initializeSourceIDs,
     initializeClassifications,
     setPotreeClassifications,
+    setAttributeRange,
+    resetAttributeRange,
+    clearAttributeRange,
+    initializeAttributeRanges,
   };
 });

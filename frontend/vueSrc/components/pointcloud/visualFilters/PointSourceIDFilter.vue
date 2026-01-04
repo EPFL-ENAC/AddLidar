@@ -57,8 +57,6 @@ function initializeSourceIDs(attribute: {
   const minID = attribute.minValue;
   const maxID = attribute.maxValue;
 
-  console.log(`Point Source ID range: ${minID} to ${maxID}`);
-
   // Generate source IDs based on the range
   const ids: number[] = [];
   if (maxID - minID < 30) {

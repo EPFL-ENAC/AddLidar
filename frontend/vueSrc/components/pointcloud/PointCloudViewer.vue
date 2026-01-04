@@ -44,20 +44,40 @@ function onAttributeChange(attributeName) {
   }
 }
 
-watch(
-  () => pointcloudStore.activeAttribute,
-  (newValue) => {
-    console.log("New attribute", newValue);
-    onAttributeChange(newValue);
-  },
-);
+watch(() => pointcloudStore.activeAttribute, onAttributeChange);
 
 watch(
   () => [pointcloudStore.visualFilterMin, pointcloudStore.visualFilterMax],
   ([newMin, newMax]) => {
-    console.log("Filtering source ID", newMin, newMax);
     window.viewer.setFilterPointSourceIDRange(newMin, newMax);
   },
+);
+
+// Watch for attribute range filters
+watch(
+  () => pointcloudStore.attributeRanges,
+  (ranges) => {
+    if (!window.viewer || !window.viewer.scene.pointclouds.length) return;
+
+    try {
+      // Apply each range filter to the appropriate viewer method
+      for (const [attrName, [min, max]] of Object.entries(ranges)) {
+        const lowerName = attrName.toLowerCase();
+
+        if (lowerName.includes("return number")) {
+          window.viewer.setFilterReturnNumberRange(min, max);
+        } else if (lowerName.includes("number of returns")) {
+          window.viewer.setFilterNumberOfReturnsRange(min, max);
+        } else if (lowerName.includes("gps") && lowerName.includes("time")) {
+          window.viewer.setFilterGPSTimeRange(min, max);
+        }
+        // Note: Point Source ID already handled by selectedSourceIDs watch
+      }
+    } catch (error) {
+      console.error("Error applying attribute range filters:", error);
+    }
+  },
+  { deep: true },
 );
 
 // Watch for changes in selected source IDs
@@ -65,8 +85,6 @@ watch(
   () => pointcloudStore.selectedSourceIDs,
   (selectedIDs) => {
     if (!window.viewer || !window.viewer.scene.pointclouds.length) return;
-
-    console.log("Source ID filter changed:", selectedIDs);
 
     try {
       if (selectedIDs.length > 0) {
@@ -92,8 +110,6 @@ watch(
   () => pointcloudStore.selectedClassifications,
   (selectedClasses) => {
     if (!window.viewer || !window.viewer.scene.pointclouds.length) return;
-
-    console.log("Classification filter changed:", selectedClasses);
 
     try {
       // Get all available classifications from the pointcloud store
@@ -144,12 +160,10 @@ watch(
 function loadPointCloud(id) {
   try {
     const pointCloudUrl = `${directoryStore.staticBasePath}/Potree/${id}/metadata.json`;
-    console.log("Loading point cloud from:", pointCloudUrl);
 
     // Load point cloud
     Potree.loadPointCloud(pointCloudUrl)
       .then((e) => {
-        console.log("point cloud loaded", e);
         const pointcloud = e.pointcloud;
         const material = pointcloud.material;
         material.activeAttributeName = pointcloudStore.activeAttribute;
@@ -207,7 +221,6 @@ onMounted(() => {
   viewer.setPointBudget(50000000);
   viewer.loadSettingsFromURL();
   viewer.setDescription("");
-  console.log(viewer);
   pointcloudStore.setVolumeTool(viewer.volumeTool);
   exportJobStore.setVolumeTool(viewer.volumeTool);
 
