@@ -107,7 +107,6 @@ function onClipChanged({ object }: { object: any }) {
 }
 
 function onVolumeAdded({ volume }: { volume: any }) {
-  console.log("Volume added", volume);
   exportJobStore.setClipVolume(volume);
   volume.addEventListener("scale_changed", onClipChanged);
   volume.addEventListener("orientation_changed", onClipChanged);

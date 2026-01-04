@@ -334,11 +334,7 @@ const allColumns: QTableColumn[] = [
   },
 ];
 
-const isTableDense = computed(() => {
-  const value = $q.screen.xs || $q.screen.sm;
-  console.log("isTableDense", value);
-  return value;
-});
+const isTableDense = computed(() => $q.screen.xs || $q.screen.sm);
 const columns = computed(() => {
   const cols = [
     allColumns[0], // Always show name
