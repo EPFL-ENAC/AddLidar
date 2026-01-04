@@ -1,7 +1,7 @@
 // WebSocket and API services for file download operations
 import { ref, Ref } from "vue";
 import { useJobStore } from "@/stores/jobStore";
-
+import { useDirectoryStore } from "@/stores/directoryStore";
 // Define types for job-related data
 interface JobLog {
   time: string;
@@ -105,11 +105,20 @@ export default function useDownloadService(
       processing.value = true;
       addLog("Starting job...");
 
+      // Get password from directory store if available
+      const directoryStore = useDirectoryStore();
+      const headers: HeadersInit = {
+        "Content-Type": "application/json",
+      };
+
+      const currentPassword = directoryStore.missionPassword;
+      if (currentPassword) {
+        headers["X-Mission-Password"] = currentPassword;
+      }
+
       const response = await fetch(`${API_BASE_URL}${PREFIX}/start-job/`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers,
         body: JSON.stringify(params),
       });
 

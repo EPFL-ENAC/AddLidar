@@ -11,6 +11,10 @@ from .potree_metacloud_state import (
     public_router as potree_metacloud_public,
     internal_router as potree_metacloud_internal,
 )
+from .mission_protection import (
+    public_router as mission_protection_public,
+    internal_router as mission_protection_internal,
+)
 from .base import (
     public_router as general_public,
     internal_router as general_internal,
@@ -37,10 +41,12 @@ internal_router = APIRouter(
 public_router.include_router(general_public)
 public_router.include_router(folder_state_public)
 public_router.include_router(potree_metacloud_public)
+public_router.include_router(mission_protection_public)
 
 internal_router.include_router(general_internal)
 internal_router.include_router(folder_state_internal)
 internal_router.include_router(potree_metacloud_internal)
+internal_router.include_router(mission_protection_internal)
 
 
 # Shared endpoints that combine data from both tables

@@ -1,8 +1,9 @@
-from fastapi import APIRouter, BackgroundTasks, WebSocket, WebSocketDisconnect
+from fastapi import APIRouter, BackgroundTasks, WebSocket, WebSocketDisconnect, Header
 from fastapi.responses import JSONResponse, Response, FileResponse
 from pydantic import ValidationError
 import logging
 import os
+from typing import Optional
 from fastapi.encoders import jsonable_encoder
 import time
 import asyncio
@@ -17,6 +18,10 @@ from src.services.k8s_addlidarmanager import (
     delete_k8s_job,
 )
 from src.api.models import PointCloudRequest, ProcessPointCloudResponse
+from src.api.mission_protection_utils import (
+    check_mission_access,
+    extract_mission_from_path,
+)
 
 # Replace Docker service import with Kubernetes service
 from src.config.settings import settings
@@ -155,16 +160,25 @@ async def stop_job(job_name: str):
 
 
 @router.post("/start-job/")
-async def start_job(payload: PointCloudRequest):
+async def start_job(
+    payload: PointCloudRequest,
+    x_mission_password: Optional[str] = Header(None, description="Password for protected missions"),
+):
     """Starts a Kubernetes job and begins watching its status.
 
     Args:
         payload: PointCloudRequest containing job parameters
+        x_mission_password: Optional password for protected missions (via header)
 
     Returns:
         dict: Job name and WebSocket URL for status tracking
     """
     try:
+        # Extract mission from file path and check protection
+        mission_key = extract_mission_from_path(str(payload.file_path))
+        if mission_key:
+            check_mission_access(mission_key, x_mission_password)
+
         # Generate a unique job name
         job_name = f"job-{uuid.uuid4().hex[:8]}"
 

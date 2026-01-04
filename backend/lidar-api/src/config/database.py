@@ -41,7 +41,7 @@ def initialize_database():
         tables = cursor.fetchall()
         table_names = [table[0] for table in tables]
 
-        expected_tables = ["folder_state", "potree_metacloud_state"]
+        expected_tables = ["folder_state", "potree_metacloud_state", "mission_protection"]
         for table in expected_tables:
             if table in table_names:
                 logger.info(f"Table '{table}' exists and is ready")

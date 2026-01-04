@@ -268,6 +268,10 @@ def main() -> None:
     logger.info("Copying footprint.geojson files...")
     scanner.copy_footprint_files()
 
+    # Scan for password files and update protection status
+    logger.info("Scanning for .password files...")
+    scanner.scan_for_password_files(args.dry_run)
+
     # Scan for changed folders
     changed_folders = scanner.collect_changed_folders(args.dry_run)
 

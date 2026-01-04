@@ -29,3 +29,11 @@ CREATE TABLE IF NOT EXISTS potree_metacloud_state (
     extra_attributes  TEXT,                  -- JSON string of other attributes from METACLOUD_ATTRIBUTES
     FOREIGN KEY (mission_key) REFERENCES folder_state(mission_key)
 );
+
+CREATE TABLE IF NOT EXISTS mission_protection (
+    mission_key       TEXT PRIMARY KEY,      -- e.g. "0003_EPFL"
+    password_hash     TEXT NOT NULL,         -- bcrypt hashed password
+    last_checked      INTEGER NOT NULL,      -- epoch timestamp of last check
+    created_at        INTEGER NOT NULL,      -- epoch timestamp when protection was added
+    updated_at        INTEGER NOT NULL       -- epoch timestamp when protection was last updated
+);

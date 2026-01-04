@@ -40,6 +40,31 @@ export const useDirectoryStore = defineStore("directory", () => {
   const error = ref<string | null>(null);
   const pointcloudMetadata = ref<PointcloudMetadata | null>(null);
   const allMissions = ref<PotreeMetacloudState[]>([]);
+  const missionPasswords = ref<Record<string, string>>({});
+  const isMissionProtected = ref(false);
+
+  // Load saved passwords from sessionStorage on init
+  const savedPasswords = sessionStorage.getItem("mission_passwords");
+  if (savedPasswords) {
+    try {
+      missionPasswords.value = JSON.parse(savedPasswords);
+    } catch (e) {
+      console.error("Failed to load saved passwords:", e);
+    }
+  }
+
+  // Computed property for current mission password
+  const missionPassword = computed(() => {
+    return activeMission.value
+      ? missionPasswords.value[activeMission.value]
+      : null;
+  });
+
+  const isPasswordValid = computed(() => {
+    return activeMission.value
+      ? Boolean(missionPasswords.value[activeMission.value])
+      : false;
+  });
 
   // For same-domain deployment, we can use relative URLs
   const apiBasePath = ref("/api");
@@ -70,10 +95,104 @@ export const useDirectoryStore = defineStore("directory", () => {
   // Current active mission ID (from URL parameter)
   const activeMission = ref<string | null>(null);
 
+  // Check if mission is password protected
+  async function checkMissionProtection(missionKey: string): Promise<boolean> {
+    try {
+      const response = await fetch(
+        `${apiBasePath.value}/sqlite/mission_protection/${missionKey}`,
+      );
+
+      if (!response.ok) {
+        return false;
+      }
+
+      const data = await response.json();
+      return data.is_protected === true;
+    } catch (err) {
+      console.error(
+        `Error checking mission protection for ${missionKey}:`,
+        err,
+      );
+      return false;
+    }
+  }
+
+  // Validate password for protected mission
+  async function validatePassword(
+    missionKey: string,
+    password: string,
+  ): Promise<boolean> {
+    try {
+      const response = await fetch(
+        `${apiBasePath.value}/sqlite/mission_protection/${missionKey}/validate`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ password }),
+        },
+      );
+
+      if (!response.ok) {
+        return false;
+      }
+
+      const data = await response.json();
+      return data.valid === true;
+    } catch (err) {
+      console.error(`Error validating password for ${missionKey}:`, err);
+      return false;
+    }
+  }
+
+  // Set password for current mission
+  function setMissionPassword(password: string | null) {
+    if (!activeMission.value) return;
+
+    if (password) {
+      missionPasswords.value[activeMission.value] = password;
+      // Save to sessionStorage
+      sessionStorage.setItem(
+        "mission_passwords",
+        JSON.stringify(missionPasswords.value),
+      );
+    } else {
+      delete missionPasswords.value[activeMission.value];
+      sessionStorage.setItem(
+        "mission_passwords",
+        JSON.stringify(missionPasswords.value),
+      );
+    }
+  }
+
+  // Clear password for specific mission
+  function clearMissionPassword(missionKey?: string) {
+    const keyToClear = missionKey || activeMission.value;
+    if (!keyToClear) return;
+
+    delete missionPasswords.value[keyToClear];
+    sessionStorage.setItem(
+      "mission_passwords",
+      JSON.stringify(missionPasswords.value),
+    );
+  }
+
+  // Clear all passwords
+  function clearAllPasswords() {
+    missionPasswords.value = {};
+    sessionStorage.removeItem("mission_passwords");
+  }
+
   // Set the active mission and fetch its data
   async function setActiveMission(missionId: string) {
     activeMission.value = missionId;
-    await fetchMissionData(missionId);
+
+    // Check if mission is protected
+    isMissionProtected.value = await checkMissionProtection(missionId);
+
+    // If not protected, or we have a password, fetch data
+    if (!isMissionProtected.value || missionPasswords.value[missionId]) {
+      await fetchMissionData(missionId);
+    }
   }
 
   // Modified to fetch only the active mission's data
@@ -104,8 +223,15 @@ export const useDirectoryStore = defineStore("directory", () => {
   // Fetch data for a specific mission
   async function fetchMissionData(missionName: string) {
     try {
+      const headers: HeadersInit = {};
+      const password = missionPasswords.value[missionName];
+      if (password) {
+        headers["X-Mission-Password"] = password;
+      }
+
       const response = await fetch(
         `${apiBasePath.value}/sqlite/folder_state/${missionName}`,
+        { headers },
       );
 
       if (!response.ok) {
@@ -233,6 +359,15 @@ export const useDirectoryStore = defineStore("directory", () => {
     apiBasePath,
     staticBasePath,
     activeMission,
+    missionPassword,
+    missionPasswords,
+    isMissionProtected,
+    isPasswordValid,
+    checkMissionProtection,
+    validatePassword,
+    setMissionPassword,
+    clearMissionPassword,
+    clearAllPasswords,
     fetchAllDirectoryData,
     fetchPointcloudGeojson,
     fetchMissionData,

@@ -239,3 +239,58 @@ class APIClient:
         except Exception as e:
             logger.error(f"Error updating last_checked for folder {folder_key}: {e}")
             return False
+
+    def get_mission_protection(self, mission_key: str) -> Optional[Dict]:
+        """Get mission protection status from API"""
+        try:
+            url = f"{self.backend_url}/sqlite/mission_protection/{mission_key}"
+            response = requests.get(url, timeout=30)
+            if response.status_code == 404:
+                return None
+            response.raise_for_status()
+            return response.json()
+        except Exception as e:
+            logger.error(f"Error fetching mission protection for {mission_key}: {e}")
+            return None
+
+    def create_mission_protection(self, mission_key: str, password: str) -> bool:
+        """Create or update mission protection via API"""
+        try:
+            url = f"{self.backend_url}/sqlite/mission_protection"
+            payload = {"mission_key": mission_key, "password": password}
+            response = requests.post(url, json=payload, timeout=30)
+            response.raise_for_status()
+            return True
+        except Exception as e:
+            logger.error(f"Error creating mission protection for {mission_key}: {e}")
+            return False
+
+    def update_mission_protection_last_checked(self, mission_key: str) -> bool:
+        """Update only the last_checked timestamp for mission protection"""
+        try:
+            url = f"{self.backend_url}/sqlite/mission_protection/{mission_key}/last_checked"
+            response = requests.patch(url, timeout=30)
+            if response.status_code == 404:
+                logger.warning(f"Mission protection not found for {mission_key}")
+                return False
+            response.raise_for_status()
+            return True
+        except Exception as e:
+            logger.error(
+                f"Error updating last_checked for mission protection {mission_key}: {e}"
+            )
+            return False
+
+    def delete_mission_protection(self, mission_key: str) -> bool:
+        """Delete mission protection via API"""
+        try:
+            url = f"{self.backend_url}/sqlite/mission_protection/{mission_key}"
+            response = requests.delete(url, timeout=30)
+            if response.status_code == 404:
+                logger.warning(f"Mission protection not found for {mission_key}")
+                return False
+            response.raise_for_status()
+            return True
+        except Exception as e:
+            logger.error(f"Error deleting mission protection for {mission_key}: {e}")
+            return False

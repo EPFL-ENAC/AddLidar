@@ -177,9 +177,9 @@ function loadPointCloud(id) {
             i >= 0;
             i--
           ) {
-            window.viewer.scene.removePointCloud(
-              window.viewer.scene.pointclouds[i],
-            );
+            const pc = window.viewer.scene.pointclouds[i];
+            window.viewer.scene.scene.remove(pc);
+            window.viewer.scene.pointclouds.splice(i, 1);
           }
         }
 

@@ -1,9 +1,11 @@
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Header
 from pydantic import BaseModel
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 import time
+import sqlite3
 
 from .base import get_db_connection, QueryResult, logger
+from src.api.mission_protection_utils import is_mission_protected, validate_mission_password
 
 
 # Pydantic models specific to folder state
@@ -50,6 +52,7 @@ internal_router = APIRouter()
 async def get_folder_state(
     limit: int = Query(100, ge=1, le=1000),
     offset: int = Query(0, ge=0),
+    x_mission_password: Optional[str] = Header(None, description="Password for protected missions"),
 ):
     """Get folder state information with new schema"""
     conn = get_db_connection()
@@ -87,10 +90,23 @@ async def get_folder_state(
 
     conn.close()
 
-    # Convert rows to list of dicts
-    data = [dict(row) for row in rows]
+    # Convert rows to list of dicts and filter protected missions
+    data = []
+    for row in rows:
+        row_dict = dict(row)
+        mission_key = row_dict.get("mission_key")
 
-    return QueryResult(data=data, count=count)
+        # Check if mission is protected
+        if mission_key and is_mission_protected(mission_key):
+            # Validate password if provided
+            if x_mission_password and validate_mission_password(mission_key, x_mission_password):
+                data.append(row_dict)
+            # Skip this row if no valid password
+        else:
+            # Mission not protected, include it
+            data.append(row_dict)
+
+    return QueryResult(data=data, count=len(data))
 
 
 @internal_router.put("/folder_state/{folder_key:path}", response_model=Dict[str, Any])
@@ -173,9 +189,11 @@ async def get_folder_state_by_subpath(
     subpath: str,
     limit: int = Query(100, ge=1, le=1000),
     offset: int = Query(0, ge=0),
+    x_mission_password: Optional[str] = Header(None, description="Password for protected missions"),
 ) -> QueryResult:
     """Get folder state information for a specific subpath.
     Returns records where folder_key starts with the provided subpath.
+    Protected missions require valid password via x-mission-password header.
     """
     conn = get_db_connection()
     cursor = conn.cursor()
@@ -219,10 +237,23 @@ async def get_folder_state_by_subpath(
 
     conn.close()
 
-    # Convert rows to list of dictionaries
-    data = [dict(row) for row in rows]
+    # Convert rows to list of dictionaries and filter protected missions
+    data = []
+    for row in rows:
+        row_dict = dict(row)
+        mission_key = row_dict.get("mission_key")
 
-    return QueryResult(data=data, count=count)
+        # Check if mission is protected
+        if mission_key and is_mission_protected(mission_key):
+            # Validate password if provided
+            if x_mission_password and validate_mission_password(mission_key, x_mission_password):
+                data.append(row_dict)
+            # Skip this row if no valid password
+        else:
+            # Mission not protected, include it
+            data.append(row_dict)
+
+    return QueryResult(data=data, count=len(data))
 
 
 @public_router.get("/folder_state/mission/{mission_key}", response_model=QueryResult)
@@ -231,8 +262,32 @@ async def get_folder_state_by_mission(
     mission_key: str,
     limit: int = Query(100, ge=1, le=1000),
     offset: int = Query(0, ge=0),
+    x_mission_password: Optional[str] = Header(None, description="Password for protected missions"),
 ) -> QueryResult:
-    """Get folder state information for a specific mission key."""
+    """Get folder state information for a specific mission key.
+    Protected missions require valid password via x-mission-password header.
+    """
+    # Check if mission is protected and validate password
+    if is_mission_protected(mission_key):
+        if not x_mission_password:
+            raise HTTPException(
+                status_code=403,
+                detail={
+                    "error": "Mission is password protected",
+                    "mission_key": mission_key,
+                    "protected": True,
+                },
+            )
+        if not validate_mission_password(mission_key, x_mission_password):
+            raise HTTPException(
+                status_code=403,
+                detail={
+                    "error": "Invalid password for protected mission",
+                    "mission_key": mission_key,
+                    "protected": True,
+                },
+            )
+
     conn = get_db_connection()
     cursor = conn.cursor()
 

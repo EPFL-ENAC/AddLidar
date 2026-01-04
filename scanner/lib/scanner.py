@@ -75,6 +75,64 @@ class DirectoryScanner:
             f"Footprint copying completed: {copied_count} copied, {skipped_count} skipped"
         )
 
+    def scan_for_password_files(self, dry_run: bool = False) -> None:
+        """Scan missions for .password files and update protection status."""
+        for level1 in os.listdir(self.original_root):
+            p1 = os.path.join(self.original_root, level1)
+            if not os.path.isdir(p1):
+                continue
+
+            # Look for .password file in the mission directory
+            password_file = os.path.join(p1, ".password")
+
+            if os.path.exists(password_file):
+                try:
+                    # Read the password from the file
+                    with open(password_file, "r") as f:
+                        password = f.read().strip()
+
+                    if not password:
+                        logger.warning(
+                            f"Empty .password file found in mission {level1}"
+                        )
+                        continue
+
+                    # Hash the password content to check for changes
+                    password_fp = fingerprint_file(password_file)
+                    logger.info(
+                        f"Found .password file in mission {level1}, fingerprint: {password_fp}"
+                    )
+
+                    # Check current protection status
+                    protection = self.api_client.get_mission_protection(level1)
+
+                    if not protection or not protection.get("is_protected"):
+                        logger.info(
+                            f"Creating password protection for mission {level1}"
+                        )
+                        if not dry_run:
+                            self.api_client.create_mission_protection(level1, password)
+                    else:
+                        # Update last_checked timestamp
+                        if not dry_run:
+                            self.api_client.update_mission_protection_last_checked(
+                                level1
+                            )
+
+                except Exception as e:
+                    logger.error(
+                        f"Error processing .password file in mission {level1}: {e}"
+                    )
+            else:
+                # No .password file found - check if protection exists and should be removed
+                protection = self.api_client.get_mission_protection(level1)
+                if protection and protection.get("is_protected"):
+                    logger.info(
+                        f"No .password file found but mission {level1} is protected - removing protection"
+                    )
+                    if not dry_run:
+                        self.api_client.delete_mission_protection(level1)
+
     def scan_for_metacloud_files(self, dry_run: bool = False) -> List[List[str]]:
         """Scan directories for .metacloud files and track changes."""
         metacloud_changes: List[List[str]] = []
