@@ -8,6 +8,7 @@ import {
 import MainAppLayout from "@/layouts/MainAppLayout.vue";
 import MissionFootprintMap from "@/components/MissionFootprintMap.vue";
 import MissionListPanel from "@/components/MissionListPanel.vue";
+import AboutContent from "@/components/AboutContent.vue";
 import { useAppMeta } from "@/composables/useMeta";
 
 useAppMeta({ title: "Browse Missions" });
@@ -25,6 +26,7 @@ interface MissionWithMetadata extends PotreeMetacloudState {
 const router = useRouter();
 const directoryStore = useDirectoryStore();
 
+const showAbout = ref(false);
 const missions = ref<MissionWithMetadata[]>([]);
 const isLoading = ref(true);
 const error = ref<string | null>(null);
@@ -104,6 +106,10 @@ function onAutoFilterToggle(enabled: boolean) {
   autoFilterEnabled.value = enabled;
 }
 
+function toggleAbout() {
+  showAbout.value = !showAbout.value;
+}
+
 onMounted(() => {
   directoryStore.configurePaths("/api", "/static");
   loadMissions();
@@ -113,33 +119,59 @@ onMounted(() => {
 <template>
   <main-app-layout>
     <template #sidebar>
-      <!-- Loading State -->
-      <div v-if="isLoading" class="flex flex-center column q-pa-xl">
-        <q-spinner color="primary" size="48px" />
-        <p class="q-mt-md text-grey-6">Loading missions...</p>
-      </div>
+      <div class="column full-height q-pt-md">
+        <!-- Header with title and About link -->
+        <header v-if="!isLoading && !error" class="q-pa-md q-pb-sm">
+          <div class="row items-center justify-between">
+            <h1
+              class="text-subtitle2 text-weight-medium text-uppercase q-ma-none"
+            >
+              {{ showAbout ? "About AddLidar" : "Missions" }}
+            </h1>
+            <q-btn flat v-if="!showAbout" label="About" @click="toggleAbout" />
+            <q-btn flat v-else icon="close" @click="toggleAbout" />
+          </div>
+        </header>
 
-      <!-- Error State -->
-      <div v-else-if="error" class="flex flex-center column q-pa-xl">
-        <q-icon name="error_outline" color="negative" size="64px" />
-        <p class="q-mt-md text-negative">{{ error }}</p>
-        <q-btn flat color="primary" label="Retry" @click="loadMissions" />
-      </div>
+        <!-- Loading State -->
+        <div v-if="isLoading" class="col flex flex-center column">
+          <q-spinner color="primary" size="48px" />
+          <p class="q-mt-md text-grey-6">Loading missions...</p>
+        </div>
 
-      <!-- Mission List -->
-      <mission-list-panel
-        v-else
-        :missions="enrichedMissions"
-        :selected-mission="selectedMission"
-        :hovered-mission="hoveredMission"
-        :visible-missions="visibleMissions"
-        :auto-filter="autoFilterEnabled"
-        @select="onMissionSelect"
-        @hover="onMissionHover"
-        @explore="viewMission"
-        @hidden-missions-change="onHiddenMissionsChange"
-        @auto-filter-toggle="onAutoFilterToggle"
-      />
+        <!-- Error State -->
+        <div v-else-if="error" class="col flex flex-center column">
+          <q-icon name="error_outline" color="negative" size="64px" />
+          <p class="q-mt-md text-negative">{{ error }}</p>
+          <q-btn flat color="primary" label="Retry" @click="loadMissions" />
+        </div>
+
+        <!-- About Content or Mission List -->
+        <template v-else>
+          <about-content v-if="showAbout" class="col" @close="toggleAbout" />
+          <mission-list-panel
+            v-else
+            class="col"
+            :missions="enrichedMissions"
+            :selected-mission="selectedMission"
+            :hovered-mission="hoveredMission"
+            :visible-missions="visibleMissions"
+            :auto-filter="autoFilterEnabled"
+            @select="onMissionSelect"
+            @hover="onMissionHover"
+            @explore="viewMission"
+            @hidden-missions-change="onHiddenMissionsChange"
+            @auto-filter-toggle="onAutoFilterToggle"
+          />
+        </template>
+
+        <!-- Footer -->
+        <div class="q-pa-md q-pt-sm text-center">
+          <small class="text-grey-6">
+            &copy; 2025 EPFL - École Polytechnique Fédérale de Lausanne
+          </small>
+        </div>
+      </div>
     </template>
 
     <template #content>

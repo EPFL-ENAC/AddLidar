@@ -129,9 +129,9 @@ async function promptForPassword() {
     <q-separator />
 
     <!-- Tab Panels -->
-    <q-scroll-area class="sidebar-content q-pa-lg">
+    <q-scroll-area class="sidebar-content">
       <q-tab-panels v-model="activeTab" animated keep-alive>
-        <q-tab-panel name="export" class="q-pa-none">
+        <q-tab-panel name="export" class="q-pa-lg">
           <!-- Show password banner if protected -->
           <div v-if="showPasswordBanner">
             <q-banner class="bg-warning text-white">
@@ -155,7 +155,7 @@ async function promptForPassword() {
           <export-panel v-else />
         </q-tab-panel>
 
-        <q-tab-panel name="files" class="q-pa-none">
+        <q-tab-panel name="files" class="q-pa-lg">
           <!-- Show password banner if protected -->
           <div v-if="showPasswordBanner">
             <q-banner class="bg-warning text-white">
@@ -179,11 +179,11 @@ async function promptForPassword() {
           <files-panel v-else />
         </q-tab-panel>
 
-        <q-tab-panel name="display" class="q-pa-none">
+        <q-tab-panel name="display" class="q-pa-lg">
           <display-panel />
         </q-tab-panel>
 
-        <q-tab-panel name="info" class="q-pa-none">
+        <q-tab-panel name="info" class="q-pa-lg">
           <mission-info-panel />
         </q-tab-panel>
       </q-tab-panels>

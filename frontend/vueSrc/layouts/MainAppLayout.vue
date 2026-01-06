@@ -1,7 +1,6 @@
 <script setup lang="ts">
 import { ref, computed } from "vue";
 import { useQuasar } from "quasar";
-import AboutContent from "@/components/AboutContent.vue";
 
 interface Props {
   showBackButton?: boolean;
@@ -17,7 +16,6 @@ const emit = defineEmits<{
 }>();
 
 const $q = useQuasar();
-const showAbout = ref(false);
 const leftDrawerOpen = ref(true);
 
 const drawerWidth = computed(() => {
@@ -30,10 +28,6 @@ const drawerWidth = computed(() => {
 
 function handleBack() {
   emit("back");
-}
-
-function toggleAbout() {
-  showAbout.value = !showAbout.value;
 }
 
 function toggleLeftDrawer() {
@@ -72,33 +66,21 @@ function toggleLeftDrawer() {
             </div>
 
             <div class="col row items-center justify-center q-px-xs">
-              <div class="row items-center q-px-xs">
+              <div class="row items-center">
                 <q-icon
                   name="view_in_ar"
-                  color="primary"
-                  size="20px"
+                  color="black"
+                  size="26px"
                   class="q-mr-xs"
                 />
                 <span class="text-h6">AddLidar</span>
               </div>
-              <q-separator vertical size="2px" inset class="q-mx-sm" />
+              <q-separator vertical size="2px" inset class="q-mx-md" />
               <img
                 src="@/assets/EPFL_Logo.svg"
                 alt="EPFL"
                 style="height: 20px; width: auto"
               />
-              <q-btn
-                flat
-                round
-                dense
-                :icon="showAbout ? 'close' : 'info_outline'"
-                color="grey-8"
-                size="md"
-                class="q-ml-sm"
-                @click="toggleAbout"
-              >
-                <q-tooltip>{{ showAbout ? "Close" : "About" }}</q-tooltip>
-              </q-btn>
             </div>
 
             <!-- Fake spacer to balance the left side and center the middle content -->
@@ -113,28 +95,7 @@ function toggleLeftDrawer() {
 
         <!-- Sidebar Content -->
         <div class="col overflow-auto column sidebar-scrollable">
-          <about-content v-if="showAbout" />
-          <template v-else>
-            <!-- Mission Name Title -->
-            <div v-if="subtitle" class="q-px-md q-px-lg-lg q-py-md q-py-xl-lg">
-              <div class="row justify-between items-center">
-                <div
-                  class="text-overline text-grey-6 q-mb-xs"
-                  style="letter-spacing: 0.5px"
-                >
-                  SELECTED MISSION
-                </div>
-                <div class="text-subtitle1 text-weight-medium ellipsis">
-                  {{ subtitle }}
-                </div>
-              </div>
-            </div>
-            <q-separator v-if="subtitle" />
-
-            <div class="col column overflow-hidden">
-              <slot name="sidebar" />
-            </div>
-          </template>
+          <slot name="sidebar" />
         </div>
       </div>
     </q-drawer>
@@ -145,6 +106,7 @@ function toggleLeftDrawer() {
       color="primary"
       round
       unelevated
+      size="md"
       class="drawer-edge-toggle"
       :style="{ left: leftDrawerOpen ? `${drawerWidth - 20}px` : '16px' }"
       @click="toggleLeftDrawer"
@@ -215,7 +177,7 @@ function toggleLeftDrawer() {
 
 .drawer-edge-toggle {
   position: fixed;
-  top: 5%;
+  top: 2.3rem;
   transform: translateY(-50%);
   z-index: 3000;
   transition: left 0.15s ease;

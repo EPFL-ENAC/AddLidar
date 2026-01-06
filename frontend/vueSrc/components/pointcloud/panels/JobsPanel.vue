@@ -78,7 +78,7 @@ function clearAll() {
       flat
       bordered
       :class="[
-        'job-card q-mx-lg',
+        'job-card q-mx-md',
         { 'job-card--active': currentJobName === job.job_name },
       ]"
       @click="selectJob(job.job_name)"

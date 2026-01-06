@@ -1,25 +1,10 @@
 <template>
   <div class="column full-height bg-white">
-    <header class="q-pa-md q-py-md">
-      <h1 class="text-h6 q-ma-none q-mb-xs">Missions</h1>
-      <div class="row items-center justify-between">
-        <p class="text-caption text-grey-6 q-ma-none">
-          Select a mission to explore LiDAR data
-        </p>
-        <q-checkbox
-          :model-value="autoFilter"
-          dense
-          size="sm"
-          label="Viewport filter"
-          class="text-caption"
-          @update:model-value="emit('autoFilterToggle', $event)"
-        >
-          <q-tooltip>Show visible missions first</q-tooltip>
-        </q-checkbox>
-      </div>
-    </header>
-
-    <div class="col q-pa-sm q-pb-md" style="min-height: 0; overflow: auto">
+    <p class="text-body2 q-px-md text-grey-8">
+      Browse airborne LiDAR missions. Select one to view its geographic
+      footprint and explore the 3D point cloud data.
+    </p>
+    <div class="col q-pa-sm q-pb-md" style="min-height: 0">
       <q-table
         :rows="visibleMissions"
         :grid="$q.screen.xs"
@@ -224,6 +209,16 @@
           </q-tr>
         </template>
       </q-table>
+      <q-checkbox
+        :model-value="autoFilter"
+        dense
+        size="sm"
+        label="Viewport filter"
+        class="text-caption viewport-filter-overlay"
+        @update:model-value="emit('autoFilterToggle', $event)"
+      >
+        <q-tooltip>Show visible missions first</q-tooltip>
+      </q-checkbox>
     </div>
   </div>
 </template>
@@ -620,5 +615,13 @@ function formatNumber(num: number | undefined): string {
 .sticky-header-table :deep(.q-table__grid-content) {
   max-height: 100%;
   overflow-y: auto;
+}
+
+/* Floating viewport filter */
+.viewport-filter-overlay {
+  position: relative;
+  bottom: 2.2rem;
+  left: 1rem;
+  z-index: 10;
 }
 </style>
