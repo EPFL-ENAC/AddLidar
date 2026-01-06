@@ -56,7 +56,6 @@ function toggleLeftDrawer() {
                 round
                 dense
                 icon="arrow_back"
-                color="grey-8"
                 size="md"
                 :style="{ visibility: showBackButton ? 'visible' : 'hidden' }"
                 @click="handleBack"
