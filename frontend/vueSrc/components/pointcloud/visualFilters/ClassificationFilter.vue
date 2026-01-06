@@ -48,6 +48,18 @@
             color="primary"
             @update:model-value="updateSelectedClasses"
           />
+
+          <label
+            class="classification-content"
+            @click="toggleClass(classValue)"
+          >
+            <div class="classification-label">
+              {{ getClassLabel(classValue) }}
+            </div>
+            <div v-if="classCount(classValue)" class="classification-count">
+              {{ formatCount(classCount(classValue)) }}
+            </div>
+          </label>
           <div
             class="classification-indicator"
             :style="{ backgroundColor: getClassColor(classValue) }"
@@ -63,20 +75,13 @@
                 @update:model-value="(val) => updateClassColor(classValue, val)"
               />
             </q-popup-proxy>
-            <q-tooltip>Click to change color</q-tooltip>
+            <q-tooltip>Click to customize color</q-tooltip>
           </div>
-          <label
-            class="classification-content"
-            @click="toggleClass(classValue)"
-          >
-            <div class="classification-label">
-              {{ getClassLabel(classValue) }}
-            </div>
-            <div v-if="classCount(classValue)" class="classification-count">
-              {{ formatCount(classCount(classValue)) }} points
-            </div>
-          </label>
         </div>
+      </div>
+      <div class="q-px-lg text-caption text-grey-6">
+        <q-icon name="info" size="14px" class="q-mr-xs" />
+        Click color squares to customize color
       </div>
     </div>
   </q-expansion-item>
@@ -224,15 +229,20 @@ function toggleClass(classValue: number) {
 
 .classification-list {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 0;
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  gap: 0.2rem 2rem;
   padding: 0 16px 8px;
 }
 
+@media screen and (min-width: 1920px) {
+  .classification-list {
+    gap: 0.3rem 8rem;
+  }
+}
 .classification-item {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 0.5rem;
   padding: 6px 8px;
   margin: 2px 0;
   min-width: 0;
@@ -245,12 +255,21 @@ function toggleClass(classValue: number) {
 }
 
 .classification-indicator {
-  width: 18px;
-  height: 18px;
-  border-radius: 3px;
-  border: 1px solid rgba(0, 0, 0, 0.15);
+  width: 24px;
+  height: 24px;
+  border: 1px solid rgba(0, 0, 0, 0.2);
   flex-shrink: 0;
   cursor: pointer;
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.classification-indicator:hover {
+  border-color: rgba(0, 0, 0, 0.3);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
 }
 
 .classification-content {
