@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import ColorVariableSelector from "../ColorVariableSelector.vue";
+import ColorVariableSelector from "../visualFilters/ColorVariableSelector.vue";
 import ClassificationFilter from "../visualFilters/ClassificationFilter.vue";
 import PointSourceIDFilter from "../visualFilters/PointSourceIDFilter.vue";
 import AttributeRangeFilter from "../visualFilters/AttributeRangeFilter.vue";
