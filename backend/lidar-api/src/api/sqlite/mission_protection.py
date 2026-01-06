@@ -32,12 +32,8 @@ class PasswordValidation(BaseModel):
     password: str
 
 
-@public_router.get(
-    "/mission_protection/{mission_key:path}", response_model=MissionProtectionStatus
-)
-@internal_router.get(
-    "/mission_protection/{mission_key:path}", response_model=MissionProtectionStatus
-)
+@public_router.get("/mission_protection/{mission_key:path}", response_model=MissionProtectionStatus)
+@internal_router.get("/mission_protection/{mission_key:path}", response_model=MissionProtectionStatus)
 async def get_mission_protection_status(mission_key: str):
     """Check if a mission is password protected"""
     conn = get_db_connection()

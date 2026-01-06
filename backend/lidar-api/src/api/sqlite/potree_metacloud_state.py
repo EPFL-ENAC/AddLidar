@@ -72,15 +72,9 @@ def filter_protected_missions(rows: List, password: Optional[str] = None) -> Lis
 async def get_potree_metacloud_state_public(
     limit: int = Query(100, ge=1, le=1000),
     offset: int = Query(0, ge=0),
-    x_mission_password: Optional[str] = Header(None, description="Password for protected missions"),
 ):
-    """Get potree metacloud state (Public API - enforces password protection)"""
-    result = await get_potree_metacloud_state_internal(limit, offset)
-    result.data = filter_protected_missions(
-        [sqlite3.Row(keys=d.keys(), values=d.values()) for d in result.data], x_mission_password
-    )
-    result.count = len(result.data)
-    return result
+    """Get potree metacloud state (Public API - shows all missions, protection applies to details only)"""
+    return await get_potree_metacloud_state_internal(limit, offset)
 
 
 @internal_router.get("/potree_metacloud_state", response_model=QueryResult)

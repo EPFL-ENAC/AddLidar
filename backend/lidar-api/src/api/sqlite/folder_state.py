@@ -70,9 +70,7 @@ async def get_folder_state_public(
 ):
     """Get folder state information (Public API - enforces password protection)"""
     result = await get_folder_state_internal(limit, offset)
-    result.data = filter_protected_missions(
-        [sqlite3.Row(keys=d.keys(), values=d.values()) for d in result.data], x_mission_password
-    )
+    result.data = filter_protected_missions(result.data, x_mission_password)
     result.count = len(result.data)
     return result
 
