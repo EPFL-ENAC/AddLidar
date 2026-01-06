@@ -47,14 +47,42 @@ public_router = APIRouter()
 internal_router = APIRouter()
 
 
+def filter_protected_missions(rows: List, password: Optional[str] = None) -> List[Dict]:
+    """Filter out protected missions unless valid password is provided."""
+    data = []
+    for row in rows:
+        row_dict = dict(row)
+        mission_key = row_dict.get("mission_key")
+
+        if mission_key and is_mission_protected(mission_key):
+            if password and validate_mission_password(mission_key, password):
+                data.append(row_dict)
+        else:
+            data.append(row_dict)
+    return data
+
+
 @public_router.get("/folder_state", response_model=QueryResult)
-@internal_router.get("/folder_state", response_model=QueryResult)
-async def get_folder_state(
+async def get_folder_state_public(
     limit: int = Query(100, ge=1, le=1000),
     offset: int = Query(0, ge=0),
     x_mission_password: Optional[str] = Header(None, description="Password for protected missions"),
 ):
-    """Get folder state information with new schema"""
+    """Get folder state information (Public API - enforces password protection)"""
+    result = await get_folder_state_internal(limit, offset)
+    result.data = filter_protected_missions(
+        [sqlite3.Row(keys=d.keys(), values=d.values()) for d in result.data], x_mission_password
+    )
+    result.count = len(result.data)
+    return result
+
+
+@internal_router.get("/folder_state", response_model=QueryResult)
+async def get_folder_state_internal(
+    limit: int = Query(100, ge=1, le=1000),
+    offset: int = Query(0, ge=0),
+):
+    """Get folder state information (Internal API - no password protection)"""
     conn = get_db_connection()
     cursor = conn.cursor()
 
@@ -90,23 +118,10 @@ async def get_folder_state(
 
     conn.close()
 
-    # Convert rows to list of dicts and filter protected missions
-    data = []
-    for row in rows:
-        row_dict = dict(row)
-        mission_key = row_dict.get("mission_key")
+    # Convert rows to list of dicts - no password filtering for internal API
+    data = [dict(row) for row in rows]
 
-        # Check if mission is protected
-        if mission_key and is_mission_protected(mission_key):
-            # Validate password if provided
-            if x_mission_password and validate_mission_password(mission_key, x_mission_password):
-                data.append(row_dict)
-            # Skip this row if no valid password
-        else:
-            # Mission not protected, include it
-            data.append(row_dict)
-
-    return QueryResult(data=data, count=len(data))
+    return QueryResult(data=data, count=count)
 
 
 @internal_router.put("/folder_state/{folder_key:path}", response_model=Dict[str, Any])
@@ -184,17 +199,28 @@ async def update_folder_state(folder_key: str, update_data: FolderStateUpdate):
 
 
 @public_router.get("/folder_state/{subpath:path}", response_model=QueryResult)
-@internal_router.get("/folder_state/{subpath:path}", response_model=QueryResult)
-async def get_folder_state_by_subpath(
+async def get_folder_state_by_subpath_public(
     subpath: str,
     limit: int = Query(100, ge=1, le=1000),
     offset: int = Query(0, ge=0),
     x_mission_password: Optional[str] = Header(None, description="Password for protected missions"),
 ) -> QueryResult:
-    """Get folder state information for a specific subpath.
-    Returns records where folder_key starts with the provided subpath.
-    Protected missions require valid password via x-mission-password header.
-    """
+    """Get folder state for subpath (Public API - enforces password protection)."""
+    result = await get_folder_state_by_subpath_internal(subpath, limit, offset)
+    result.data = filter_protected_missions(
+        [sqlite3.Row(keys=d.keys(), values=d.values()) for d in result.data], x_mission_password
+    )
+    result.count = len(result.data)
+    return result
+
+
+@internal_router.get("/folder_state/{subpath:path}", response_model=QueryResult)
+async def get_folder_state_by_subpath_internal(
+    subpath: str,
+    limit: int = Query(100, ge=1, le=1000),
+    offset: int = Query(0, ge=0),
+) -> QueryResult:
+    """Get folder state for subpath (Internal API - no password protection)."""
     conn = get_db_connection()
     cursor = conn.cursor()
 
@@ -237,23 +263,10 @@ async def get_folder_state_by_subpath(
 
     conn.close()
 
-    # Convert rows to list of dictionaries and filter protected missions
-    data = []
-    for row in rows:
-        row_dict = dict(row)
-        mission_key = row_dict.get("mission_key")
+    # Convert rows to list of dictionaries - no password filtering for internal API
+    data = [dict(row) for row in rows]
 
-        # Check if mission is protected
-        if mission_key and is_mission_protected(mission_key):
-            # Validate password if provided
-            if x_mission_password and validate_mission_password(mission_key, x_mission_password):
-                data.append(row_dict)
-            # Skip this row if no valid password
-        else:
-            # Mission not protected, include it
-            data.append(row_dict)
-
-    return QueryResult(data=data, count=len(data))
+    return QueryResult(data=data, count=count)
 
 
 @public_router.get("/folder_state/mission/{mission_key}", response_model=QueryResult)

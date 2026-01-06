@@ -1,9 +1,11 @@
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Header
 from pydantic import BaseModel
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, List
 import time
+import sqlite3
 
 from .base import get_db_connection, QueryResult, logger
+from src.api.mission_protection_utils import is_mission_protected, validate_mission_password
 
 
 # Pydantic models specific to potree metacloud
@@ -51,13 +53,42 @@ public_router = APIRouter()
 internal_router = APIRouter()
 
 
+def filter_protected_missions(rows: List, password: Optional[str] = None) -> List[Dict]:
+    """Filter out protected missions unless valid password is provided."""
+    data = []
+    for row in rows:
+        row_dict = dict(row)
+        mission_key = row_dict.get("mission_key")
+
+        if mission_key and is_mission_protected(mission_key):
+            if password and validate_mission_password(mission_key, password):
+                data.append(row_dict)
+        else:
+            data.append(row_dict)
+    return data
+
+
 @public_router.get("/potree_metacloud_state", response_model=QueryResult)
+async def get_potree_metacloud_state_public(
+    limit: int = Query(100, ge=1, le=1000),
+    offset: int = Query(0, ge=0),
+    x_mission_password: Optional[str] = Header(None, description="Password for protected missions"),
+):
+    """Get potree metacloud state (Public API - enforces password protection)"""
+    result = await get_potree_metacloud_state_internal(limit, offset)
+    result.data = filter_protected_missions(
+        [sqlite3.Row(keys=d.keys(), values=d.values()) for d in result.data], x_mission_password
+    )
+    result.count = len(result.data)
+    return result
+
+
 @internal_router.get("/potree_metacloud_state", response_model=QueryResult)
-async def get_potree_metacloud_state(
+async def get_potree_metacloud_state_internal(
     limit: int = Query(100, ge=1, le=1000),
     offset: int = Query(0, ge=0),
 ):
-    """Get potree metacloud state information"""
+    """Get potree metacloud state (Internal API - no password protection)"""
     conn = get_db_connection()
     cursor = conn.cursor()
 
@@ -198,9 +229,38 @@ async def update_potree_metacloud_state(mission_key: str, update_data: PotreeMet
 
 
 @public_router.get("/potree_metacloud_state/{mission_key}", response_model=Dict[str, Any])
+async def get_potree_metacloud_state_by_mission_public(
+    mission_key: str,
+    x_mission_password: Optional[str] = Header(None, description="Password for protected missions"),
+):
+    """Get potree metacloud state for mission (Public API - enforces password protection)"""
+    # Check if mission is protected and validate password
+    if is_mission_protected(mission_key):
+        if not x_mission_password:
+            raise HTTPException(
+                status_code=403,
+                detail={
+                    "error": "Mission is password protected",
+                    "mission_key": mission_key,
+                    "protected": True,
+                },
+            )
+        if not validate_mission_password(mission_key, x_mission_password):
+            raise HTTPException(
+                status_code=403,
+                detail={
+                    "error": "Invalid password for protected mission",
+                    "mission_key": mission_key,
+                    "protected": True,
+                },
+            )
+
+    return await get_potree_metacloud_state_by_mission_internal(mission_key)
+
+
 @internal_router.get("/potree_metacloud_state/{mission_key}", response_model=Dict[str, Any])
-async def get_potree_metacloud_state_by_mission(mission_key: str):
-    """Get potree metacloud state for a specific mission"""
+async def get_potree_metacloud_state_by_mission_internal(mission_key: str):
+    """Get potree metacloud state for mission (Internal API - no password protection)"""
     conn = get_db_connection()
     cursor = conn.cursor()
 
