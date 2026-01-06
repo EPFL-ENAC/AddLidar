@@ -259,29 +259,27 @@ async def update_folder_state(folder_key: str, update_data: FolderStateUpdate):
     }
 
 
-@public_router.get("/folder_state/{subpath:path}", response_model=QueryResult)
+@public_router.get("/folder_state/prefix/{subpath:path}", response_model=QueryResult)
 async def get_folder_state_by_subpath_public(
     subpath: str,
     limit: int = Query(100, ge=1, le=1000),
     offset: int = Query(0, ge=0),
     x_mission_password: Optional[str] = Header(None, description="Password for protected missions"),
 ) -> QueryResult:
-    """Get folder state for subpath (Public API - enforces password protection)."""
+    """Get folder state for subpath prefix (Public API - enforces password protection)."""
     result = await get_folder_state_by_subpath_internal(subpath, limit, offset)
-    result.data = filter_protected_missions(
-        [sqlite3.Row(keys=d.keys(), values=d.values()) for d in result.data], x_mission_password
-    )
+    result.data = filter_protected_missions(result.data, x_mission_password)
     result.count = len(result.data)
     return result
 
 
-@internal_router.get("/folder_state/{subpath:path}", response_model=QueryResult)
+@internal_router.get("/folder_state/prefix/{subpath:path}", response_model=QueryResult)
 async def get_folder_state_by_subpath_internal(
     subpath: str,
     limit: int = Query(100, ge=1, le=1000),
     offset: int = Query(0, ge=0),
 ) -> QueryResult:
-    """Get folder state for subpath (Internal API - no password protection)."""
+    """Get folder state for subpath prefix (Internal API - no password protection)."""
     conn = get_db_connection()
     cursor = conn.cursor()
 
@@ -330,8 +328,8 @@ async def get_folder_state_by_subpath_internal(
     return QueryResult(data=data, count=count)
 
 
-@public_router.get("/folder_state/mission/{mission_key}", response_model=QueryResult)
-@internal_router.get("/folder_state/mission/{mission_key}", response_model=QueryResult)
+@public_router.get("/mission_folders/{mission_key:path}", response_model=QueryResult)
+@internal_router.get("/mission_folders/{mission_key:path}", response_model=QueryResult)
 async def get_folder_state_by_mission(
     mission_key: str,
     limit: int = Query(100, ge=1, le=1000),
