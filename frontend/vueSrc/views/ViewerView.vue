@@ -49,9 +49,7 @@ function handleBack() {
       <div class="full-width full-height relative-position">
         <point-cloud-viewer />
         <div class="floating-banner">
-          <div
-            class="banner-pill row items-center q-px-lg q-py-sm bg-white shadow-1"
-          >
+          <div class="banner-pill row items-center q-px-lg q-py-sm bg-white">
             <q-icon name="location_on" size="16px" class="q-mr-sm" />
             <span class="text-weight-medium">{{ missionName }}</span>
           </div>
@@ -72,8 +70,6 @@ function handleBack() {
 }
 
 .banner-pill {
-  opacity: 0.92;
-  backdrop-filter: blur(12px);
   border-radius: 24px;
   border: 1px solid rgba(0, 0, 0, 0.06);
 }
