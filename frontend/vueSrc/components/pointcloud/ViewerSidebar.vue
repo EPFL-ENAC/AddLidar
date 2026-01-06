@@ -110,7 +110,6 @@ async function promptForPassword() {
     <!-- Tab Navigation -->
     <q-tabs
       v-model="activeTab"
-      class="text-grey-7"
       active-color="primary"
       indicator-color="primary"
     >
@@ -120,7 +119,7 @@ async function promptForPassword() {
         :name="tab.name"
         :icon="tab.icon"
         :label="tab.label"
-        class="text-header6"
+        class="text-subtitle2 text-weight-medium"
       >
         <q-tooltip>{{ tab.tooltip }}</q-tooltip>
       </q-tab>

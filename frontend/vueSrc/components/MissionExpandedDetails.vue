@@ -36,13 +36,13 @@
     >
       <div
         v-if="mission.last_checked_time"
-        class="text-body2 text-grey-7 text-wrap"
+        class="text-body2 text-grey-8 text-wrap"
       >
         Last checked: {{ formatDateTime(mission.last_checked_time) }}
       </div>
       <div
         v-if="mission.last_processed_time"
-        class="text-body2 text-grey-7 text-wrap"
+        class="text-body2 text-grey-8 text-wrap"
       >
         Last processed: {{ formatDateTime(mission.last_processed_time) }}
       </div>

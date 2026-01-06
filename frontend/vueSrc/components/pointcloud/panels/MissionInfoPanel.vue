@@ -55,7 +55,7 @@ const availableClassifications = computed(() => {
     <q-expansion-item
       label="Mission Details"
       icon="info"
-      header-class="text-grey-8"
+      header-class="text-subtitle2"
       default-opened
     >
       <div class="q-pa-md q-pt-sm">
@@ -94,7 +94,7 @@ const availableClassifications = computed(() => {
     <q-expansion-item
       label="Point Cloud Statistics"
       icon="scatter_plot"
-      header-class="text-grey-8"
+      header-class="text-subtitle2"
     >
       <div class="q-pa-md q-pt-sm">
         <div class="q-gutter-y-sm">
@@ -136,7 +136,7 @@ const availableClassifications = computed(() => {
     <q-expansion-item
       label="Point Attributes"
       icon="data_array"
-      header-class="text-grey-8"
+      header-class="text-subtitle2"
     >
       <div class="q-pa-md q-pt-sm">
         <div v-if="!metadata?.attributes?.length" class="empty">
@@ -164,7 +164,7 @@ const availableClassifications = computed(() => {
       v-if="availableClassifications.length"
       label="Classification Distribution"
       icon="category"
-      header-class="text-grey-8"
+      header-class="text-subtitle2"
     >
       <div class="q-pa-md q-pt-sm">
         <div class="q-gutter-y-sm">

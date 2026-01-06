@@ -44,13 +44,13 @@
       <!-- Timestamps row - more explicit -->
       <div class="row q-gutter-x-lg text-caption q-mb-sm">
         <div v-if="mission.last_checked_time" class="column">
-          <span class="text-grey-5">Checked</span>
+          <span class="text-grey-6">Checked</span>
           <span class="text-grey-8">{{
             formatDateTime(mission.last_checked_time)
           }}</span>
         </div>
         <div v-if="mission.last_processed_time" class="column">
-          <span class="text-grey-5">Processed</span>
+          <span class="text-grey-6">Processed</span>
           <span class="text-grey-8">{{
             formatDateTime(mission.last_processed_time)
           }}</span>
@@ -80,7 +80,7 @@
         <!-- Description shown separately if long -->
         <div
           v-if="parsedExtraAttributes.description"
-          class="text-caption text-grey-7 q-mb-xs"
+          class="text-caption text-grey-8 q-mb-xs"
           style="line-height: 1.4"
         >
           <q-icon name="notes" size="14px" class="q-mr-xs" />
@@ -136,7 +136,7 @@
 
           <div class="q-pa-sm">
             <div class="row items-center justify-between q-mb-xs">
-              <span class="text-caption text-grey-7">Error Log</span>
+              <span class="text-caption text-grey-8">Error Log</span>
               <q-btn
                 flat
                 dense
@@ -151,7 +151,7 @@
             <pre v-if="mission.detailed_error_message" class="error-logs">{{
               formatDetailedError(mission.detailed_error_message)
             }}</pre>
-            <div v-else class="text-caption text-grey-7">
+            <div v-else class="text-caption text-grey-8">
               No detailed logs available.
             </div>
           </div>

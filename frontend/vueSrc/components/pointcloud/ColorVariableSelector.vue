@@ -2,7 +2,7 @@
   <q-expansion-item
     label="Color Mode"
     icon="palette"
-    header-class="text-grey-8"
+    header-class="text-subtitle2 "
     :default-opened="true"
   >
     <div class="q-pt-sm q-pb-md">

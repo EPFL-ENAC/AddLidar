@@ -3,7 +3,7 @@
     v-if="attribute"
     :label="getAttributeLabel(attribute)"
     icon="tune"
-    header-class="text-grey-8"
+    header-class="text-subtitle2"
   >
     <div v-if="rangeValue" class="q-pt-xs q-px-md q-pb-md overflow-hidden">
       <div class="row items-center justify-end q-gutter-x-xs q-pb-sm">

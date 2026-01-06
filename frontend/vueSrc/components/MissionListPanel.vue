@@ -145,7 +145,7 @@
                 <span v-if="props.row.metadata?.points">
                   {{ formatNumber(props.row.metadata.points) }} pts
                 </span>
-                <span v-else class="text-grey-5">N/A</span>
+                <span v-else class="text-grey-6">N/A</span>
               </template>
               <template v-else-if="col.name === 'hide'">
                 <q-checkbox

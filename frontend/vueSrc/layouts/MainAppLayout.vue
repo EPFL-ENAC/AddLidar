@@ -67,12 +67,7 @@ function toggleLeftDrawer() {
 
             <div class="col row items-center justify-center q-px-xs">
               <div class="row items-center">
-                <q-icon
-                  name="view_in_ar"
-                  color="black"
-                  size="26px"
-                  class="q-mr-xs"
-                />
+                <q-icon name="view_in_ar" size="26px" class="q-mr-xs" />
                 <span class="text-h6">AddLidar</span>
               </div>
               <q-separator vertical size="2px" inset class="q-mx-md" />

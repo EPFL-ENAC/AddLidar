@@ -164,7 +164,7 @@ onBeforeUnmount(closeConnection);
       <q-expansion-item
         label="Output Settings"
         icon="settings"
-        header-class="text-grey-8"
+        header-class="text-subtitle2 "
         :default-opened="true"
       >
         <div class="q-pa-md q-pt-sm">
@@ -195,7 +195,7 @@ onBeforeUnmount(closeConnection);
       <q-expansion-item
         label="Sampling & Filtering"
         icon="filter_alt"
-        header-class="text-grey-8"
+        header-class="text-subtitle2 "
       >
         <div class="q-pa-md q-pt-sm">
           <q-input
@@ -251,7 +251,7 @@ onBeforeUnmount(closeConnection);
       <q-expansion-item
         label="Attribute Filtering"
         icon="tune"
-        header-class="text-grey-8"
+        header-class="text-subtitle2 "
       >
         <div class="q-pa-md q-px-lg q-mb-md q-pt-sm">
           <div class="row justify-between q-gutter-y-md">
@@ -279,7 +279,7 @@ onBeforeUnmount(closeConnection);
       <q-expansion-item
         label="Region of Interest"
         icon="crop"
-        header-class="text-grey-8"
+        header-class="text-subtitle2 "
       >
         <div class="q-pa-md q-px-lg q-mb-md q-pt-sm">
           <clip-volume />
@@ -382,7 +382,7 @@ onBeforeUnmount(closeConnection);
               :key="i"
               class="text-caption q-py-xs"
             >
-              <span class="text-grey-5">{{ log.time }}</span>
+              <span class="text-grey-6">{{ log.time }}</span>
               {{
                 typeof log.message === "string"
                   ? log.message
@@ -400,7 +400,7 @@ onBeforeUnmount(closeConnection);
       <q-expansion-item
         icon="history"
         label="Export History"
-        header-class="text-grey-8"
+        header-class="text-subtitle2 "
       >
         <jobs-panel />
       </q-expansion-item>

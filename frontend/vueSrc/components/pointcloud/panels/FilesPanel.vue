@@ -184,7 +184,7 @@ watch(
               </template>
               <template v-else-if="col.name === 'files'">
                 <span v-if="props.row.file_count > 0">{{ col.value }}</span>
-                <span v-else class="text-grey-5">Empty</span>
+                <span v-else class="text-grey-6">Empty</span>
               </template>
               <template v-else-if="col.name === 'actions'">
                 <q-btn
@@ -233,7 +233,7 @@ watch(
                       {{ props.row.file_count }}
                       {{ props.row.file_count === 1 ? "file" : "files" }}
                     </span>
-                    <span v-else class="text-grey-5">Empty</span>
+                    <span v-else class="text-grey-6">Empty</span>
                   </div>
 
                   <q-btn

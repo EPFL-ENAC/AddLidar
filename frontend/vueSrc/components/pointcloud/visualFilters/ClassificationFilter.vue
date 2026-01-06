@@ -2,7 +2,7 @@
   <q-expansion-item
     label="Classification"
     icon="category"
-    header-class="text-grey-8"
+    header-class="text-subtitle2"
   >
     <div class="q-pt-sm q-pb-md">
       <div class="filter-actions q-px-md q-pb-sm">
