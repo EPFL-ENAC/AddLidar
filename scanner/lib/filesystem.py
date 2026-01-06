@@ -34,15 +34,14 @@ def fingerprint_directory(path: str) -> str:
 
                 stat_result = os.stat(full_path, follow_symlinks=False)
                 size_bytes = stat_result.st_size
-                mod_time = stat_result.st_mtime
 
-                file_info.append((rel_path, size_bytes, mod_time))
+                file_info.append((rel_path, size_bytes))
 
         file_info.sort()
         hasher = hashlib.sha256()
 
-        for rel_path, size_bytes, mod_time in file_info:
-            file_data = f"{rel_path}|{size_bytes}|{mod_time}\n".encode("utf-8")
+        for rel_path, size_bytes in file_info:
+            file_data = f"{rel_path}|{size_bytes}\n".encode("utf-8")
             hasher.update(file_data)
 
         return hasher.hexdigest()
