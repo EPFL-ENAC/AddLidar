@@ -74,7 +74,7 @@
                   v-if="isProcessed(props.row)"
                   flat
                   color="primary"
-                  icon="open_in_new"
+                  icon="arrow_forward"
                   label="Explore"
                   size="sm"
                   class="full-width"
@@ -162,7 +162,7 @@
                   color="primary"
                   outline
                   push
-                  icon="open_in_new"
+                  icon="arrow_forward"
                   size="md"
                   @click.stop="handleExplore(props.row.mission_key)"
                 >
@@ -485,16 +485,16 @@ function formatNumber(num: number | undefined): string {
 }
 
 :deep(.q-table tbody tr:hover) {
-  background-color: rgba(var(--q-primary-rgb), 0.08) !important;
+  background-color: rgba(0, 0, 0, 0.02) !important;
 }
 
 :deep(.q-table tbody tr.selected) {
   border-left-color: var(--q-primary);
-  background-color: rgba(var(--q-primary-rgb), 0.04) !important;
+  background-color: rgba(0, 0, 0, 0.01) !important;
 }
 
 :deep(.q-table tbody tr.selected:hover) {
-  background-color: rgba(var(--q-primary-rgb), 0.12) !important;
+  background-color: rgba(0, 0, 0, 0.03) !important;
 }
 
 :deep(.q-table tbody tr.map-hovered) {
@@ -553,7 +553,7 @@ function formatNumber(num: number | undefined): string {
   background: linear-gradient(
     to bottom,
     transparent,
-    rgba(0, 116, 128, 0.3),
+    rgba(0, 0, 0, 0.3),
     transparent
   );
   border-radius: 0 2px 2px 0;
@@ -589,17 +589,17 @@ function formatNumber(num: number | undefined): string {
 }
 
 .mission-card:hover {
-  background-color: rgba(var(--q-primary-rgb), 0.08);
+  background-color: rgba(0, 0, 0, 0.04);
   transform: translateX(2px);
 }
 
 .selected-card {
   border-left-color: var(--q-primary);
-  background-color: rgba(var(--q-primary-rgb), 0.04);
+  background-color: rgba(0, 0, 0, 0.02);
 }
 
 .selected-card:hover {
-  background-color: rgba(var(--q-primary-rgb), 0.12);
+  background-color: rgba(0, 0, 0, 0.06);
 }
 
 .map-hovered-card {

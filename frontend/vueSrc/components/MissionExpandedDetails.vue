@@ -66,14 +66,14 @@
     </div>
 
     <!-- Actions -->
-    <div class="row justify-end">
+    <div class="q-mt-lg">
       <q-btn
         v-if="isProcessed"
         flat
         color="primary"
-        label="Explore"
+        padding="none"
+        label="Explore Mission"
         icon-right="arrow_forward"
-        size="sm"
         @click="$emit('explore', mission.mission_key)"
       />
     </div>

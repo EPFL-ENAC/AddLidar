@@ -54,7 +54,7 @@ const availableClassifications = computed(() => {
   <div>
     <q-expansion-item
       label="Mission Details"
-      icon="info"
+      icon="flight"
       header-class="text-subtitle2"
       default-opened
     >
