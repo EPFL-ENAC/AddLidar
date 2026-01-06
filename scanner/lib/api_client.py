@@ -17,10 +17,7 @@ class APIClient:
             if response.status_code == 404:
                 return None
             response.raise_for_status()
-            data = response.json()
-            if data.get("data") and len(data["data"]) > 0:
-                return data["data"][0]
-            return None
+            return response.json()
         except Exception as e:
             logger.error(f"Error fetching folder state for {folder_key}: {e}")
             return None

@@ -124,7 +124,70 @@ async def get_folder_state_internal(
     return QueryResult(data=data, count=count)
 
 
-@internal_router.put("/folder_state/{folder_key:path}", response_model=Dict[str, Any])
+@public_router.get("/folder_state/{folder_key:path}", response_model=Dict[str, Any])
+async def get_folder_state_by_key_public(
+    folder_key: str,
+    x_mission_password: Optional[str] = Header(None, description="Password for protected missions"),
+):
+    """Get folder state for folder_key (Public API - enforces password protection)."""
+    result = await get_folder_state_by_key_internal(folder_key)
+    mission_key = result.get("mission_key")
+
+    if mission_key and is_mission_protected(mission_key):
+        if not x_mission_password or not validate_mission_password(mission_key, x_mission_password):
+            raise HTTPException(
+                status_code=403,
+                detail={
+                    "error": "Mission is password protected",
+                    "mission_key": mission_key,
+                    "protected": True,
+                },
+            )
+
+    return result
+
+
+@internal_router.get("/folder_state/{folder_key:path}", response_model=Dict[str, Any])
+async def get_folder_state_by_key_internal(folder_key: str):
+    """Get folder state for folder_key (Internal API - no password protection)."""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    # Query for exact match
+    query = """
+    SELECT
+      folder_key,
+      mission_key,
+      fp,
+      output_path,
+      size_kb,
+      file_count,
+      last_checked,
+      last_processed,
+      processing_time,
+      processing_status,
+      error_message,
+      detailed_error_message,
+      datetime(last_checked,'unixepoch') AS last_checked_time,
+      datetime(last_processed,'unixepoch') AS last_processed_time
+    FROM folder_state
+    WHERE folder_key = ?
+    """
+
+    cursor.execute(query, (folder_key,))
+    row = cursor.fetchone()
+    conn.close()
+
+    if not row:
+        raise HTTPException(
+            status_code=404,
+            detail=f"Folder state not found for: {folder_key}",
+        )
+
+    return dict(row)
+
+
+@public_router.get("/folder_state/mission/{mission_key}", response_model=QueryResult)
 async def update_folder_state(folder_key: str, update_data: FolderStateUpdate):
     """Update folder state record (Internal use only)"""
     conn = get_db_connection()
