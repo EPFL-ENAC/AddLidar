@@ -26,14 +26,15 @@ RUN apt-get update && apt-get install -y \
 WORKDIR /download
 
 # Download PotreeConverter
-RUN REPO="potree/PotreeConverter" && \
-    API_URL="https://api.github.com/repos/$REPO/releases" && \
-    LATEST_RELEASE=$(curl -s "$API_URL" | jq -r '.[0].tag_name') && \
-    DOWNLOAD_URL="https://github.com/$REPO/releases/download/$LATEST_RELEASE/PotreeConverter_${LATEST_RELEASE}_x64_linux.zip" && \
-    echo "Downloading from: $DOWNLOAD_URL" && \
-    wget -v "$DOWNLOAD_URL" && \
-    unzip "PotreeConverter_${LATEST_RELEASE}_x64_linux.zip" && \
-    mv "PotreeConverter_${LATEST_RELEASE}_x64_linux" PotreeConverter && \
+# Pin to specific version to avoid API rate limits
+RUN VERSION="2.1.2" && \
+    REPO="potree/PotreeConverter" && \
+    DOWNLOAD_URL="https://github.com/$REPO/releases/download/$VERSION/PotreeConverter_${VERSION}_x64_linux.zip" && \
+    echo "Downloading PotreeConverter $VERSION from: $DOWNLOAD_URL" && \
+    wget -v --tries=3 --timeout=30 "$DOWNLOAD_URL" && \
+    echo "Download complete, unzipping..." && \
+    unzip "PotreeConverter_${VERSION}_x64_linux.zip" && \
+    mv "PotreeConverter_${VERSION}_x64_linux" PotreeConverter && \
     rm -rf PotreeConverter/resources && \
     chmod +x PotreeConverter/PotreeConverter
 
