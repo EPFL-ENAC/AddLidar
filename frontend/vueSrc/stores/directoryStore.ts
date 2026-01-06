@@ -230,7 +230,7 @@ export const useDirectoryStore = defineStore("directory", () => {
       }
 
       const response = await fetch(
-        `${apiBasePath.value}/sqlite/folder_state/${missionName}`,
+        `${apiBasePath.value}/sqlite/mission_folders/${missionName}`,
         { headers },
       );
 

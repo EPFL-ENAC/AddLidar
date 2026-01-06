@@ -25,7 +25,7 @@ class APIClient:
     def check_mission_exists(self, mission_key: str) -> bool:
         """Check if mission exists in folder_state via API"""
         try:
-            url = f"{self.backend_url}/sqlite/folder_state/mission/{mission_key}"
+            url = f"{self.backend_url}/sqlite/mission_folders/{mission_key}"
             response = requests.get(url, timeout=30)
             if response.status_code == 404:
                 return False
