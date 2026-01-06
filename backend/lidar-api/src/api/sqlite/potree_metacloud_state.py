@@ -222,7 +222,7 @@ async def update_potree_metacloud_state(mission_key: str, update_data: PotreeMet
     }
 
 
-@public_router.get("/potree_metacloud_state/{mission_key}", response_model=Dict[str, Any])
+@public_router.get("/potree_metacloud_state/{mission_key:path}", response_model=Dict[str, Any])
 async def get_potree_metacloud_state_by_mission_public(
     mission_key: str,
     x_mission_password: Optional[str] = Header(None, description="Password for protected missions"),
@@ -252,7 +252,7 @@ async def get_potree_metacloud_state_by_mission_public(
     return await get_potree_metacloud_state_by_mission_internal(mission_key)
 
 
-@internal_router.get("/potree_metacloud_state/{mission_key}", response_model=Dict[str, Any])
+@internal_router.get("/potree_metacloud_state/{mission_key:path}", response_model=Dict[str, Any])
 async def get_potree_metacloud_state_by_mission_internal(mission_key: str):
     """Get potree metacloud state for mission (Internal API - no password protection)"""
     conn = get_db_connection()
