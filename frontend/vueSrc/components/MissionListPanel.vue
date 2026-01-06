@@ -485,16 +485,16 @@ function formatNumber(num: number | undefined): string {
 }
 
 :deep(.q-table tbody tr:hover) {
-  background-color: rgba(0, 0, 0, 0.02) !important;
+  border-left-color: var(--q-primary);
 }
 
 :deep(.q-table tbody tr.selected) {
-  border-left-color: var(--q-primary);
   background-color: rgba(0, 0, 0, 0.01) !important;
 }
 
 :deep(.q-table tbody tr.selected:hover) {
-  background-color: rgba(0, 0, 0, 0.03) !important;
+  background-color: rgba(0, 0, 0, 0.01) !important;
+  border-left-color: var(--q-primary);
 }
 
 :deep(.q-table tbody tr.map-hovered) {
@@ -589,17 +589,16 @@ function formatNumber(num: number | undefined): string {
 }
 
 .mission-card:hover {
-  background-color: rgba(0, 0, 0, 0.04);
-  transform: translateX(2px);
+  border-left-color: var(--q-primary);
 }
 
 .selected-card {
-  border-left-color: var(--q-primary);
-  background-color: rgba(0, 0, 0, 0.02);
+  background-color: rgba(0, 0, 0, 0.01);
 }
 
 .selected-card:hover {
-  background-color: rgba(0, 0, 0, 0.06);
+  background-color: rgba(0, 0, 0, 0.01);
+  border-left-color: var(--q-primary);
 }
 
 .map-hovered-card {
