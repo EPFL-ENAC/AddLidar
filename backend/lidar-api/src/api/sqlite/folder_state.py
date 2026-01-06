@@ -185,7 +185,7 @@ async def get_folder_state_by_key_internal(folder_key: str):
     return dict(row)
 
 
-@internal_router.put("/folder_state/{folder_key}")
+@internal_router.put("/folder_state/{folder_key:path}")
 async def update_folder_state(folder_key: str, update_data: FolderStateUpdate):
     """Update folder state record (Internal use only)"""
     conn = get_db_connection()
