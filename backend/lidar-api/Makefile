@@ -9,7 +9,7 @@ sync:
 # Run both public and internal servers
 run:
 	@echo "Starting both public (port 8000) and internal (port 8001) servers"
-	uv run python -m src.main
+	UVICORN_RELOAD=true uv run python -m src.main
 
 # Run only public server (for development/testing)
 run-public:
