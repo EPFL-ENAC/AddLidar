@@ -106,18 +106,21 @@ async def run_servers():
 
     public_port = int(os.getenv("PUBLIC_PORT", 8000))
     internal_port = int(os.getenv("INTERNAL_PORT", 8001))
+    reload = os.getenv("UVICORN_RELOAD", "false").lower() == "true"
 
     config_public = uvicorn.Config(
         app=public_app,
         host="0.0.0.0",
         port=public_port,
         log_level="info",
+        reload=reload,
     )
     config_internal = uvicorn.Config(
         app=internal_app,
         host="0.0.0.0",
         port=internal_port,
         log_level="info",
+        reload=reload,
     )
 
     server_public = uvicorn.Server(config_public)
