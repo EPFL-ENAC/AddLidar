@@ -29,8 +29,7 @@ export function useKeycloak() {
     if (!keycloak) {
       keycloak = new Keycloak({
         url:
-          import.meta.env.VITE_KEYCLOAK_URL ||
-          "https://enac-it-sso2.epfl.ch/auth",
+          import.meta.env.VITE_KEYCLOAK_URL || "https://enac-it-sso2.epfl.ch",
         realm: import.meta.env.VITE_KEYCLOAK_REALM || "master",
         clientId:
           import.meta.env.VITE_KEYCLOAK_CLIENT_ID || "addlidar-local-web",
