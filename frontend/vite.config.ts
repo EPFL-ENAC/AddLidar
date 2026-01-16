@@ -8,6 +8,7 @@ export default defineConfig({
   // adjust root if needed (e.g., to "src" or another folder)
   root: "./vueSrc/",
   publicDir: "public",
+  envDir: "../", // Load .env files from frontend/ directory (one level up from vueSrc/)
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "vueSrc"),

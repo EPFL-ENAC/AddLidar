@@ -7,6 +7,11 @@ const routes: Array<RouteRecordRaw> = [
     component: () => import("@/views/HomeView.vue"),
   },
   {
+    path: "/scanner",
+    name: "Scanner",
+    component: () => import("@/views/ScannerView.vue"),
+  },
+  {
     path: "/viewer/:missionId",
     name: "Viewer",
     component: () => import("@/views/ViewerView.vue"),

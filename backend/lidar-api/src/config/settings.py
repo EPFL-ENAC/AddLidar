@@ -3,7 +3,13 @@ from typing import Optional
 
 
 class Settings(BaseSettings):
-    ENVIRONMENT: str = "development"
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        case_sensitive=True,
+        extra="ignore",  # Allow extra fields in .env that aren't defined in Settings
+    )
+
     IMAGE_NAME: str = "lvjospinepfl/lidardatamanager"
     IMAGE_TAG: str = "latest"
     PATH_PREFIX: str = "/api"
@@ -17,6 +23,12 @@ class Settings(BaseSettings):
     JOB_TIMEOUT: int = 300  # Timeout in seconds for job completion
     DEFAULT_OUTPUT_ROOT: str = "/output"  # Default root path based on environment
 
+    # Keycloak configuration
+    KEYCLOAK_REALM: str = "master"
+    KEYCLOAK_URL: str = "https://enac-it-sso2.epfl.ch/auth"
+    KEYCLOAK_API_ID: str = "addlidar-local-api"
+    KEYCLOAK_API_SECRET: str = "not-used-for-jwt-validation"  # Not used for token validation, only for admin operations
+
     @property
     def effective_namespace(self) -> str:
         """Get the effective namespace to use, with runtime detection if not configured."""
@@ -27,11 +39,6 @@ class Settings(BaseSettings):
         from src.utils.kubernetes_utils import get_current_namespace
 
         return get_current_namespace()
-
-    @property
-    def is_production(self) -> bool:
-        """Check if running in production environment."""
-        return self.ENVIRONMENT.lower() == "production"
 
     @property
     def is_rcp_haas(self) -> bool:
