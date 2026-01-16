@@ -26,7 +26,7 @@ class Settings(BaseSettings):
     # Keycloak configuration
     KEYCLOAK_REALM: str = "master"
     KEYCLOAK_URL: str = "https://enac-it-sso2.epfl.ch"
-    KEYCLOAK_API_ID: str = "addlidar-local-api"
+    KEYCLOAK_API_ID: str = "addlidar-api"
     KEYCLOAK_API_SECRET: str = "not-used-for-jwt-validation"  # Not used for token validation, only for admin operations
 
     @property
