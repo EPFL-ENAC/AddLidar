@@ -19,8 +19,17 @@ export const levelOptions: SelectOption[] = [
   { label: "Segmented Point Cloud", value: "7" },
 ];
 
-export const epsgOptions: string[] = ["EPSG:4326", "EPSG:3857", "EPSG:2056"];
-
+export const epsgOptions: string[] = [
+  "EPSG:4326",
+  "EPSG:3857",
+  "EPSG:2056",
+  "EPSG:32632",
+  "EPSG:32633",
+  "EPSG:25832",
+  "EPSG:25833",
+  "EPSG:4979",
+  "EPSG:2056+5728",
+];
 export const typeOptions: SelectOption[] = [
   { label: "Trajectory", value: "traj" },
   { label: "Point Cloud", value: "pointcloud" },
