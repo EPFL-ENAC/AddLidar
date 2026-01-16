@@ -7,5 +7,10 @@
       "path": "../enack8s-app-config/epfl-eso/addlidar",
     },
   ],
-  "settings": {},
+  "settings": {
+    "python.defaultInterpreterPath": "${workspaceFolder:AddLidar}/backend/lidar-api/.venv/bin/python3",
+    "python.analysis.extraPaths": [
+      "${workspaceFolder:AddLidar}/backend/lidar-api",
+    ],
+  },
 }

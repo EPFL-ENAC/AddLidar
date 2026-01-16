@@ -9,6 +9,7 @@ from pathlib import Path
 import logging
 
 from src.api.routes import router as public_router
+from src.api.scanner import router as scanner_router
 from src.api.sqlite.index import public_router as sqlite_public_router
 from src.api.sqlite.index import internal_router as sqlite_internal_router
 from src.api.pod_logs import router as pod_logs_router
@@ -99,6 +100,7 @@ public_app.include_router(public_router)
 internal_app.include_router(sqlite_internal_router, tags=["sqlite"])
 public_app.include_router(sqlite_public_router, tags=["sqlite"])
 internal_app.include_router(pod_logs_router, tags=["pod-logs"])  # Add pod logs to internal API
+public_app.include_router(scanner_router)  # Add scanner endpoints to public API with Keycloak auth
 
 
 # Single startup function to run both servers
