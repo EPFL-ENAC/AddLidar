@@ -291,3 +291,29 @@ class APIClient:
         except Exception as e:
             logger.error(f"Error deleting mission protection for {mission_key}: {e}")
             return False
+
+    def get_all_missions(self) -> Optional[Dict]:
+        """Get all missions from potree_metacloud_state"""
+        try:
+            url = f"{self.backend_url}/sqlite/potree_metacloud_state"
+            response = requests.get(url, timeout=30)
+            response.raise_for_status()
+            return response.json()
+        except Exception as e:
+            logger.error(f"Error fetching all missions: {e}")
+            return None
+
+    def delete_mission(self, mission_key: str) -> bool:
+        """Delete a mission and all its associated data"""
+        try:
+            url = f"{self.backend_url}/sqlite/mission/{mission_key}"
+            response = requests.delete(url, timeout=30)
+            if response.status_code == 404:
+                logger.warning(f"Mission not found: {mission_key}")
+                return False
+            response.raise_for_status()
+            logger.info(f"Successfully deleted mission {mission_key} from database")
+            return True
+        except Exception as e:
+            logger.error(f"Error deleting mission {mission_key}: {e}")
+            return False

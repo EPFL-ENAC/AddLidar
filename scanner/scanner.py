@@ -272,6 +272,10 @@ def main() -> None:
     logger.info("Scanning for .password files...")
     scanner.scan_for_password_files(args.dry_run)
 
+    # Clean up deleted missions
+    logger.info("Checking for deleted missions...")
+    deleted_missions = scanner.cleanup_deleted_missions(args.dry_run)
+
     # Scan for changed folders
     changed_folders = scanner.collect_changed_folders(args.dry_run)
 
@@ -320,6 +324,7 @@ def main() -> None:
     logger.info(
         f"Scan completed: detected {length_changed_folders} folder changes"
         + (f" and {metacloud_count} metacloud changes" if metacloud_count > 0 else "")
+        + (f" and {len(deleted_missions)} deleted missions" if deleted_missions else "")
     )
 
 

@@ -19,6 +19,14 @@ class DirectoryScanner:
         self.original_root = original_root
         self.zip_root = zip_root
 
+        # SAFETY: Log the directories to make the distinction clear
+        logger.info("=" * 80)
+        logger.info("DirectoryScanner initialized with:")
+        logger.info(f"  ORIGINAL_ROOT (READ-ONLY): {self.original_root}")
+        logger.info(f"  ZIP_ROOT (READ-WRITE):     {self.zip_root}")
+        logger.info("SAFETY GUARANTEE: Scanner will NEVER delete from original_root")
+        logger.info("=" * 80)
+
     def copy_footprint_files(self) -> None:
         """Copy footprint.geojson files to zip_root/Footprints/ directory."""
         footprints_dir = os.path.join(self.zip_root, "Footprints")
@@ -296,3 +304,139 @@ class DirectoryScanner:
                     logger.error(f"Error processing directory {rel}: {e}")
 
         return changed_folders
+
+    def cleanup_deleted_missions(self, dry_run: bool = False) -> List[str]:
+        """Detect and clean up missions that no longer exist in storage.
+
+        SAFETY GUARANTEES:
+        1. This method ONLY reads from original_root to check which missions exist
+        2. It NEVER deletes anything from original_root (researchers' data is READ-ONLY)
+        3. All deletions happen exclusively in zip_root (processed/generated data)
+        4. Multiple path validation checks prevent accidental deletion outside zip_root
+
+        What gets deleted when a mission is removed from original_root:
+        - Database records (folder_state, potree_metacloud_state, mission_protection)
+        - Footprint file: {zip_root}/Footprints/{mission_key}.geojson
+        - Potree output: {zip_root}/Potree/{mission_key}/
+        - Archive files: {zip_root}/{mission_key}/
+
+        What is NEVER touched:
+        - {original_root}/* (researchers' original LiDAR data)
+        """
+        deleted_missions: List[str] = []
+
+        # Get all missions currently in the database
+        all_missions_response = self.api_client.get_all_missions()
+        if not all_missions_response:
+            logger.warning("Could not retrieve missions from database")
+            return deleted_missions
+
+        db_missions = all_missions_response.get("data", [])
+        logger.info(f"Found {len(db_missions)} missions in database")
+
+        # Get list of missions that currently exist in storage
+        existing_missions = set()
+        if os.path.exists(self.original_root):
+            for level1 in os.listdir(self.original_root):
+                p1 = os.path.join(self.original_root, level1)
+                if os.path.isdir(p1):
+                    existing_missions.add(level1)
+
+        logger.info(f"Found {len(existing_missions)} missions in storage")
+
+        # Find missions that are in DB but not in storage
+        for mission in db_missions:
+            mission_key = mission.get("mission_key")
+            if mission_key and mission_key not in existing_missions:
+                logger.info(
+                    f"Mission {mission_key} no longer exists in storage - marking for deletion"
+                )
+                deleted_missions.append(mission_key)
+
+                if not dry_run:
+                    # Delete files associated with this mission
+                    self._delete_mission_files(mission_key)
+
+                    # Delete from database
+                    self.api_client.delete_mission(mission_key)
+
+        if deleted_missions:
+            logger.info(
+                f"Cleaned up {len(deleted_missions)} deleted missions: {deleted_missions}"
+            )
+        else:
+            logger.info("No deleted missions detected")
+
+        return deleted_missions
+
+    def _delete_mission_files(self, mission_key: str) -> None:
+        """Delete all files associated with a mission (archives, potree, footprint).
+
+        SAFETY: This method ONLY deletes files from zip_root (generated/processed data).
+        It will NEVER touch original_root (researchers' original data).
+        """
+        deleted_files = []
+
+        # SAFETY CHECK: Ensure we're only working with zip_root paths
+        if not self.zip_root or not os.path.isabs(self.zip_root):
+            logger.error(f"Invalid zip_root path: {self.zip_root}. Aborting deletion.")
+            return
+
+        try:
+            # Delete footprint file
+            footprint_path = os.path.join(
+                self.zip_root, "Footprints", f"{mission_key}.geojson"
+            )
+
+            # SAFETY: Verify the path is within zip_root before deletion
+            if not footprint_path.startswith(self.zip_root):
+                logger.error(
+                    f"SAFETY CHECK FAILED: footprint_path {footprint_path} is not within zip_root {self.zip_root}"
+                )
+                return
+
+            if os.path.exists(footprint_path):
+                os.remove(footprint_path)
+                deleted_files.append(footprint_path)
+                logger.info(f"Deleted footprint: {footprint_path}")
+
+            # Delete potree output directory
+            potree_output_path = os.path.join(self.zip_root, "Potree", mission_key)
+
+            # SAFETY: Verify the path is within zip_root before deletion
+            if not potree_output_path.startswith(self.zip_root):
+                logger.error(
+                    f"SAFETY CHECK FAILED: potree_output_path {potree_output_path} is not within zip_root {self.zip_root}"
+                )
+                return
+
+            if os.path.exists(potree_output_path):
+                shutil.rmtree(potree_output_path)
+                deleted_files.append(potree_output_path)
+                logger.info(f"Deleted potree output: {potree_output_path}")
+
+            # Delete archive files for all folders in this mission
+            # Pattern: mission_key/folder_name.tar.gz
+            mission_archive_dir = os.path.join(self.zip_root, mission_key)
+
+            # SAFETY: Verify the path is within zip_root before deletion
+            if not mission_archive_dir.startswith(self.zip_root):
+                logger.error(
+                    f"SAFETY CHECK FAILED: mission_archive_dir {mission_archive_dir} is not within zip_root {self.zip_root}"
+                )
+                return
+
+            if os.path.exists(mission_archive_dir):
+                shutil.rmtree(mission_archive_dir)
+                deleted_files.append(mission_archive_dir)
+                logger.info(f"Deleted mission archives: {mission_archive_dir}")
+
+            if deleted_files:
+                logger.info(
+                    f"Deleted {len(deleted_files)} file(s) for mission {mission_key}"
+                )
+            else:
+                logger.info(f"No files found to delete for mission {mission_key}")
+
+        except Exception as e:
+            logger.error(f"Error deleting files for mission {mission_key}: {e}")
