@@ -136,3 +136,52 @@ async def query_table(
     data = [dict(row) for row in rows]
 
     return QueryResult(data=data, count=count)
+
+
+@internal_router.delete("/mission/{mission_key:path}")
+async def delete_mission(mission_key: str) -> Dict[str, Any]:
+    """Delete a mission and all its associated data from all tables (Internal use only)"""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+
+    deleted_counts = {"folder_state": 0, "potree_metacloud_state": 0, "mission_protection": 0}
+
+    try:
+        # Delete from folder_state (all folders belonging to this mission)
+        cursor.execute(
+            "DELETE FROM folder_state WHERE mission_key = ?",
+            (mission_key,),
+        )
+        deleted_counts["folder_state"] = cursor.rowcount
+
+        # Delete from potree_metacloud_state
+        cursor.execute(
+            "DELETE FROM potree_metacloud_state WHERE mission_key = ?",
+            (mission_key,),
+        )
+        deleted_counts["potree_metacloud_state"] = cursor.rowcount
+
+        # Delete from mission_protection
+        cursor.execute(
+            "DELETE FROM mission_protection WHERE mission_key = ?",
+            (mission_key,),
+        )
+        deleted_counts["mission_protection"] = cursor.rowcount
+
+        conn.commit()
+        conn.close()
+
+        total_deleted = sum(deleted_counts.values())
+
+        if total_deleted == 0:
+            logger.warning(f"No records found for mission {mission_key}")
+        else:
+            logger.info(f"Deleted mission {mission_key}: {deleted_counts}")
+
+        return {"mission_key": mission_key, "deleted": True, "records_deleted": deleted_counts, "total_records": total_deleted}
+
+    except Exception as e:
+        conn.rollback()
+        conn.close()
+        logger.error(f"Error deleting mission {mission_key}: {e}")
+        raise HTTPException(status_code=500, detail=f"Failed to delete mission: {str(e)}")
