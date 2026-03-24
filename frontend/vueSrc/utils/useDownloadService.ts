@@ -354,37 +354,17 @@ export default function useDownloadService(
       addLog(`Downloading from: ${url}`);
       notify("Starting download...", "info");
 
-      const response = await fetch(url);
-      if (!response.ok) {
-        throw new Error(`Download failed: ${response.statusText}`);
-      }
-
-      const blob = await response.blob();
-      const downloadUrl = window.URL.createObjectURL(blob);
-
-      // Extract filename from Content-Disposition header or use a default
-      let filename = "processed_pointcloud";
-      const contentDisposition = response.headers.get("Content-Disposition");
-      if (contentDisposition) {
-        const matches = /filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/.exec(
-          contentDisposition,
-        );
-        if (matches && matches[1]) {
-          filename = matches[1].replace(/['"]/g, "");
-        }
-      }
-
-      // Create and trigger download link
+      // Use direct browser navigation for large file downloads
+      // This avoids buffering the entire file in memory via fetch+blob
       const a = document.createElement("a");
-      a.href = downloadUrl;
-      a.download = filename;
+      a.href = url;
+      a.style.display = "none";
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
-      window.URL.revokeObjectURL(downloadUrl);
 
-      addLog("Download complete");
-      notify("Download complete!", "success");
+      addLog("Download initiated");
+      notify("Download started in browser", "success");
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : String(error);
