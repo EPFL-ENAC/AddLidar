@@ -20,6 +20,7 @@ class Settings(BaseSettings):
     OUTPUT_PATH: str = "/output"
     PVC_OUTPUT_NAME: str = "lidar-data-output-pvc"  # Default to our created PVC
     PVC_NAME: str = "lidar-data-pvc"  # Default to our created PVC
+    ENVIRONMENT: str = "development"  # "development" or "production"
     JOB_TIMEOUT: int = 300  # Timeout in seconds for job completion
     DEFAULT_OUTPUT_ROOT: str = "/output"  # Default root path based on environment
 
