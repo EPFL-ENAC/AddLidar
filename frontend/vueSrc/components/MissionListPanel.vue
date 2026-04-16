@@ -4,7 +4,12 @@
       Browse airborne LiDAR missions. Select one to view its geographic
       footprint and explore the 3D point cloud data.
     </p>
-    <div class="col q-pa-sm q-pb-md" style="min-height: 0">
+    <div
+      class="col q-pa-sm q-pb-md"
+      style="min-height: 0"
+      @mouseenter="isMouseOverTable = true"
+      @mouseleave="isMouseOverTable = false"
+    >
       <q-table
         :rows="visibleMissions"
         :grid="$q.screen.xs"
@@ -268,15 +273,20 @@ const props = defineProps<{
 
 const $q = useQuasar();
 const hiddenMissions = ref(new Set<string>());
+const isMouseOverTable = ref(false);
 const pagination = ref({
   rowsPerPage: 0, // Show all rows
 });
 
-// Auto-scroll to hovered mission from map
+// Auto-scroll to hovered mission from map (skip when hover came from the table itself)
 watch(
   () => props.hoveredMission,
   async (newHovered) => {
-    if (newHovered && newHovered !== props.selectedMission) {
+    if (
+      newHovered &&
+      newHovered !== props.selectedMission &&
+      !isMouseOverTable.value
+    ) {
       await nextTick();
       const rowElement = document.querySelector(
         `.q-tr.map-hovered`,
