@@ -13,7 +13,7 @@ ENV UV_PROJECT_ENVIRONMENT=/app/.venv
 WORKDIR /app
 
 # Copy project files needed for dependency installation
-COPY pyproject.toml uv.lock ./
+COPY lidar-api/pyproject.toml lidar-api/uv.lock ./
 
 # Install dependencies using uv sync
 RUN uv sync --frozen --no-cache
@@ -33,7 +33,7 @@ COPY --from=builder /app/uv.lock /app/uv.lock
 WORKDIR /app
 
 # Copy the rest of the application code
-COPY . .
+COPY lidar-api/ ./
 
 # Set the path to include the virtual environment's binaries
 ENV PATH="/app/.venv/bin:$PATH"

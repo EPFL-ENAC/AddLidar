@@ -1,7 +1,7 @@
 services:
   lidar-api:
     build:
-      context: ./lidar-api/
+      context: ./
       dockerfile: Dockerfile
     ports:
       - "8081:8081"
