@@ -1,5 +1,46 @@
 # Changelog
 
+## [1.1.0](https://github.com/EPFL-ENAC/AddLidar/compare/v1.0.0...v1.1.0) (2026-04-17)
+
+
+### Features
+
+* add custom text color overrides for improved readability ([cd4b9a8](https://github.com/EPFL-ENAC/AddLidar/commit/cd4b9a80ccaa1857dc08106789fb375ba0a268c0))
+* add Keycloak authentication and scanner management ([e8a77b5](https://github.com/EPFL-ENAC/AddLidar/commit/e8a77b5f8266ccf35db6cedff984b068655eaf1a))
+* add new epsgOptions ([b064d34](https://github.com/EPFL-ENAC/AddLidar/commit/b064d341fcf6dd99f95aece69a9b329b88ca59b5))
+* **api:** use post instead of put on folder update ([cb59ee7](https://github.com/EPFL-ENAC/AddLidar/commit/cb59ee77253d7c8ab3856b9dd69a6c2e2fad75ec))
+* enable UVICORN_RELOAD option for server startup in Makefile and main.py ([5a1dbd0](https://github.com/EPFL-ENAC/AddLidar/commit/5a1dbd0d681e9a6b9e0e3b9d4c9834c63ead239e))
+* enhance classification filter UI with improved layout and interaction ([0676b98](https://github.com/EPFL-ENAC/AddLidar/commit/0676b988c1fa74cad5e44acc9ef7b74df72464b5))
+* enhance UI components and improve layout for better user experience ([b49b1d0](https://github.com/EPFL-ENAC/AddLidar/commit/b49b1d0a6f6be6de9c1955d08ff8747f2a268e54))
+* **frontend:** zoom-aware mission markers with clustering and hover sync ([4960f85](https://github.com/EPFL-ENAC/AddLidar/commit/4960f852464770d3d05ace3647ce099be040c648))
+* implement mission deletion and cleanup functionality ([d420727](https://github.com/EPFL-ENAC/AddLidar/commit/d4207271d10040f6d4984f4212eb764881be6841))
+* implement mission password protection and management ([8d571ba](https://github.com/EPFL-ENAC/AddLidar/commit/8d571ba1dc100796fd790567e435ea81348fa376))
+* implement password protection bypass for internal API endpoints ([1fa9d79](https://github.com/EPFL-ENAC/AddLidar/commit/1fa9d79b433712944a538ff9c5b039e24e54d261))
+* improve UI UX after benjamin review ([c69294c](https://github.com/EPFL-ENAC/AddLidar/commit/c69294c1a8507aeec2639b5c0e18c5a47f397312))
+* move ColorVariableSelector ([0f72356](https://github.com/EPFL-ENAC/AddLidar/commit/0f7235618c4b36b6e75c4e0e8b2466e6ed5cd10e))
+* pin PotreeConverter version to 2.1.2 for stable downloads ([629a4ed](https://github.com/EPFL-ENAC/AddLidar/commit/629a4ed3e42203adede8f2c5546a9eaf2cf8a8f4))
+* remove color property from back button for improved styling ([955efe3](https://github.com/EPFL-ENAC/AddLidar/commit/955efe3deca1c27cbea4bd4e59bcc9c3b5b6e448))
+* remove shadow and backdrop filter from banner for cleaner appearance ([43ef7dc](https://github.com/EPFL-ENAC/AddLidar/commit/43ef7dc788cd0e85d3de2acc688ebebdcc56e6b7))
+* simplify fingerprinting logic by removing modification time from file attributes ([efdaca0](https://github.com/EPFL-ENAC/AddLidar/commit/efdaca0da0e870605c4b93345c8e771871a00d59))
+* simplify folder state and potree metacloud state API responses by optimizing data filtering ([5b9e280](https://github.com/EPFL-ENAC/AddLidar/commit/5b9e280fead1d0fe8ef4b3ccb3d8daf8688f849d))
+* update button labels and icons for improved clarity and consistency ([29e6bf6](https://github.com/EPFL-ENAC/AddLidar/commit/29e6bf603a59886728c485f177b2c370bd921901))
+* update folder state API endpoints to use prefix and mission_folders path ([1059ec2](https://github.com/EPFL-ENAC/AddLidar/commit/1059ec248a2007bcff10d04eb1277720a60f2c8d))
+* update table row styles for improved visual feedback and consistency ([3dc28bd](https://github.com/EPFL-ENAC/AddLidar/commit/3dc28bdcfe8730cd9bd035de7d1927447234eda8))
+* use exact matching for folder state api get ([6284633](https://github.com/EPFL-ENAC/AddLidar/commit/6284633c75476b18c455a69abe391afb900fe175))
+
+
+### Bug Fixes
+
+* add internal router decorator to mission protection GET endpoint ([7e667c2](https://github.com/EPFL-ENAC/AddLidar/commit/7e667c249bed05db13c2fb546a2b9fc2147ff93a))
+* add missing ENVIRONMENT variable to settings ([c655d25](https://github.com/EPFL-ENAC/AddLidar/commit/c655d25e7a9ac11d178a07a8f2afbd6223cb6c66))
+* add skip vulnerability scan option to deploy workflow ([a7269fa](https://github.com/EPFL-ENAC/AddLidar/commit/a7269fa36aff1232b55fc027f3dba1cbdda1ca7c))
+* fix correct decorator for folder state ([77ae2f9](https://github.com/EPFL-ENAC/AddLidar/commit/77ae2f9f40e894b1a033f1d1568545b7bfe72218))
+* **frontend:** fix large file download process by using direct browser navigation ([668d592](https://github.com/EPFL-ENAC/AddLidar/commit/668d5929df5b791f9c3dddf0e3b41c2b7b9e9bc4))
+* update base image in Dockerfile to use python:3.12-bookworm to have git ([9b7dc0f](https://github.com/EPFL-ENAC/AddLidar/commit/9b7dc0f2d00a7600f0c1fc5cfb84e84ce5b8319c))
+* update Keycloak API ID and client ID for consistency ([f0dc705](https://github.com/EPFL-ENAC/AddLidar/commit/f0dc7058488b6a232d4acfeaca366bf05c93b39d))
+* update Keycloak URL to remove the authentication path ([033747f](https://github.com/EPFL-ENAC/AddLidar/commit/033747f5596909cc6bcd7d7cb21a822b5a071a4c))
+* update route parameters to use path converter for folder and potree metacloud state APIs ([12289fb](https://github.com/EPFL-ENAC/AddLidar/commit/12289fbce7ff1dad6c9027c11a2ff46383f0d7ce))
+
 ## [1.0.0](https://github.com/EPFL-ENAC/AddLidar/compare/v0.8.1...v1.0.0) (2026-01-04)
 
 
