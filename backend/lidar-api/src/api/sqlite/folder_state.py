@@ -40,6 +40,8 @@ class FolderStateCreate(BaseModel):
     file_count: int
     output_path: str
     processing_status: Optional[str] = "pending"
+    processing_time: Optional[int] = None
+    error_message: Optional[str] = None
 
 
 # Create routers
@@ -416,8 +418,8 @@ async def create_folder_state(create_data: FolderStateCreate):
     try:
         cursor.execute(
             """INSERT INTO folder_state
-            (folder_key, mission_key, fp, size_kb, file_count, last_checked, last_processed, processing_status, output_path)
-            VALUES (?, ?, ?, ?, ?, ?, NULL, ?, ?)
+            (folder_key, mission_key, fp, size_kb, file_count, last_checked, last_processed, processing_status, output_path, processing_time, error_message)
+            VALUES (?, ?, ?, ?, ?, ?, NULL, ?, ?, ?, ?)
             ON CONFLICT(folder_key) DO UPDATE SET
             mission_key = excluded.mission_key,
             fp = excluded.fp,
@@ -426,7 +428,10 @@ async def create_folder_state(create_data: FolderStateCreate):
             last_checked = excluded.last_checked,
             last_processed = NULL,
             processing_status = excluded.processing_status,
-            output_path = excluded.output_path""",
+            output_path = excluded.output_path,
+            processing_time = excluded.processing_time,
+            error_message = excluded.error_message,
+            detailed_error_message = NULL""",
             (
                 create_data.folder_key,
                 create_data.mission_key,
@@ -436,6 +441,8 @@ async def create_folder_state(create_data: FolderStateCreate):
                 current_time,
                 create_data.processing_status,
                 create_data.output_path,
+                create_data.processing_time,
+                create_data.error_message,
             ),
         )
         conn.commit()

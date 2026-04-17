@@ -61,31 +61,22 @@ class APIClient:
         output_path: str,
     ) -> bool:
         """Create or update folder state via API"""
+        # Always POST so file_count/size_kb/output_path get refreshed on
+        # subsequent scans. The backend POST uses INSERT ON CONFLICT DO UPDATE,
+        # so this handles both new rows and updates. PUT is reserved for the
+        # compression job's narrow status update.
         try:
-            url = f"{self.backend_url}/sqlite/folder_state/{folder_key}"
-            payload = {"fingerprint": fp, "processing_status": "pending"}
-            response = requests.put(url, json=payload, timeout=30)
-
-            if response.status_code == 404:
-                logger.info(
-                    f"Creating new folder state record via API for {folder_key}"
-                )
-                create_url = f"{self.backend_url}/sqlite/folder_state"
-                create_payload = {
-                    "folder_key": folder_key,
-                    "mission_key": mission_key,
-                    "fingerprint": fp,
-                    "size_kb": size,
-                    "file_count": count,
-                    "output_path": output_path,
-                    "processing_status": "pending",
-                }
-                create_response = requests.post(
-                    create_url, json=create_payload, timeout=30
-                )
-                create_response.raise_for_status()
-                return True
-
+            url = f"{self.backend_url}/sqlite/folder_state"
+            payload = {
+                "folder_key": folder_key,
+                "mission_key": mission_key,
+                "fingerprint": fp,
+                "size_kb": size,
+                "file_count": count,
+                "output_path": output_path,
+                "processing_status": "pending",
+            }
+            response = requests.post(url, json=payload, timeout=30)
             response.raise_for_status()
             return True
         except Exception as e:
@@ -103,37 +94,19 @@ class APIClient:
     ) -> bool:
         """Create or update folder state for empty folders with 'empty' status"""
         try:
-            url = f"{self.backend_url}/sqlite/folder_state/{folder_key}"
+            url = f"{self.backend_url}/sqlite/folder_state"
             payload = {
+                "folder_key": folder_key,
+                "mission_key": mission_key,
                 "fingerprint": fp,
+                "size_kb": size,
+                "file_count": count,
+                "output_path": output_path,
                 "processing_status": "empty",
                 "processing_time": 0,
                 "error_message": "Folder is empty (no files)",
             }
-            response = requests.put(url, json=payload, timeout=30)
-
-            if response.status_code == 404:
-                logger.info(
-                    f"Creating new folder state record for empty folder via API: {folder_key}"
-                )
-                create_url = f"{self.backend_url}/sqlite/folder_state"
-                create_payload = {
-                    "folder_key": folder_key,
-                    "mission_key": mission_key,
-                    "fingerprint": fp,
-                    "size_kb": size,
-                    "file_count": count,
-                    "output_path": output_path,
-                    "processing_status": "empty",
-                    "processing_time": 0,
-                    "error_message": "Folder is empty (no files)",
-                }
-                create_response = requests.post(
-                    create_url, json=create_payload, timeout=30
-                )
-                create_response.raise_for_status()
-                return True
-
+            response = requests.post(url, json=payload, timeout=30)
             response.raise_for_status()
             logger.info(f"Marked folder as empty: {folder_key}")
             return True
