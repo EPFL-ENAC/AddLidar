@@ -12,12 +12,11 @@ jobs:
     permissions:
       contents: read
       packages: write
-    uses: EPFL-ENAC/epfl-enac-build-push-deploy-action/.github/workflows/deploy.yml@v3.0.3
+    uses: EPFL-ENAC/epfl-enac-build-push-deploy-action/.github/workflows/deploy.yml@v3.0.5
     secrets:
       token: ${{ secrets.CD_TOKEN }}
     with:
       # Optional inputs can be passed here
-      skip_vulnerability_scan: true
       ORG: epfl-eso #.e.g epfl-eso
       REPO: addlidar # ex. addlidar
       build_context: '["./backend/lidar-api", "./frontend", "./compression", "./scanner", "./potree-converter"]'
