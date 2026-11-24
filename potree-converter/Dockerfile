@@ -39,7 +39,7 @@ RUN VERSION="2.1.2" && \
     chmod +x PotreeConverter/PotreeConverter
 
 # Runtime stage with Debian slim
-FROM debian:bullseye-slim
+FROM ubuntu:22.04
 
 # Create necessary directories
 RUN mkdir -p /lib/x86_64-linux-gnu /usr/lib/x86_64-linux-gnu
